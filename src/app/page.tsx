@@ -73,13 +73,13 @@ function Jaali({ light = false }: { light?: boolean }) {
 export default function Home() {
   return (
     <>
-      <nav className="flex items-center justify-between max-w-[1080px] mx-auto px-8 py-6">
-        <div className="font-display text-[22px] font-semibold text-indigo">
+      <nav className="flex items-center justify-between max-w-[1080px] mx-auto px-8 py-6 gap-4">
+        <div className="font-display text-[22px] font-semibold text-indigo shrink-0">
           mom<span className="text-gold-deep">village</span>
         </div>
-        <ul className="hidden md:flex gap-8 text-sm text-ink">
+        <ul className="hidden lg:flex gap-7 text-sm text-ink shrink-0">
           {navLinks.map((l) => (
-            <li key={l.href}>
+            <li key={l.href} className="whitespace-nowrap">
               <a href={l.href} className="hover:text-gold-deep transition-colors">
                 {l.label}
               </a>
@@ -88,7 +88,7 @@ export default function Home() {
         </ul>
         <Link
           href="/join"
-          className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory"
+          className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory shrink-0 whitespace-nowrap"
         >
           Join the village
         </Link>
