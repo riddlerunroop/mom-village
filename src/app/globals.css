@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  /* Mom Village design tokens — from the brand mockup */
+  --color-ink: #2B2420;
+  --color-indigo: #1F2E4D;
+  --color-gold: #D9A441;
+  --color-gold-deep: #A97418;
+  --color-terracotta: #BE6240;
+  --color-ivory: #FBF4E8;
+  --color-ivory-2: #F4E9D8;
+  --color-sage: #8B9E7E;
+  --color-sage-deep: #5F7052;
+  --color-line: rgba(43, 36, 32, 0.14);
+
+  --background: var(--color-ivory);
+  --foreground: var(--color-ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-ink: var(--color-ink);
+  --color-indigo: var(--color-indigo);
+  --color-gold: var(--color-gold);
+  --color-gold-deep: var(--color-gold-deep);
+  --color-terracotta: var(--color-terracotta);
+  --color-ivory: var(--color-ivory);
+  --color-ivory-2: var(--color-ivory-2);
+  --color-sage: var(--color-sage);
+  --color-sage-deep: var(--color-sage-deep);
+  --color-line: var(--color-line);
+
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-karla);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-karla), sans-serif;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-fraunces), serif;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
