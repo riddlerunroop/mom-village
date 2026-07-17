@@ -1,9 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { calculateMonthNumber, monthLabel, journeyProgress } from "@/lib/monthCalculator";
+import { hasActiveSubscription } from "@/lib/subscription";
+import LockedPreview from "@/components/LockedPreview";
 
-// Monthly Chart is baby-centric only now: what she needs, what's changing,
-// and what's happening in the world around baby. Fitness/mom-care moved to
-// its own pillar at /dashboard/care.
 const SECTIONS = [
   { key: "money", label: "Money", accent: "gold" as const },
   { key: "development", label: "Development", accent: "sage" as const },
@@ -23,18 +22,22 @@ export default async function DashboardPage() {
     .eq("id", user!.id)
     .maybeSingle();
 
+  const isSubscribed = await hasActiveSubscription(supabase, user!.id);
+
   const referenceDate = profile!.baby_dob || profile!.due_date;
   const monthNumber = calculateMonthNumber(referenceDate);
   const label = monthLabel(monthNumber);
   const progress = journeyProgress(monthNumber);
   const deliveryType = profile!.delivery_type;
 
-  const { data: chartContent } = await supabase
-    .from("monthly_chart_content")
-    .select("*")
-    .eq("month_number", monthNumber)
-    .or(`delivery_type.eq.${deliveryType},delivery_type.eq.any`)
-    .order("sort_order");
+  const { data: chartContent } = isSubscribed
+    ? await supabase
+        .from("monthly_chart_content")
+        .select("*")
+        .eq("month_number", monthNumber)
+        .or(`delivery_type.eq.${deliveryType},delivery_type.eq.any`)
+        .order("sort_order")
+    : { data: null };
 
   const bySection = SECTIONS.map((section) => ({
     ...section,
@@ -68,40 +71,47 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-5">
-        {bySection.map((section) => (
-          <div
-            key={section.key}
-            className="bg-ivory-2 rounded-2xl border border-line p-6"
-            style={{
-              borderTop: `3px solid var(--color-${section.accent})`,
-            }}
-          >
-            <h3 className="font-display text-lg text-indigo mb-3">
-              {section.label}
-            </h3>
+      {!isSubscribed ? (
+        <LockedPreview
+          title="Your full Monthly Chart is waiting"
+          teaser={`You're at ${label.toLowerCase()} — join to see exactly what to buy, skip, and expect this month, with fresh guidance unlocked every month after.`}
+        />
+      ) : (
+        <div className="grid md:grid-cols-3 gap-5">
+          {bySection.map((section) => (
+            <div
+              key={section.key}
+              className="bg-ivory-2 rounded-2xl border border-line p-6"
+              style={{
+                borderTop: `3px solid var(--color-${section.accent})`,
+              }}
+            >
+              <h3 className="font-display text-lg text-indigo mb-3">
+                {section.label}
+              </h3>
 
-            {section.items.length === 0 ? (
-              <p className="text-sm text-ink/55 italic">
-                Your {label.toLowerCase()} {section.label.toLowerCase()} plan
-                is being brewed — check back soon.
-              </p>
-            ) : (
-              <ul className="space-y-3">
-                {section.items.map((item) => (
-                  <li key={item.id} className="flex items-start gap-2.5">
-                    <input type="checkbox" className="mt-1 accent-gold-deep" disabled />
-                    <div>
-                      <p className="text-sm font-semibold text-ink">{item.title}</p>
-                      <p className="text-[13px] text-ink/65 mt-0.5">{item.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </div>
+              {section.items.length === 0 ? (
+                <p className="text-sm text-ink/55 italic">
+                  Your {label.toLowerCase()} {section.label.toLowerCase()} plan
+                  is being brewed — check back soon.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {section.items.map((item) => (
+                    <li key={item.id} className="flex items-start gap-2.5">
+                      <input type="checkbox" className="mt-1 accent-gold-deep" disabled />
+                      <div>
+                        <p className="text-sm font-semibold text-ink">{item.title}</p>
+                        <p className="text-[13px] text-ink/65 mt-0.5">{item.body}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
