@@ -86,12 +86,20 @@ export default function Home() {
             </li>
           ))}
         </ul>
-        <Link
-          href="/join"
-          className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory shrink-0 whitespace-nowrap"
-        >
-          Join the village
-        </Link>
+        <div className="flex items-center gap-4 shrink-0">
+          <Link
+            href="/login"
+            className="text-sm font-semibold text-indigo whitespace-nowrap hover:text-gold-deep transition-colors"
+          >
+            Log in
+          </Link>
+          <Link
+            href="/login"
+            className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory whitespace-nowrap"
+          >
+            Join the village
+          </Link>
+        </div>
       </nav>
 
       <Jaali light />
