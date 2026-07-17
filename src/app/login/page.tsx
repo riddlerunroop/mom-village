@@ -1,20 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-type Step = "phone" | "otp";
+type Step = "checking" | "phone" | "otp";
 
 export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [step, setStep] = useState<Step>("phone");
+  const [step, setStep] = useState<Step>("checking");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // The moment this page loads, quietly check if she's already logged in.
+  // If so, skip the form entirely — no phone number, no OTP, straight to her dashboard.
+  // Only show the login form if she genuinely has no active session.
+  useEffect(() => {
+    async function checkExistingSession() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setStep("phone");
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("due_date, baby_dob")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile && (profile.due_date || profile.baby_dob)) {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/onboarding");
+      }
+    }
+
+    checkExistingSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Normalizes to E.164 format e.g. +919876543210, assumes India (+91) if no country code typed
   function formatPhone(raw: string) {
@@ -89,13 +120,21 @@ export default function LoginPage() {
             mom<span className="text-gold-deep">village</span>
           </div>
           <p className="text-sm text-ink/65">
-            {step === "phone"
+            {step === "checking"
+              ? "Just a second…"
+              : step === "phone"
               ? "No passwords. Just your phone number."
               : "Check your phone for the code."}
           </p>
         </div>
 
         <div className="bg-ivory-2 rounded-2xl border border-line p-7">
+          {step === "checking" && (
+            <p className="text-center text-sm text-sage-deep py-6">
+              Checking if you're already signed in…
+            </p>
+          )}
+
           {step === "phone" && (
             <form onSubmit={handleSendOtp}>
               <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
