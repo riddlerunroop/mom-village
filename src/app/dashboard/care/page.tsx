@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { calculateCareWeek, carePhaseLabel, careWeekLabel } from "@/lib/weekCalculator";
 import LockedPreview from "@/components/LockedPreview";
 
 export default async function CarePage() {
@@ -7,23 +8,38 @@ export default async function CarePage() {
   const { data: { user } } = await supabase.auth.getUser();
   const isSubscribed = await hasActiveSubscription(supabase, user!.id);
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("baby_dob, due_date")
+    .eq("id", user!.id)
+    .maybeSingle();
+
+  const week = calculateCareWeek(profile?.baby_dob ?? null, profile?.due_date ?? null);
+  const phaseLabel = week !== null ? carePhaseLabel(week) : null;
+  const weekLabel = week !== null ? careWeekLabel(week) : null;
+
   return (
     <main className="max-w-[900px] mx-auto px-6 py-10">
       <div className="mb-2 text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold">
         this week, for you
       </div>
-      <h1 className="font-display text-[30px] text-indigo mb-2">
+      <h1 className="font-display text-[30px] text-indigo mb-1">
         Your weekly care chart
       </h1>
+      {weekLabel && (
+        <p className="text-sm font-semibold text-gold-deep mb-1">
+          {weekLabel} — {phaseLabel}
+        </p>
+      )}
       <p className="text-sm text-ink/65 mb-10 max-w-[540px]">
-        Body, food, and mind — built around how you delivered and how far
-        along you are.
+        Body, mind, skin, and more — built around exactly where you are,
+        pregnancy through postpartum.
       </p>
 
       {!isSubscribed ? (
         <LockedPreview
           title="Your care chart is ready to be personalized"
-          teaser="Join to get a weekly plan built around your own recovery, feeding stage, and how much time you actually have today."
+          teaser="Join to get a weekly plan built around your own stage, feeding, and how much time you actually have today."
         />
       ) : (
         <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
