@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { calculateMonthNumber, monthLabel, journeyProgress } from "@/lib/monthCalculator";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { getCurrentSeason } from "@/lib/season";
 import LockedPreview from "@/components/LockedPreview";
 
 const SECTIONS = [
@@ -30,12 +31,15 @@ export default async function DashboardPage() {
   const progress = journeyProgress(monthNumber);
   const deliveryType = profile!.delivery_type;
 
+  const currentSeason = getCurrentSeason();
+
   const { data: chartContent } = isSubscribed
     ? await supabase
         .from("monthly_chart_content")
         .select("*")
         .eq("month_number", monthNumber)
         .or(`delivery_type.eq.${deliveryType},delivery_type.eq.any`)
+        .or(`season.eq.${currentSeason},season.eq.any`)
         .order("sort_order")
     : { data: null };
 
