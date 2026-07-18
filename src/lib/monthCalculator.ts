@@ -22,8 +22,12 @@ export function monthLabel(monthNumber: number): string {
     const monthsToGo = Math.abs(monthNumber);
     return `${monthsToGo} ${monthsToGo === 1 ? "month" : "months"} to go`;
   }
-  if (monthNumber === 0) return "Newborn — Month 0";
-  return `Month ${monthNumber}`;
+  // Postnatal months are 1-indexed in how she thinks of them: the newborn
+  // stretch (baby's age 0–1 month, stored as month_number 0) is "Month 1",
+  // not "Month 0" — matches her own "Month +5 = fifth completed month" convention.
+  const displayMonth = monthNumber + 1;
+  if (monthNumber === 0) return "Month 1 — Newborn";
+  return `Month ${displayMonth}`;
 }
 
 // The 1000-day journey runs roughly from pregnancy start (-9) to age 3 (36)
