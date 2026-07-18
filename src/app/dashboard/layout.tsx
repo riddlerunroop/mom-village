@@ -24,12 +24,18 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("due_date, baby_dob")
+    .select("due_date, baby_dob, birth_welcome_seen")
     .eq("id", user!.id)
     .maybeSingle();
 
   if (!profile || (!profile.due_date && !profile.baby_dob)) {
     redirect("/onboarding");
+  }
+
+  // If baby's born and she hasn't seen the welcome moment yet, show it first —
+  // but don't loop: skip this check if she's already on that page.
+  if (profile.baby_dob && !profile.birth_welcome_seen) {
+    redirect("/welcome-baby");
   }
 
   return (
