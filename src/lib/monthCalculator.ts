@@ -38,11 +38,17 @@ export function journeyProgress(monthNumber: number): number {
   return Math.min(100, Math.max(0, Math.round(pct)));
 }
 
-// Precise real-date check for the actual first birthday — used to trigger
-// the one-time celebration moment, independent of our month-number bucketing.
-export function hasTurnedOne(babyDob: string): boolean {
+// Precise real-date check for whether baby has reached a given birthday —
+// used to trigger the one-time celebration moments, independent of our
+// month-number bucketing.
+export function hasTurnedAge(babyDob: string, years: number): boolean {
   const dob = new Date(babyDob);
-  const oneYearMark = new Date(dob);
-  oneYearMark.setFullYear(oneYearMark.getFullYear() + 1);
-  return new Date() >= oneYearMark;
+  const mark = new Date(dob);
+  mark.setFullYear(mark.getFullYear() + years);
+  return new Date() >= mark;
+}
+
+// Kept for the existing first-birthday feature.
+export function hasTurnedOne(babyDob: string): boolean {
+  return hasTurnedAge(babyDob, 1);
 }
