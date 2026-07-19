@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import DashboardNav from "@/components/DashboardNav";
+import { hasTurnedOne } from "@/lib/monthCalculator";
 
 // Shared shell for every logged-in page: checks she's authenticated and has
 // completed onboarding, then renders the same header + nav everywhere —
@@ -24,7 +25,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("due_date, baby_dob, birth_welcome_seen")
+    .select("due_date, baby_dob, birth_welcome_seen, birthday_1_seen")
     .eq("id", user!.id)
     .maybeSingle();
 
@@ -36,6 +37,16 @@ export default async function DashboardLayout({
   // but don't loop: skip this check if she's already on that page.
   if (profile.baby_dob && !profile.birth_welcome_seen) {
     redirect("/welcome-baby");
+  }
+
+  // Once she's past the birth-welcome moment, check for the first-birthday
+  // celebration — only relevant once baby's actually turned one.
+  if (
+    profile.baby_dob &&
+    !profile.birthday_1_seen &&
+    hasTurnedOne(profile.baby_dob)
+  ) {
+    redirect("/birthday-1");
   }
 
   return (

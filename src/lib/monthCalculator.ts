@@ -37,3 +37,12 @@ export function journeyProgress(monthNumber: number): number {
   const pct = (monthsElapsed / totalMonths) * 100;
   return Math.min(100, Math.max(0, Math.round(pct)));
 }
+
+// Precise real-date check for the actual first birthday — used to trigger
+// the one-time celebration moment, independent of our month-number bucketing.
+export function hasTurnedOne(babyDob: string): boolean {
+  const dob = new Date(babyDob);
+  const oneYearMark = new Date(dob);
+  oneYearMark.setFullYear(oneYearMark.getFullYear() + 1);
+  return new Date() >= oneYearMark;
+}
