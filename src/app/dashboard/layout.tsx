@@ -25,7 +25,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("due_date, baby_dob, birth_welcome_seen, birthday_1_seen, birthday_2_seen")
+    .select("due_date, baby_dob, birth_welcome_seen, birthday_1_seen, birthday_2_seen, birthday_3_seen")
     .eq("id", user!.id)
     .maybeSingle();
 
@@ -56,6 +56,17 @@ export default async function DashboardLayout({
     hasTurnedAge(profile.baby_dob, 2)
   ) {
     redirect("/birthday-2");
+  }
+
+  // Then the third-birthday celebration — only once baby's actually turned
+  // three. This also sends off the Monthly Chart's 1,000-day journey, which
+  // concludes at month 36 / the third birthday.
+  if (
+    profile.baby_dob &&
+    !profile.birthday_3_seen &&
+    hasTurnedAge(profile.baby_dob, 3)
+  ) {
+    redirect("/birthday-3");
   }
 
   return (
