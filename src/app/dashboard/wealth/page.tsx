@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import LockedPreview from "@/components/LockedPreview";
@@ -26,10 +27,28 @@ export default async function WealthPage() {
           teaser="Join to get guidance on schemes, savings, and staying financially independent through these early years."
         />
       ) : (
-        <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
-          <p className="font-display italic text-lg text-sage-deep">
-            This guidance is being written — worth the wait.
-          </p>
+        <div className="space-y-5">
+          <Link
+            href="/budget-calculator"
+            className="block bg-indigo rounded-2xl p-7 text-ivory hover:opacity-95 transition-opacity"
+          >
+            <div className="text-xs uppercase tracking-[0.12em] text-gold font-semibold mb-2">
+              the real minimum, not the inflated version
+            </div>
+            <h3 className="font-display text-xl mb-2">Minimum Budget Planner</h3>
+            <p className="text-sm text-ivory/75">
+              A few honest questions, and a realistic number — pregnancy
+              through your child&apos;s third birthday, built around what you
+              actually need.
+            </p>
+          </Link>
+
+          <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
+            <p className="font-display italic text-lg text-sage-deep">
+              Schemes, savings guidance, and book recommendations are being
+              written — worth the wait.
+            </p>
+          </div>
         </div>
       )}
     </main>

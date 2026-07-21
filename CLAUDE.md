@@ -68,19 +68,28 @@ Working module-by-module now (confirmed 2026-07-21). Order chosen: **Fitness/Car
 
 **Code already existed before this session** (found, not built from scratch): `src/app/care-quiz/page.tsx` (health-flags quiz — thyroid/diabetes-GD/PCOS/high BP — live), `src/app/dashboard/care/page.tsx` (subscription-gated page, currently just a placeholder — "Check back soon"), `src/lib/weekCalculator.ts` (`calculateCareWeek`, `carePhaseLabel`, `careWeekLabel`), `supabase/migration_2_care_chart.sql` (tables: `user_care_profile`, `user_daily_checkin`, `weekly_care_chart_content`, `user_care_progress`).
 
-**Build complete as of 2026-07-21 — pending Roop's Supabase run + GitHub push:**
-- `supabase/migration_8_care_chart_skin_section.sql` — adds "skin" as a real 4th section. **Run in Supabase, confirmed.**
-- `supabase/migration_9_care_chart_phase_key.sql` — adds a `phase_key` column (stable slug like `first_trimester`, `early_healing`) so content is queried by phase, not fragile week-number math. **Run in Supabase, confirmed.**
-- `supabase/migration_10_care_chart_content_seed.sql` — loads all 124 rows of the locked 9-phase content into `weekly_care_chart_content` (parsed from the locked docx: Body/Mind sections split into 5/15/30-min rows + a standing "Note" row per section; Food/Skin sections are thematic, all tagged `time_option='any'`; one row — Phase 4 Body's "After caesarean or complications" — tagged `delivery_type='c_section'`, everything else `'any'`). **Not yet run — Roop needs to run this next.**
-- `src/lib/weekCalculator.ts` — `carePhaseLabel` extended through month 36, renamed to match the locked content's exact phase names (Settling into strength / Sustainable rhythms / Your rhythm, year three). Added `carePhaseKey(week)` returning the stable slug used to query content. **Not yet committed/pushed via GitHub Desktop.**
-- `src/app/care-checkin/page.tsx` — new daily check-in page (time available 5/15/30, energy 1–10, mood 1–10, upserts into `user_daily_checkin` keyed on user+date). **New file, not yet pushed.**
-- `src/app/dashboard/care/page.tsx` — placeholder replaced with real logic: computes her phase from her own baby_dob/due_date, checks if she's checked in today (prompts her to `/care-checkin` if not), then queries `weekly_care_chart_content` filtered by phase + her delivery_type + today's time_available + her health flags, rendered as 4 cards (Body/Food/Mind/Skin). **Rewritten, not yet pushed.**
+**Status: FULLY LIVE.** Migrations 8, 9, and 10 all run in Supabase (skin section, phase_key column, and all 124 content rows loaded). `weekCalculator.ts` (phase labels + `carePhaseKey`), `src/app/care-checkin/page.tsx` (daily check-in), and `src/app/dashboard/care/page.tsx` (real content-matching logic, replacing the old placeholder) are all committed and pushed via GitHub Desktop, deployed on Vercel. A mother now lands on Care Chart, gets prompted to check in (time/energy/mood) if she hasn't today, and sees real phase-matched content across Body/Food/Mind/Skin. Nothing left to do here unless Roop asks for changes.
 
-**Roop's next steps to actually go live:** (1) run `migration_10_care_chart_content_seed.sql` in Supabase SQL Editor, (2) commit + push all changed files via GitHub Desktop. Once both are done, the Care Chart pillar is fully live, not just built.
+## Wealth pillar — in progress (2026-07-21)
+
+Roop had ChatGPT draft a much bigger "Financial Empowerment Ecosystem" brief (skills courses/LMS, job/freelance curation, AI mentor recommending jobs and schemes, deep integration with non-existent modules). **Same pattern as the Master Product Brief — Claude reviewed it, flagged it as over-scoped and partly contradicting confirmed decisions (esp. the narrowly-scoped Intelligence Layer), and Roop agreed to the scoped-down version instead.** Confirmed actual scope for Wealth: government schemes directory, savings/financial-planning guidance, books tied into the Library ₹249 flow, framed around the mother's own financial confidence/independence (matches the existing placeholder page copy: "her own security... government schemes, how to save, how to stay financially independent"). The bigger ecosystem brief is NOT approved — don't build toward it without Roop revisiting this decision explicitly.
+
+**Minimum Budget Planner — built 2026-07-21.** This is the ₹49 low-friction front-door product from the original business model, confirmed by Roop to be the same thing, and it also lives as a tab inside Wealth. Interactive: she answers real questions (currently pregnant or not, baby count, delivery facility public/private + type, feeding plan, diapering plan, hand-me-downs or starting from scratch) and gets a minimum-realistic budget range broken down by stage (pregnancy & delivery / newborn essentials / first year / toddler years 1–3) and by category, plus callouts for government schemes that lower the real cost (JSSK free public delivery, PMSMA free ANC checkups, PMMVY ₹5,000 cash benefit, free UIP immunizations). Deliberately conservative, budget-conscious figures, not premium/inflated ones — independently researched (see chat verification pass, 2026-07-21) rather than guessed.
+
+- `src/lib/budgetCalculator.ts` — pure calculation logic, no DB writes (stateless, she can re-run anytime).
+- `src/app/budget-calculator/page.tsx` — server-side auth + subscription gate (this route lives outside `/dashboard` on purpose, since it's meant to eventually work stand-alone before subscription once Razorpay exists — until then it's gated the same as everything else).
+- `src/app/budget-calculator/BudgetCalculatorClient.tsx` — the actual interactive form + results + "download/print as PDF" (via browser print, no new PDF dependency added).
+- `src/app/dashboard/wealth/page.tsx` — updated with a card linking to the calculator; the rest of Wealth (schemes, savings guidance, books) is still "being written."
+
+**Important limitation, by design:** the calculator currently sits behind the normal subscription check, not a true stand-alone ₹49 paywall — that requires Razorpay, which is intentionally being built last. Don't wire a separate ₹49 payment flow for this until Razorpay is actually integrated.
+
+**No Supabase migration needed for this feature** — just a GitHub Desktop commit + push (`budgetCalculator.ts`, `budget-calculator/page.tsx`, `budget-calculator/BudgetCalculatorClient.tsx`, `dashboard/wealth/page.tsx`).
+
+**Still to build for Wealth:** the schemes directory, savings/planning guidance content, and Library-linked book recommendations — not started yet.
 
 ## Other pillars/features still fully unbuilt
 
-Wealth pillar, Library pillar, Community pillar, vaccination tracking + reminders, voice-log memories + recall. Razorpay is intentionally saved for last (see above). Order beyond Care Chart hasn't been decided — ask Roop.
+Library pillar, Community pillar, vaccination tracking + reminders, voice-log memories + recall. Razorpay is intentionally saved for last (see above). Order beyond Care Chart and Wealth's budget calculator hasn't been decided — ask Roop.
 
 ## Tech stack
 
