@@ -31,11 +31,15 @@ export function carePhaseLabel(week: number): string {
   if (week <= -14) return "Second trimester";
   if (week < 0) return "Third trimester — getting close";
 
-  // Postnatal phases
+  // Postnatal phases — extended through the third birthday (~week 156) to
+  // match the Care Chart's full pregnancy-through-age-3 span, same as the
+  // Monthly Chart. Confirmed 2026-07-21.
   if (week <= 6) return "Early healing (0–6 weeks)";
   if (week <= 12) return "Finding rhythm (6–12 weeks)";
   if (week <= 26) return "Rebuilding (3–6 months)";
-  return "Strong again (6–12 months+)";
+  if (week <= 52) return "Strong again (6–12 months)";
+  if (week <= 104) return "Toddler year two (1–2 years)";
+  return "Toddler year three (2–3 years)";
 }
 
 export function careWeekLabel(week: number): string {
