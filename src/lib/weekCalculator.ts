@@ -33,13 +33,41 @@ export function carePhaseLabel(week: number): string {
 
   // Postnatal phases — extended through the third birthday (~week 156) to
   // match the Care Chart's full pregnancy-through-age-3 span, same as the
-  // Monthly Chart. Confirmed 2026-07-21.
+  // Monthly Chart. Names match the locked 9-phase content exactly
+  // (Weekly Care Chart - All 9 Phases (LOCKED).docx). Confirmed 2026-07-21.
   if (week <= 6) return "Early healing (0–6 weeks)";
   if (week <= 12) return "Finding rhythm (6–12 weeks)";
   if (week <= 26) return "Rebuilding (3–6 months)";
-  if (week <= 52) return "Strong again (6–12 months)";
-  if (week <= 104) return "Toddler year two (1–2 years)";
-  return "Toddler year three (2–3 years)";
+  if (week <= 52) return "Settling into strength (6–12 months)";
+  if (week <= 104) return "Sustainable rhythms (1–2 years)";
+  return "Your rhythm, year three (2–3 years)";
+}
+
+// Stable slug per phase — this is what content rows in weekly_care_chart_content
+// are actually tagged and queried by (phase_key column, migration_9). Boundaries
+// must stay in lockstep with carePhaseLabel above.
+export type CarePhaseKey =
+  | "first_trimester"
+  | "second_trimester"
+  | "third_trimester"
+  | "early_healing"
+  | "finding_rhythm"
+  | "rebuilding"
+  | "settling_into_strength"
+  | "sustainable_rhythms"
+  | "rhythm_year_three";
+
+export function carePhaseKey(week: number): CarePhaseKey {
+  if (week <= -27) return "first_trimester";
+  if (week <= -14) return "second_trimester";
+  if (week < 0) return "third_trimester";
+
+  if (week <= 6) return "early_healing";
+  if (week <= 12) return "finding_rhythm";
+  if (week <= 26) return "rebuilding";
+  if (week <= 52) return "settling_into_strength";
+  if (week <= 104) return "sustainable_rhythms";
+  return "rhythm_year_three";
 }
 
 export function careWeekLabel(week: number): string {

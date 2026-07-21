@@ -68,16 +68,15 @@ Working module-by-module now (confirmed 2026-07-21). Order chosen: **Fitness/Car
 
 **Code already existed before this session** (found, not built from scratch): `src/app/care-quiz/page.tsx` (health-flags quiz — thyroid/diabetes-GD/PCOS/high BP — live), `src/app/dashboard/care/page.tsx` (subscription-gated page, currently just a placeholder — "Check back soon"), `src/lib/weekCalculator.ts` (`calculateCareWeek`, `carePhaseLabel`, `careWeekLabel`), `supabase/migration_2_care_chart.sql` (tables: `user_care_profile`, `user_daily_checkin`, `weekly_care_chart_content`, `user_care_progress`).
 
-**Changes made this session:**
-- `supabase/migration_8_care_chart_skin_section.sql` — adds "skin" as a real 4th section (was body/food/mind only). **Not yet run in Supabase — Roop needs to run this.**
-- `src/lib/weekCalculator.ts` — `carePhaseLabel` extended to cover months 12–36 (previously capped at "6–12 months+" as one open bucket). **Not yet committed/pushed via GitHub Desktop.**
+**Build complete as of 2026-07-21 — pending Roop's Supabase run + GitHub push:**
+- `supabase/migration_8_care_chart_skin_section.sql` — adds "skin" as a real 4th section. **Run in Supabase, confirmed.**
+- `supabase/migration_9_care_chart_phase_key.sql` — adds a `phase_key` column (stable slug like `first_trimester`, `early_healing`) so content is queried by phase, not fragile week-number math. **Run in Supabase, confirmed.**
+- `supabase/migration_10_care_chart_content_seed.sql` — loads all 124 rows of the locked 9-phase content into `weekly_care_chart_content` (parsed from the locked docx: Body/Mind sections split into 5/15/30-min rows + a standing "Note" row per section; Food/Skin sections are thematic, all tagged `time_option='any'`; one row — Phase 4 Body's "After caesarean or complications" — tagged `delivery_type='c_section'`, everything else `'any'`). **Not yet run — Roop needs to run this next.**
+- `src/lib/weekCalculator.ts` — `carePhaseLabel` extended through month 36, renamed to match the locked content's exact phase names (Settling into strength / Sustainable rhythms / Your rhythm, year three). Added `carePhaseKey(week)` returning the stable slug used to query content. **Not yet committed/pushed via GitHub Desktop.**
+- `src/app/care-checkin/page.tsx` — new daily check-in page (time available 5/15/30, energy 1–10, mood 1–10, upserts into `user_daily_checkin` keyed on user+date). **New file, not yet pushed.**
+- `src/app/dashboard/care/page.tsx` — placeholder replaced with real logic: computes her phase from her own baby_dob/due_date, checks if she's checked in today (prompts her to `/care-checkin` if not), then queries `weekly_care_chart_content` filtered by phase + her delivery_type + today's time_available + her health flags, rendered as 4 cards (Body/Food/Mind/Skin). **Rewritten, not yet pushed.**
 
-**Still to build (real work, not yet started):**
-1. Insert the locked 9-phase content into `weekly_care_chart_content` (currently zero rows).
-2. Build the daily check-in UI (`user_daily_checkin` has a table, no page/component exists at all).
-3. Build the content-matching query logic — map her actual week → phase → filter by today's check-in (time/health flags) → replace the `care/page.tsx` placeholder with real rendered content.
-
-Don't assume Care Chart is "done" just because content is locked — the pillar isn't live until all three of the above are built too.
+**Roop's next steps to actually go live:** (1) run `migration_10_care_chart_content_seed.sql` in Supabase SQL Editor, (2) commit + push all changed files via GitHub Desktop. Once both are done, the Care Chart pillar is fully live, not just built.
 
 ## Other pillars/features still fully unbuilt
 
