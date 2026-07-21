@@ -83,7 +83,13 @@ create table book_purchases (
   primary key (user_id, book_id)
 );
 
--- ============ COMMUNITY (Orkut-style group spaces) ============
+-- ============ COMMUNITY — SUPERSEDED, see migration_11_community.sql ============
+-- This groups-based draft (join a group, then see topics inside it) was an
+-- earlier idea. Roop confirmed 2026-07-21 the real scope is a flat forum,
+-- no groups, any mother can start a thread on anything, real profile shown.
+-- migration_11_community.sql drops these four tables and creates
+-- community_threads / community_replies instead. Kept here only so the
+-- history of what was tried is visible — do not build against this block.
 create table community_groups (
   id uuid primary key default gen_random_uuid(),
   name text not null,

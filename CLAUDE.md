@@ -91,11 +91,26 @@ Roop had ChatGPT draft a much bigger "Financial Empowerment Ecosystem" brief (sk
 
 **Savings & Financial Planning Guidance — content locked 2026-07-21.** General financial education, deliberately non-personalized (stays on the general-education side of the SEBI Investment Adviser line by design). Covers: order of priorities (claim benefits → starter buffer → high-interest debt → maternity cash-flow plan → fuller emergency fund → insurance review → long-term goals), a maternity cash-flow worksheet, emergency fund sizing, health insurance pre-delivery checklist, life insurance factors (no "10-15x income" shortcut), debt payoff approach, PPF/Sukanya Samriddhi mechanics (verified PPF's ₹1.5L Section 80C deduction is a shared/aggregate limit, not additional room), education-cost planning without false-precision forecasts, financial paperwork/nominee checklist, and a scam-awareness section. Same draft → ChatGPT revision → independent verification → warm-voice rewrite → lock workflow. File: `Wealth - Savings and Planning Guidance (LOCKED).md`.
 
-**Still to build for Wealth:** wiring both locked documents into `src/app/dashboard/wealth/page.tsx` as readable content (currently that page only links to the budget calculator and shows a "being written" placeholder for everything else — needs replacing). Books are confirmed original-content but not yet started (separate thread, Roop starting that herself).
+**Government Benefits & Savings Directory and Savings & Financial Planning Guidance — wired into the app 2026-07-21.** Both locked documents are now live as readable content: `src/components/ContentDoc.tsx` (shared presentational building blocks — DocHeader, DisclaimerBox, Section, EntryCard, NoteCard, BulletList, NumberedList, Worksheet, SourceFooter), `src/app/dashboard/wealth/schemes/page.tsx`, `src/app/dashboard/wealth/savings/page.tsx`, and an updated `src/app/dashboard/wealth/page.tsx` linking to both (replacing the old placeholder). Committed and pushed via GitHub Desktop ("Add Wealth pillar: government schemes directory + savings guidance"), deploying on Vercel.
+
+**Still to build for Wealth:** Books are confirmed original-content but not yet started (separate thread, Roop starting that herself). Nothing else outstanding for the schemes/savings content.
+
+## Community pillar — scoped 2026-07-21, build starting now
+
+Confirmed with Roop: **Orkut Communities model.** Topic-based discussion threads (forum-style), with a search bar so mothers can find whether a relevant discussion has already happened before starting a new one. Key decisions:
+
+- **Real profile**, not anonymous/nickname — mothers post under the same identity as the rest of the app.
+- **Fully open thread creation** — no predefined/admin-set categories; any mother can start a thread on anything, tagged freely (not a fixed-category structure).
+- **Search** is central — surfacing past related discussions is the main way this differs from a plain feed.
+- **Moderation (report/flag flow) explicitly deferred** — Roop's call, build without it for now, add before this is opened to real users at scale.
+
+**Built 2026-07-21 — not yet migrated/deployed.** `supabase/migration_11_community.sql` (creates `community_threads` + `community_replies` with full-text search via a generated `tsvector` column, drops the old unused groups-based draft tables from `schema.sql`, adds a `community_author_names` view so mothers can see each other's names without loosening `profiles`' own-row-only RLS), `src/app/dashboard/community/page.tsx` (thread list + search bar, subscription-gated), `src/app/dashboard/community/new/page.tsx` + `NewThreadClient.tsx` (start a thread, free-text tags), `src/app/dashboard/community/[threadId]/page.tsx` + `ReplyForm.tsx` (thread detail + replies). Nav entry already existed in `DashboardNav.tsx` from earlier scaffolding — no change needed there.
+
+**Next steps before this is live:** run `migration_11_community.sql` in the Supabase SQL Editor (this will drop the old empty `community_groups`/`topics`/`replies`/`group_members` tables — safe, nothing references them), then commit + push the six new/changed files via GitHub Desktop.
 
 ## Other pillars/features still fully unbuilt
 
-Library pillar, Community pillar, vaccination tracking + reminders, voice-log memories + recall. Razorpay is intentionally saved for last (see above). Order beyond Care Chart and Wealth's budget calculator hasn't been decided — ask Roop.
+Library pillar, vaccination tracking + reminders, voice-log memories + recall. Razorpay is intentionally saved for last (see above).
 
 ## Tech stack
 
