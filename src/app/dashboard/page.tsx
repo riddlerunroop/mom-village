@@ -63,9 +63,14 @@ export default async function DashboardPage() {
       <p className="text-sm text-ink/65 mb-6">
         What she needs, what's changing, and what to expect this month.
       </p>
-      <Link href="/dashboard/archive" className="text-xs font-semibold text-sage-deep mb-6 inline-block">
-        ← look back at past months
-      </Link>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 mb-6">
+        <Link href="/dashboard/archive" className="text-xs font-semibold text-sage-deep">
+          ← look back at past months
+        </Link>
+        <Link href="/dashboard/vaccinations" className="text-xs font-semibold text-sage-deep">
+          track vaccinations →
+        </Link>
+      </div>
 
       <div className="mb-10">
         <div className="h-2 rounded-full bg-ivory-2 overflow-hidden">

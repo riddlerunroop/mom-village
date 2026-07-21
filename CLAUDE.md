@@ -106,11 +106,32 @@ Confirmed with Roop: **Orkut Communities model.** Topic-based discussion threads
 
 **Built 2026-07-21 — not yet migrated/deployed.** `supabase/migration_11_community.sql` (creates `community_threads` + `community_replies` with full-text search via a generated `tsvector` column, drops the old unused groups-based draft tables from `schema.sql`, adds a `community_author_names` view so mothers can see each other's names without loosening `profiles`' own-row-only RLS), `src/app/dashboard/community/page.tsx` (thread list + search bar, subscription-gated), `src/app/dashboard/community/new/page.tsx` + `NewThreadClient.tsx` (start a thread, free-text tags), `src/app/dashboard/community/[threadId]/page.tsx` + `ReplyForm.tsx` (thread detail + replies). Nav entry already existed in `DashboardNav.tsx` from earlier scaffolding — no change needed there.
 
-**Next steps before this is live:** run `migration_11_community.sql` in the Supabase SQL Editor (this will drop the old empty `community_groups`/`topics`/`replies`/`group_members` tables — safe, nothing references them), then commit + push the six new/changed files via GitHub Desktop.
+**Status: FULLY LIVE 2026-07-21.** Migration ran successfully in Supabase (after one fix — the original `search_doc` generated column used `to_tsvector`, which Postgres treats as STABLE not IMMUTABLE, so generated columns rejected it; switched to a plain column filled by a BEFORE INSERT/UPDATE trigger instead). Code committed and pushed via GitHub Desktop, deploying on Vercel. A mother can now open Community, search past discussions, start a new thread, and reply — under her real profile name, no groups to join. Nothing left to do here unless Roop wants moderation/reporting added (explicitly deferred) or asks for changes.
+
+## Roadmap decision — native app confirmed, 2026-07-21
+
+Roop confirmed mom-village is planned as **both a website and a native app**, with the app eventually launching on Google Play and the App Store. Not started, no timeline set — noted here so future sessions don't assume web-only. This surfaced while scoping push notifications (see below) and matters for that build specifically: native push uses APNs/FCM, different from Web Push.
+
+## Push notifications — explicitly deferred, 2026-07-21
+
+Roop wants real push notifications eventually (vaccination due-date reminders, weekly Care Chart nudges, monthly chart delivery messages) across both web and the future native app. This is real infrastructure (service worker + subscription storage + a trigger mechanism for web; APNs/FCM for native) and was deliberately **not** built as a side effect of vaccination tracking. Sequencing decision: ship vaccination tracking now with an in-app due/overdue banner (no new infra), build push notifications later as its own dedicated thread — designed once, serving all three use cases above.
+
+## Vaccination tracking — scoping 2026-07-21, build starting now
+
+Bounded to the 0–3 window like everything else; ties into the Monthly Chart's existing immunization content (Universal Immunization Programme / UIP schedule — also referenced in the Wealth schemes directory). Confirmed with Roop:
+
+- **Photo upload of the physical vaccination card**, not manual entry. Since OCR/AI extraction from handwritten cards is failure-prone, the design includes a mother confirm/edit step before any extracted date is trusted — a wrong vaccine date is a real safety issue, not just a UX detail.
+- **Reminders are in-app only for now** (a due/overdue banner) — no push notifications yet, see above.
+
+**Built 2026-07-21 — not yet migrated/deployed, and needs one manual setup step from Roop.** UIP schedule verified directly against the Ministry of Health & Family Welfare's official National Immunization Schedule PDF (not from memory) — `src/lib/vaccinationSchedule.ts` holds the schedule data and due/overdue calculation logic as plain code (not a DB table, matches how `monthCalculator.ts` works). `supabase/migration_12_vaccination.sql` creates `user_vaccination_records` plus a private `vaccination-cards` Storage bucket with per-user RLS. `src/app/api/vaccination/extract/route.ts` is a new server-side API route that calls Claude Vision (Sonnet 5) to read a photographed card and suggest the vaccine + date — always shown to her as an editable suggestion, never saved automatically. `src/app/dashboard/vaccinations/page.tsx` (schedule + due/overdue banner) and `src/app/dashboard/vaccinations/log/page.tsx` + `LogDoseClient.tsx` (photo upload → AI suggestion → her confirm/edit → save) round it out. Linked from the Monthly Chart dashboard home (`src/app/dashboard/page.tsx`) rather than given its own nav tab, since it's explicitly a bounded addition, not a 6th pillar.
+
+**New dependency + setup step:** added `@anthropic-ai/sdk` to `package.json` — Vercel installs it automatically on the next deploy, no action needed from Roop for that part. She does need a real `ANTHROPIC_API_KEY`: get one at console.anthropic.com, add billing there, then add it as an environment variable in the Vercel project settings (Settings → Environment Variables). `.env.local.example` documents the same variable for local dev, though Roop doesn't typically run the app locally. Nothing else in the app depends on this key; it's used only in the one API route, server-side.
+
+**Progress 2026-07-21 (evening):** `migration_12_vaccination.sql` has been run successfully in Supabase. Still outstanding: get the Anthropic API key set up (Roop hit an international-transaction decline buying credits with a debit card — resuming with her husband's card), and commit + push via GitHub Desktop (safe to do before the key is set — the extract API route just returns a graceful error if `ANTHROPIC_API_KEY` is missing, nothing else in the app is affected).
 
 ## Other pillars/features still fully unbuilt
 
-Library pillar, vaccination tracking + reminders, voice-log memories + recall. Razorpay is intentionally saved for last (see above).
+Library pillar, voice-log memories + recall (scoping started 2026-07-21 — AI cost estimate given to Roop: transcription ~$0.006/min via a separate speech-to-text service since Claude API doesn't take raw audio, recall reasoning a few hundredths of a cent per query via Claude — well under ₹1/month per active user; Roop deprioritized this behind vaccination tracking, not yet resumed). Razorpay is intentionally saved for last (see above).
 
 ## Tech stack
 
