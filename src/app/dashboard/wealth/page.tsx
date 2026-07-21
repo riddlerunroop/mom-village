@@ -43,10 +43,42 @@ export default async function WealthPage() {
             </p>
           </Link>
 
+          <Link
+            href="/dashboard/wealth/schemes"
+            className="block bg-ivory-2 rounded-2xl border border-line p-7 hover:border-gold-deep/40 transition-colors"
+          >
+            <div className="text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold mb-2">
+              what you're entitled to
+            </div>
+            <h3 className="font-display text-xl text-indigo mb-2">
+              Government Benefits &amp; Savings Directory
+            </h3>
+            <p className="text-sm text-ink/65">
+              PMSMA, JSSK, PMMVY, Ayushman Bharat, Sukanya Samriddhi, and
+              more — what each one gives you, and how to actually access it.
+            </p>
+          </Link>
+
+          <Link
+            href="/dashboard/wealth/savings"
+            className="block bg-ivory-2 rounded-2xl border border-line p-7 hover:border-gold-deep/40 transition-colors"
+          >
+            <div className="text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold mb-2">
+              general education, not advice
+            </div>
+            <h3 className="font-display text-xl text-indigo mb-2">
+              Savings &amp; Financial Planning Guidance
+            </h3>
+            <p className="text-sm text-ink/65">
+              Emergency funds, insurance, debt, PPF and Sukanya Samriddhi,
+              and a maternity cash-flow worksheet — the order that tends to
+              serve you best.
+            </p>
+          </Link>
+
           <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
             <p className="font-display italic text-lg text-sage-deep">
-              Schemes, savings guidance, and book recommendations are being
-              written — worth the wait.
+              Books are being written — worth the wait.
             </p>
           </div>
         </div>
