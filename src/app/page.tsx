@@ -27,16 +27,19 @@ const pillars = [
     num: "1",
     title: "Monthly chart",
     body: "Money, growth, fitness, and what's changing — unlocked on the first of every month, from her stage, not a stranger's average.",
+    href: "/dashboard",
   },
   {
     num: "2",
     title: "The library",
     body: "Six books on money and parenting, written for the Indian home. Free with membership, or buy individually.",
+    href: "/dashboard/library",
   },
   {
     num: "3",
     title: "The circle",
     body: "Small group spaces to vent, ask, and be understood. No profiles, no performing — just moms who are where you are.",
+    href: "/dashboard/community",
   },
 ];
 
@@ -57,12 +60,12 @@ const trackCards = [
 ];
 
 const books = [
-  { cat: "Money", title: "Money, Understood", accent: "gold" },
-  { cat: "Money", title: "Creating Your Own Opportunities", accent: "gold" },
-  { cat: "Money", title: "Building Your Financial Security", accent: "gold" },
-  { cat: "Parenting", title: "Understanding Your Little One", accent: "terracotta" },
-  { cat: "Parenting", title: "Guiding Your Growing Child", accent: "terracotta" },
-  { cat: "Parenting", title: "Supporting Your Child's Growing Independence", accent: "terracotta" },
+  { cat: "Money", title: "Money, Understood", accent: "gold", slug: "money-understood" },
+  { cat: "Money", title: "Creating Your Own Opportunities", accent: "gold", slug: "creating-your-own-opportunities" },
+  { cat: "Money", title: "Building Your Financial Security", accent: "gold", slug: "building-your-financial-security" },
+  { cat: "Parenting", title: "Understanding Your Little One", accent: "terracotta", slug: "understanding-your-little-one" },
+  { cat: "Parenting", title: "Guiding Your Growing Child", accent: "terracotta", slug: "guiding-your-growing-child" },
+  { cat: "Parenting", title: "Supporting Your Child's Growing Independence", accent: "terracotta", slug: "supporting-your-childs-growing-independence" },
 ];
 
 const quotes = [
@@ -90,6 +93,13 @@ export default async function Home() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Every clickable card on this page should lead toward actually getting
+  // the thing, not just describe it. Logged in -> straight to the real
+  // page. Logged out -> through login (and onboarding, if new), landing on
+  // that same real page, where the subscribe prompt is already built in.
+  const dest = (path: string) =>
+    user ? path : `/login?next=${encodeURIComponent(path)}`;
 
   return (
     <>
@@ -259,16 +269,17 @@ export default async function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-7">
             {pillars.map((p) => (
-              <div
+              <Link
                 key={p.num}
-                className="bg-ivory-2 rounded-t-[120px] rounded-b-2xl px-6.5 pt-11 pb-7.5 text-center border border-line"
+                href={dest(p.href)}
+                className="block bg-ivory-2 rounded-t-[120px] rounded-b-2xl px-6.5 pt-11 pb-7.5 text-center border border-line hover:border-gold-deep/40 transition-colors"
               >
                 <div className="w-13 h-13 rounded-full bg-gold text-ink flex items-center justify-center font-display font-semibold text-lg mx-auto mb-4.5">
                   {p.num}
                 </div>
                 <h3 className="text-[19px] text-indigo mb-2.5">{p.title}</h3>
                 <p className="text-sm text-ink/70">{p.body}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -303,16 +314,17 @@ export default async function Home() {
           </p>
           <div className="grid md:grid-cols-4 gap-5 mb-3">
             {fitCards.map((c) => (
-              <div
+              <Link
                 key={c.label}
-                className="bg-ivory rounded-2xl p-6 border border-line border-t-[3px] border-t-sage"
+                href={dest("/dashboard/care")}
+                className="block bg-ivory rounded-2xl p-6 border border-line border-t-[3px] border-t-sage hover:border-sage-deep/50 transition-colors"
               >
                 <div className="text-[11px] uppercase tracking-wide font-bold text-sage-deep mb-2.5">
                   {c.label}
                 </div>
                 <h4 className="text-base text-indigo mb-2">{c.title}</h4>
                 <p className="text-[13px] text-ink/72">{c.body}</p>
-              </div>
+              </Link>
             ))}
           </div>
           <p className="text-center text-[13px] text-sage-deep italic font-display mt-8 mb-14">
@@ -334,13 +346,17 @@ export default async function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-4.5">
             {trackCards.map((t) => (
-              <div key={t.title} className="bg-indigo rounded-2xl p-5.5 text-ivory">
+              <Link
+                key={t.title}
+                href={dest("/dashboard/care")}
+                className="block bg-indigo rounded-2xl p-5.5 text-ivory hover:opacity-95 transition-opacity"
+              >
                 <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-gold bg-gold/[0.14] px-2.5 py-1 rounded-full mb-3">
                   {t.tag}
                 </span>
                 <h4 className="text-base mb-2">{t.title}</h4>
                 <p className="text-[13px] text-ivory/70">{t.body}</p>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -363,9 +379,10 @@ export default async function Home() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4.5 mb-5">
             {books.map((b) => (
-              <div
+              <Link
                 key={b.title}
-                className="bg-ivory rounded-l overflow-hidden flex flex-col shadow-[-6px_0_0_rgba(0,0,0,0.15)]"
+                href={dest(`/dashboard/library/${b.slug}`)}
+                className="bg-ivory rounded-l overflow-hidden flex flex-col shadow-[-6px_0_0_rgba(0,0,0,0.15)] hover:opacity-95 transition-opacity"
               >
                 <div
                   className="h-1.5"
@@ -398,14 +415,17 @@ export default async function Home() {
                     </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
           <div className="flex items-center justify-center gap-4">
             <p className="text-ivory/75 text-sm">Or get all six as a bundle for ₹849</p>
-            <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full border-[1.5px] border-gold text-gold">
+            <Link
+              href={dest("/dashboard/library")}
+              className="text-sm font-semibold px-[22px] py-[11px] rounded-full border-[1.5px] border-gold text-gold"
+            >
               Buy the bundle
-            </button>
+            </Link>
           </div>
         </div>
       </section>
