@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 
 const navLinks = [
   { label: "Monthly chart", href: "#chart" },
@@ -71,7 +72,12 @@ function Jaali({ light = false }: { light?: boolean }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <>
       <nav className="flex items-center justify-between max-w-[1080px] mx-auto px-8 py-6 gap-4">
@@ -88,18 +94,37 @@ export default function Home() {
           ))}
         </ul>
         <div className="flex items-center gap-4 shrink-0">
-          <Link
-            href="/login"
-            className="text-sm font-semibold text-indigo whitespace-nowrap hover:text-gold-deep transition-colors"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/login"
-            className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory whitespace-nowrap"
-          >
-            Join the village
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/dashboard/account"
+                className="text-sm font-semibold text-indigo whitespace-nowrap hover:text-gold-deep transition-colors"
+              >
+                Your account
+              </Link>
+              <Link
+                href="/dashboard"
+                className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory whitespace-nowrap"
+              >
+                Go to dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm font-semibold text-indigo whitespace-nowrap hover:text-gold-deep transition-colors"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/login"
+                className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory whitespace-nowrap"
+              >
+                Join the village
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -122,12 +147,23 @@ export default function Home() {
             already get it.
           </p>
           <div className="flex gap-3.5 flex-wrap mb-5">
-            <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full border-[1.5px] border-indigo text-indigo">
-              Get the ₹49 budget map
-            </button>
-            <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory">
-              Join for ₹299/month
-            </button>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory"
+              >
+                Go to your dashboard
+              </Link>
+            ) : (
+              <>
+                <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full border-[1.5px] border-indigo text-indigo">
+                  Get the ₹49 budget map
+                </button>
+                <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory">
+                  Join for ₹299/month
+                </button>
+              </>
+            )}
           </div>
           <p className="font-display italic text-[13px] text-sage-deep">
             Built by a mom. Not a corporation selling diapers.
@@ -417,7 +453,7 @@ export default function Home() {
               <div className="font-display text-[34px] my-2">₹299/mo</div>
               <ul className="text-sm space-y-0">
                 <li className="py-1.5 border-t border-ivory/15">Monthly chart, every month</li>
-                <li className="py-1.5 border-t border-ivory/15">All 5 books, included</li>
+                <li className="py-1.5 border-t border-ivory/15">All 6 books, included</li>
                 <li className="py-1.5 border-t border-ivory/15">Full access to the circle</li>
               </ul>
             </div>
