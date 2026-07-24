@@ -1,14 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = "checking" | "phone" | "otp";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  // Where she was trying to go before we asked her to log in — e.g. she
+  // clicked "Library" on the homepage while logged out. Carried through
+  // onboarding too, if she's new, so she lands exactly where she meant to.
+  const next = searchParams.get("next") || "/dashboard";
+  const onboardingHref = `/onboarding?next=${encodeURIComponent(next)}`;
 
   const [step, setStep] = useState<Step>("checking");
   const [phone, setPhone] = useState("");
@@ -17,8 +24,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   // The moment this page loads, quietly check if she's already logged in.
-  // If so, skip the form entirely — no phone number, no OTP, straight to her dashboard.
-  // Only show the login form if she genuinely has no active session.
+  // If so, skip the form entirely — no phone number, no OTP, straight to
+  // where she was headed. Only show the login form if she genuinely has no
+  // active session.
   useEffect(() => {
     async function checkExistingSession() {
       const {
@@ -37,9 +45,9 @@ export default function LoginPage() {
         .maybeSingle();
 
       if (profile && (profile.due_date || profile.baby_dob)) {
-        router.replace("/dashboard");
+        router.replace(next);
       } else {
-        router.replace("/onboarding");
+        router.replace(onboardingHref);
       }
     }
 
@@ -102,13 +110,13 @@ export default function LoginPage() {
 
       setLoading(false);
       if (profile && (profile.due_date || profile.baby_dob)) {
-        router.push("/dashboard");
+        router.push(next);
       } else {
-        router.push("/onboarding");
+        router.push(onboardingHref);
       }
     } else {
       setLoading(false);
-      router.push("/onboarding");
+      router.push(onboardingHref);
     }
   }
 
@@ -131,7 +139,7 @@ export default function LoginPage() {
         <div className="bg-ivory-2 rounded-2xl border border-line p-7">
           {step === "checking" && (
             <p className="text-center text-sm text-sage-deep py-6">
-              Checking if you're already signed in…
+              Checking if you&apos;re already signed in…
             </p>
           )}
 
@@ -201,5 +209,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
   );
 }

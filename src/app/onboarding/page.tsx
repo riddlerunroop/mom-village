@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 type Stage = "not_born" | "born";
 
-export default function OnboardingPage() {
+function OnboardingPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/dashboard";
   const supabase = createClient();
 
   const [stage, setStage] = useState<Stage>("not_born");
@@ -57,7 +59,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(next);
   }
 
   return (
@@ -207,5 +209,13 @@ export default function OnboardingPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={null}>
+      <OnboardingPageInner />
+    </Suspense>
   );
 }

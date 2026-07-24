@@ -1,12 +1,25 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
+// Logged-out visitors: clicking a pillar tab should lead toward actually
+// getting it, not just scroll to a pitch about it — so each one routes
+// through login (and onboarding, if she's new) and lands on the real page,
+// where she'll see the subscribe prompt if she isn't a member yet.
 const navLinks = [
-  { label: "Monthly chart", href: "#chart" },
-  { label: "Fitness", href: "#fitness" },
-  { label: "Library", href: "#books" },
-  { label: "Community", href: "#community" },
+  { label: "Monthly chart", href: "/login?next=/dashboard" },
+  { label: "Fitness", href: "/login?next=/dashboard/care" },
+  { label: "Library", href: "/login?next=/dashboard/library" },
+  { label: "Community", href: "/login?next=/dashboard/community" },
   { label: "Pricing", href: "#pricing" },
+];
+
+// Once she's a member, these same tabs take her straight to the real page
+// instead of scrolling past marketing copy she's already bought into.
+const memberNavLinks = [
+  { label: "Monthly chart", href: "/dashboard" },
+  { label: "Fitness", href: "/dashboard/care" },
+  { label: "Library", href: "/dashboard/library" },
+  { label: "Community", href: "/dashboard/community" },
 ];
 
 const pillars = [
@@ -85,11 +98,11 @@ export default async function Home() {
           mom<span className="text-gold-deep">village</span>
         </div>
         <ul className="hidden lg:flex gap-7 text-sm text-ink shrink-0">
-          {navLinks.map((l) => (
+          {(user ? memberNavLinks : navLinks).map((l) => (
             <li key={l.href} className="whitespace-nowrap">
-              <a href={l.href} className="hover:text-gold-deep transition-colors">
+              <Link href={l.href} className="hover:text-gold-deep transition-colors">
                 {l.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
