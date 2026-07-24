@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
@@ -72,10 +73,18 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-ivory">
       <header className="border-b border-line px-6 py-5 flex items-center justify-between max-w-[900px] mx-auto">
-        <div className="font-display text-xl font-semibold text-indigo">
+        <Link href="/" className="font-display text-xl font-semibold text-indigo">
           mom<span className="text-gold-deep">village</span>
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/dashboard/account"
+            className="text-xs font-semibold text-ink/60 hover:text-indigo transition-colors"
+          >
+            {user!.email}
+          </Link>
+          <SignOutButton />
         </div>
-        <SignOutButton />
       </header>
       <DashboardNav />
       {children}
