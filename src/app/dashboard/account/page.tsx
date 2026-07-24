@@ -53,7 +53,10 @@ export default async function AccountPage() {
       </h1>
 
       <div className="bg-ivory-2 rounded-2xl border border-line px-6 py-2 mb-8">
-        <Row label="Email" value={user!.email ?? "—"} />
+        <Row
+          label="Phone"
+          value={user!.phone ? `+${user!.phone.replace(/^\+/, "")}` : "—"}
+        />
         <Row label="Your name" value={profile?.mom_name || "Not set"} />
         {profile?.baby_name && <Row label="Baby's name" value={profile.baby_name} />}
         {profile?.baby_dob && (

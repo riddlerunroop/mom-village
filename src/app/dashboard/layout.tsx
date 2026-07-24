@@ -81,7 +81,7 @@ export default async function DashboardLayout({
             href="/dashboard/account"
             className="text-xs font-semibold text-ink/60 hover:text-indigo transition-colors"
           >
-            {user!.email}
+            {user!.phone ? `+${user!.phone.replace(/^\+/, "")}` : "Your account"}
           </Link>
           <SignOutButton />
         </div>
