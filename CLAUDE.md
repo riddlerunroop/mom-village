@@ -4,7 +4,7 @@
 
 *This section is maintained by Claude at the end of every significant session. Read this first in any new chat — it replaces needing to re-explain context. Update it whenever something material changes (content locked, feature shipped, decision made).*
 
-*Last updated: 2026-07-24 (night)*
+*Last updated: 2026-07-24 (night) — birth-date prompt feature*
 
 ## What it is
 
@@ -60,7 +60,19 @@ Roop caught this by trying to view her chart on the live site and seeing nothing
 - `src/app/dashboard/page.tsx` — updated to use the new shared component and the 6 real categories (previously hardcoded to the old 3-bucket Money/Development/Environment scaffold).
 - `src/app/dashboard/chart/[month]/page.tsx` — **new route**, fixes the archive's dead link. Shows any month she's actually reached (guards against viewing months ahead of "now" — those redirect to a 404, since the current month lives on the main dashboard and future months haven't been written for her stage yet), subscription-gated the same way as everywhere else.
 
-**Status: code complete, verified clean on `tsc`/`eslint`, not yet deployed.** Roop needs to (1) run `migration_13_monthly_chart_seed.sql` in Supabase's SQL editor, then (2) push the code via GitHub Desktop as usual. Once both are done, this note should be updated to confirm it's fully live, matching the pattern used for every other feature in this file.
+**Status: FULLY LIVE 2026-07-24 (night).** Migration ran in Supabase and the code was pushed via GitHub Desktop — Roop confirmed both steps are done. A mother can now see her real Monthly Chart content for the current month and browse any past month from the archive.
+
+## Birth-date prompt — built 2026-07-24 (night)
+
+Roop's question: how does the app know a pregnant mother has actually delivered, if she doesn't log in again for days or weeks after? Until she updates her profile, the app keeps counting from her due date, showing pregnancy content to a mother who's already given birth. Confirmed fix, her framing: a hard-to-miss prompt that "starts flashing the moment she enters 9th month," reachable whenever she next opens the app after delivery, however late that is.
+
+- `shouldPromptBirth(dueDate, babyDob)` added to `src/lib/monthCalculator.ts` — true whenever `baby_dob` isn't set yet and she's reached `calculateMonthNumber(dueDate) >= -1` (final pregnancy month or overdue). Deliberately keeps returning true on every load until she actually confirms the birth, rather than firing once — she might not log back in until well after delivery.
+- `src/components/DashboardNav.tsx` — now takes an optional `promptBirth` prop; when true, renders a small pulsing terracotta dot (ping animation) on the "Monthly chart" tab.
+- `src/app/dashboard/layout.tsx` — computes `promptBirth` from the profile's `due_date`/`baby_dob` (already fetched for the existing redirect checks) and passes it to `DashboardNav`.
+- `src/app/dashboard/page.tsx` — shows a prominent terracotta-bordered banner ("Has your baby arrived?") above the month header when `promptBirth` is true, linking to the new confirm-birth flow.
+- `src/app/dashboard/confirm-birth/page.tsx` + `ConfirmBirthClient.tsx` — new short-form page: birth date + delivery type (normal/c-section, same options as onboarding). On save, updates `profiles.baby_dob`/`delivery_type` and redirects to `/dashboard` — the layout's existing `birth_welcome_seen` redirect chain then automatically takes her to the welcome-baby moment, so this flow doesn't duplicate any of that logic, it just supplies the missing trigger.
+
+No new Supabase migration needed (uses existing `due_date`/`baby_dob`/`delivery_type` columns). Verified clean on `tsc`/`eslint`. **Not yet deployed** — needs a GitHub Desktop commit + push.
 
 ## App features already built and DEPLOYED (live)
 

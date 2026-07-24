@@ -11,7 +11,11 @@ const tabs = [
   { label: "Community", href: "/dashboard/community" },
 ];
 
-export default function DashboardNav() {
+export default function DashboardNav({
+  promptBirth = false,
+}: {
+  promptBirth?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
@@ -22,17 +26,24 @@ export default function DashboardNav() {
             tab.href === "/dashboard"
               ? pathname === "/dashboard"
               : pathname.startsWith(tab.href);
+          const showBadge = promptBirth && tab.href === "/dashboard";
           return (
             <Link
               key={tab.href}
               href={tab.href}
-              className={`px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+              className={`relative px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                 isActive
                   ? "border-gold-deep text-indigo"
                   : "border-transparent text-ink/55 hover:text-ink"
               }`}
             >
               {tab.label}
+              {showBadge && (
+                <span className="absolute top-2 right-0.5 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracotta opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-terracotta" />
+                </span>
+              )}
             </Link>
           );
         })}

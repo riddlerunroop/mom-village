@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { calculateMonthNumber, monthLabel, journeyProgress } from "@/lib/monthCalculator";
+import { calculateMonthNumber, monthLabel, journeyProgress, shouldPromptBirth } from "@/lib/monthCalculator";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { getCurrentSeason } from "@/lib/season";
 import LockedPreview from "@/components/LockedPreview";
@@ -41,9 +41,23 @@ export default async function DashboardPage() {
 
   const babyName = profile!.baby_name || "your little one";
   const momFirstName = profile!.mom_name ? `, ${profile!.mom_name}` : "";
+  const promptBirth = shouldPromptBirth(profile!.due_date, profile!.baby_dob);
 
   return (
     <main className="max-w-[900px] mx-auto px-6 py-10">
+      {promptBirth && (
+        <Link
+          href="/dashboard/confirm-birth"
+          className="block mb-6 rounded-2xl border-2 border-terracotta bg-terracotta/10 px-5 py-4 hover:bg-terracotta/15 transition-colors"
+        >
+          <p className="font-display text-base text-indigo mb-0.5">
+            Has your baby arrived?
+          </p>
+          <p className="text-sm text-ink/70">
+            Tap here to log her birth date — we&apos;ll start counting her very first month from the day she was born.
+          </p>
+        </Link>
+      )}
       <div className="mb-2 text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold">
         welcome back{momFirstName}
       </div>

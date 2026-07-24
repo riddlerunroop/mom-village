@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import DashboardNav from "@/components/DashboardNav";
-import { hasTurnedOne, hasTurnedAge } from "@/lib/monthCalculator";
+import { hasTurnedOne, hasTurnedAge, shouldPromptBirth } from "@/lib/monthCalculator";
 
 // Shared shell for every logged-in page: checks she's authenticated and has
 // completed onboarding, then renders the same header + nav everywhere —
@@ -70,6 +70,12 @@ export default async function DashboardLayout({
     redirect("/birthday-3");
   }
 
+  // Once she's in her final pregnancy month (or overdue) and hasn't logged
+  // baby's real birth date, keep flashing a nudge on the Monthly Chart tab —
+  // she might not open the app again until well after delivery, so this has
+  // to stick around across logins, not fire just once.
+  const promptBirth = shouldPromptBirth(profile!.due_date, profile!.baby_dob);
+
   return (
     <div className="min-h-screen bg-ivory">
       <header className="border-b border-line px-6 py-5 flex items-center justify-between max-w-[900px] mx-auto">
@@ -86,7 +92,7 @@ export default async function DashboardLayout({
           <SignOutButton />
         </div>
       </header>
-      <DashboardNav />
+      <DashboardNav promptBirth={promptBirth} />
       {children}
     </div>
   );

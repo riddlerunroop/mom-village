@@ -52,3 +52,17 @@ export function hasTurnedAge(babyDob: string, years: number): boolean {
 export function hasTurnedOne(babyDob: string): boolean {
   return hasTurnedAge(babyDob, 1);
 }
+
+// True once she's reached her final pregnancy month (or gone overdue) but
+// hasn't logged baby's real birth date yet. Drives the "has your baby
+// arrived?" nudge — she might not open the app again until days or weeks
+// after delivery, so this has to keep showing (not just fire once) until she
+// actually confirms the birth, however late that login happens.
+export function shouldPromptBirth(
+  dueDate: string | null | undefined,
+  babyDob: string | null | undefined
+): boolean {
+  if (babyDob) return false;
+  if (!dueDate) return false;
+  return calculateMonthNumber(dueDate) >= -1;
+}
