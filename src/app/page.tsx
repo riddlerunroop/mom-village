@@ -17,7 +17,7 @@ const pillars = [
   {
     num: "2",
     title: "The library",
-    body: "Five books on money and parenting, written for the Indian home. Free with membership, or buy individually.",
+    body: "Six books on money and parenting, written for the Indian home. Free with membership, or buy individually.",
   },
   {
     num: "3",
@@ -43,11 +43,12 @@ const trackCards = [
 ];
 
 const books = [
-  { cat: "Money", title: "The first 1000 days: a money map", accent: "gold" },
-  { cat: "Money", title: "Small sums, big security", accent: "gold" },
-  { cat: "Parenting", title: "What's normal, month by month", accent: "terracotta" },
-  { cat: "Parenting", title: "The tired mother's guide to everything", accent: "terracotta" },
-  { cat: "Parenting", title: "Raising her, not losing yourself", accent: "terracotta" },
+  { cat: "Money", title: "Money, Understood", accent: "gold" },
+  { cat: "Money", title: "Creating Your Own Opportunities", accent: "gold" },
+  { cat: "Money", title: "Building Your Financial Security", accent: "gold" },
+  { cat: "Parenting", title: "Understanding Your Little One", accent: "terracotta" },
+  { cat: "Parenting", title: "Guiding Your Growing Child", accent: "terracotta" },
+  { cat: "Parenting", title: "Supporting Your Child's Growing Independence", accent: "terracotta" },
 ];
 
 const quotes = [
@@ -304,15 +305,14 @@ export default function Home() {
               the library
             </div>
             <h2 className="text-[32px] text-ivory mt-2">
-              Five books, written for this exact journey
+              Six books, written for this exact journey
             </h2>
             <p className="text-ivory/70 text-[15px] mt-3">
-              Two on money, three on parenting — free the moment you join, or
-              buy on their own. Titles below are placeholders until topics are
-              finalised.
+              Three on money, three on parenting — free the moment you join,
+              or buy on their own.
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4.5 mb-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4.5 mb-5">
             {books.map((b) => (
               <div
                 key={b.title}
@@ -353,7 +353,7 @@ export default function Home() {
             ))}
           </div>
           <div className="flex items-center justify-center gap-4">
-            <p className="text-ivory/75 text-sm">Or get all five as a bundle for ₹849</p>
+            <p className="text-ivory/75 text-sm">Or get all six as a bundle for ₹849</p>
             <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full border-[1.5px] border-gold text-gold">
               Buy the bundle
             </button>
