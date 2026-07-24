@@ -43,10 +43,29 @@ The full 1,000-day content journey is complete. No more Monthly Chart content wo
 
 Review workflow used for every month (worth reusing for any future content): Claude drafts → ChatGPT second-pass review → Claude independently web-verifies any new medical/factual claim → lock. Do not skip the independent verification step even if ChatGPT's rationale sounds right.
 
+## Monthly Chart module — content was locked but never actually loaded into the app until 2026-07-24 (night)
+
+Roop caught this by trying to view her chart on the live site and seeing nothing. Turned out to be three separate gaps, all now fixed in this same pass:
+
+1. **The `monthly_chart_content` table was empty.** The dashboard page (`src/app/dashboard/page.tsx`) has queried this table since early in the project, but none of the 42 locked months (see table above) had ever actually been transcribed into it — every mom just saw "being brewed" placeholders forever, on every month.
+2. **The table's category schema didn't match the real content.** It was originally scaffolded around 3 generic buckets — Money / Development / Environment — but the locked docx content is actually organized into 6 real categories per month (Baby's Development, Mum's Wellbeing, Buy/Arrange Now, Hold Off On, Movement & Rest, Appointments & Safety), plus an occasional seasonal note. Roop chose (2026-07-24, via explicit decision) to expand the schema to the real 6 categories rather than force-fit content into the old 3-bucket scaffold.
+3. **The archive's "view a past month" link went nowhere.** `src/app/dashboard/archive/page.tsx` has always linked to `/dashboard/chart/[month]`, but that route was never built — clicking any past month 404'd. Built now.
+
+**What was built:**
+- A parser (`docx → pandoc markdown → structured data`, mirroring the Library book pipeline) that walks all 7 batch docs and extracts each month's 6 real sections plus seasonal notes, verbatim from the locked wording. Verified programmatically: exactly 42 months captured (-6 through 36, no gaps/dupes), 1,031 total content items, zero stray markdown artifacts.
+- One important correction handled during seeding: the docx files number postnatal months 1-indexed ("Month 1" = the newborn stretch), but `monthCalculator.ts`'s internal `monthNumber` is 0-indexed for postnatal months (0 = newborn stretch) — so every docx month N (N ≥ 1) had to be inserted as `month_number = N - 1`. Pregnancy months carry over 1:1 (docx "Month -6" = app month_number -6). Getting this wrong would have shown every mother the wrong month's content for her entire postnatal journey, so this was double-checked against `monthLabel()`'s actual logic before generating the seed data.
+- Seasonal-note bullets were folded into the Appointments & Safety category (tagged with their real season — winter/summer/monsoon — so they still only surface when relevant), rather than given their own always-mostly-empty 7th card.
+- `supabase/migration_13_monthly_chart_seed.sql` — widens the `section` check constraint to the 6 real category keys, makes `title` nullable (the locked content is written as flowing sentences, not short-title-plus-elaboration pairs, so the card UI now renders each item as a single paragraph rather than inventing an artificial title), clears any stale rows, and inserts all 1,031 real content rows. **Not yet run — this is the one manual step left for Roop, same pattern as every other migration in this project: paste into Supabase's SQL editor and run.**
+- `src/components/MonthlyChartGrid.tsx` — new shared component rendering the 6-category card grid, used by both the current-month dashboard view and the new past-month view, so "today" and "looking back" look and behave identically.
+- `src/app/dashboard/page.tsx` — updated to use the new shared component and the 6 real categories (previously hardcoded to the old 3-bucket Money/Development/Environment scaffold).
+- `src/app/dashboard/chart/[month]/page.tsx` — **new route**, fixes the archive's dead link. Shows any month she's actually reached (guards against viewing months ahead of "now" — those redirect to a 404, since the current month lives on the main dashboard and future months haven't been written for her stage yet), subscription-gated the same way as everywhere else.
+
+**Status: code complete, verified clean on `tsc`/`eslint`, not yet deployed.** Roop needs to (1) run `migration_13_monthly_chart_seed.sql` in Supabase's SQL editor, then (2) push the code via GitHub Desktop as usual. Once both are done, this note should be updated to confirm it's fully live, matching the pattern used for every other feature in this file.
+
 ## App features already built and DEPLOYED (live)
 
 - Birth-transition welcome screen (fires on first birth-date entry)
-- Month archive (all past months stay accessible)
+- Month archive (all past months stay accessible) — **note:** the archive listing itself has been live for a while, but its per-month links were dead until the fix above; see the Monthly Chart module section.
 - First-birthday celebration screen — `src/app/birthday-1/Birthday1Client.tsx`
 - Second-birthday celebration screen — `src/app/birthday-2/Birthday2Client.tsx`
 - **Third-birthday celebration screen** — `src/app/birthday-3/Birthday3Client.tsx`. Wishes the baby happy third birthday and sends the mother off warmly, since the Monthly Chart content journey (not the whole app) concludes at month 36. Matches the visual pattern of birthday-1/birthday-2 (three rows of gold dots). Wired into `src/app/dashboard/layout.tsx` (redirect check) and `src/app/birthday-3/page.tsx` (gate). Supabase column `birthday_3_seen` added via `supabase/migration_7_birthday3.sql` — **migration has been run, and the commit ("Add third birthday screen") has been pushed to GitHub via GitHub Desktop and deployed on Vercel. This feature is fully live, not just built.**
