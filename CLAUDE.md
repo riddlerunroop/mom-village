@@ -4,7 +4,7 @@
 
 *This section is maintained by Claude at the end of every significant session. Read this first in any new chat — it replaces needing to re-explain context. Update it whenever something material changes (content locked, feature shipped, decision made).*
 
-*Last updated: 2026-07-24 (evening)*
+*Last updated: 2026-07-24 (night)*
 
 ## What it is
 
@@ -197,7 +197,7 @@ Bounded to the 0–3 window like everything else; ties into the Monthly Chart's 
 
 **Status: FULLY LIVE 2026-07-22.** Migration ran in Supabase, code pushed via GitHub Desktop, and the Anthropic API key is set up and working — took a couple of tries (Safari's cross-site tracking protection was silently blocking the Claude Console payment form; switched to Brave and it went through). `ANTHROPIC_API_KEY` is added in Vercel (Production environment) and the app has been redeployed. A mother can now photograph her baby's vaccination card, get an AI-suggested vaccine + date to confirm or edit, and see due/overdue status on the vaccinations page. Nothing left to do here unless Roop asks for changes.
 
-## Library pillar — build started 2026-07-24, subscriber reading experience only
+## Library pillar — build started 2026-07-24, all six books now readable in-app (subscriber reading experience only)
 
 All six Library books (three Wealth/finance, three Parenting) are now content-locked (see above). Roop's own framing for the next step: "one more left on parenting and then we can build the library" — build started right after parenting book 3 locked.
 
@@ -217,14 +217,25 @@ All six Library books (three Wealth/finance, three Parenting) are now content-lo
 **Build:**
 
 - `react-pageflip` added to `package.json` dependencies (no peer-dependency conflicts with React 19; Vercel will install it automatically on next deploy, same pattern as `@anthropic-ai/sdk` earlier). No official TypeScript types exist for this package, so a hand-written ambient declaration was added at `src/types/react-pageflip.d.ts` covering the props actually used.
-- `src/lib/library.ts` — static metadata for all six books (title, tagline, series, cover path, and a `hasReader` flag; only `money-understood` is `true` for now).
+- `src/lib/library.ts` — static metadata for all six books (title, tagline, series, cover path, and a `hasReader` flag).
 - `src/types/library-content.ts` — shared types for the paginated page/block JSON shape.
 - `src/components/BookReader.tsx` — the actual flip-book reader (client component): renders a cover page (the real cover image), one rendered page per JSON page entry (chapter-start pages get a kicker/title/epigraph header), and a simple "end of book" closing page. Plays the page-turn sound on every flip via a hidden `<audio>` element. Desktop gets hover arrow buttons beside the book; mobile gets Prev/Next buttons below it; both plus native swipe/drag (built into the library) all work.
-- `src/app/dashboard/library/page.tsx` — rewritten from the placeholder into a real catalog: both series shown with real cover art in a grid, subscription-gated the same way as every other pillar (`LockedPreview` for non-subscribers). Books without a reader yet show a small "Reader coming soon" ribbon on their cover and still route through, landing on a "being prepared" holding page rather than a dead link.
-- `src/app/dashboard/library/[slug]/page.tsx` — new dynamic route: subscription check, then loads `money-understood`'s JSON (the other five slugs currently fall through to the "being prepared" state) and renders `BookReader`.
+- `src/app/dashboard/library/page.tsx` — rewritten from the placeholder into a real catalog: both series shown with real cover art in a grid, subscription-gated the same way as every other pillar (`LockedPreview` for non-subscribers).
+- `src/app/dashboard/library/[slug]/page.tsx` — dynamic route: subscription check, then loads the matching book's JSON via a per-slug loader map and renders `BookReader`.
 - Verified clean with `npx tsc --noEmit` and `npx eslint` (both zero errors after two small fixes — a stray `@ts-expect-error` and an unescaped apostrophe). Could not run a full `next build` inside this sandbox because Google Fonts (Fraunces/Karla, fetched at build time by `next/font/google`) aren't reachable from this environment's network allowlist — this is a sandbox limitation unrelated to the change and will not occur on Vercel's build, which has normal internet access.
 
-**Not yet done:** the other five books' content still needs the same docx → paginated-JSON conversion once Roop approves the reader format from this prototype; reading-progress tracking (e.g. "resume where you left off") was not built in this pass; the purchase/bundle/download flow remains blocked on Razorpay as planned.
+**All five remaining books converted and wired up, same session, 2026-07-24 (night).** Once Roop approved the prototype, the same `docx → HTML (pandoc) → parsed blocks → paginated JSON` pipeline was rerun for the other five locked manuscripts: Creating Your Own Opportunities (15 chapters → 643 pages), Building Your Financial Security (15 → 912), Understanding Your Little One (20 → 1,294), Guiding Your Growing Child (25 → 1,384), Supporting Your Child's Growing Independence (28 → 1,617) — all at the same ~620-weighted-char budget as the prototype.
+
+The parser needed two robustness fixes once run against manuscripts beyond the prototype book: (1) chapter titles are marked up as `<p>` in some books but as `<h1>` in others (Guiding Your Growing Child, Supporting Your Child's Growing Independence) — the title-detection step now accepts either; (2) epigraph detection needed to handle three different source patterns found across the six manuscripts — a clean `<p><em>quote</em></p>`, a quoted line with no italics markup at all (Understanding Your Little One), and one book (Creating Your Own Opportunities) where the italic epigraph and the first body sentence were merged into a single source paragraph — the parser now detects a leading `<em>` quote and splits the remainder back out as the chapter's first body paragraph rather than losing it or mis-capturing it. All six books now show a correctly captured chapter title and epigraph on 100% of chapter-start pages (verified programmatically, not just spot-checked).
+
+All five new JSON files live at `src/content/library/*.json` alongside `money-understood.json`; `hasReader` is now `true` for all six entries in `src/lib/library.ts`; `[slug]/page.tsx`'s content loader now maps all six slugs to their JSON file. Every generated JSON file was validated (correct page/block shape, zero malformed entries) and the whole project re-checked clean with `tsc`/`eslint`.
+
+**Not yet done:** reading-progress tracking ("resume where you left off") was not built in this pass; the purchase/bundle/download flow remains blocked on Razorpay as planned. Roop hasn't yet visually reviewed the five newly-added books in the actual reader (only the Money, Understood prototype was visually approved before this round) — worth a look once deployed, since the pagination budget was tuned against that one shorter book and hasn't been eyeballed on the three much longer parenting manuscripts (1,300–1,600+ pages each).
+
+## Homepage + account page fixes — 2026-07-24 (night)
+
+- **Public homepage teaser section** (`src/app/page.tsx`, `<section id="books">`): was still showing five fake placeholder book titles/pricing copy left over from before any books were written. Updated the `books` array to the six real, locked titles (three Money, three Parenting, matching `src/lib/library.ts`), fixed "Five books" → "Six books" and "Two on money, three on parenting" → "Three on money, three on parenting" throughout, removed the now-false "Titles below are placeholders until topics are finalised" line, and widened the grid from 5 to 6 cards. Pricing figures (₹249/book, ₹849 bundle) were deliberately left untouched — not a confirmed decision, just inherited placeholder numbers, out of scope for this fix.
+- **No way back to the homepage from inside the app, and no account/profile page** — both flagged by Roop after logging in and looking around. Fixed: the "momvillage" wordmark in the dashboard header (`src/app/dashboard/layout.tsx`) is now a link back to `/`; her email in the header now links to a new `src/app/dashboard/account/page.tsx` showing email, name, baby's DOB (or due date if not yet born), city, and current membership/subscription status, plus a "back to homepage" link and sign out.
 
 ## Other pillars/features still fully unbuilt
 

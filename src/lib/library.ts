@@ -32,7 +32,7 @@ export const LIBRARY_BOOKS: LibraryBookMeta[] = [
     series: "wealth",
     seriesLabel: "Wealth & Financial Confidence Series",
     cover: "/library-covers/creating-your-own-opportunities.png",
-    hasReader: false,
+    hasReader: true,
   },
   {
     slug: "building-your-financial-security",
@@ -41,7 +41,7 @@ export const LIBRARY_BOOKS: LibraryBookMeta[] = [
     series: "wealth",
     seriesLabel: "Wealth & Financial Confidence Series",
     cover: "/library-covers/building-your-financial-security.png",
-    hasReader: false,
+    hasReader: true,
   },
   {
     slug: "understanding-your-little-one",
@@ -50,7 +50,7 @@ export const LIBRARY_BOOKS: LibraryBookMeta[] = [
     series: "parenting",
     seriesLabel: "Parenting Series",
     cover: "/library-covers/understanding-your-little-one.png",
-    hasReader: false,
+    hasReader: true,
   },
   {
     slug: "guiding-your-growing-child",
@@ -59,7 +59,7 @@ export const LIBRARY_BOOKS: LibraryBookMeta[] = [
     series: "parenting",
     seriesLabel: "Parenting Series",
     cover: "/library-covers/guiding-your-growing-child.png",
-    hasReader: false,
+    hasReader: true,
   },
   {
     slug: "supporting-your-childs-growing-independence",
@@ -68,7 +68,7 @@ export const LIBRARY_BOOKS: LibraryBookMeta[] = [
     series: "parenting",
     seriesLabel: "Parenting Series",
     cover: "/library-covers/supporting-your-childs-growing-independence.png",
-    hasReader: false,
+    hasReader: true,
   },
 ];
 

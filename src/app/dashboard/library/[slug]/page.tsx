@@ -6,15 +6,28 @@ import LockedPreview from "@/components/LockedPreview";
 import BookReader from "@/components/BookReader";
 import type { LibraryBookContent } from "@/types/library-content";
 
-// Only "Money, Understood" has its paginated content wired up so far —
-// this is the flip-book reader prototype. The other five books will be
-// added here the same way once the format is approved.
+// All six books now have their paginated content wired up — each was
+// converted from its locked manuscript via the same docx -> HTML ->
+// paginated-JSON pipeline built for the "Money, Understood" prototype.
+const CONTENT_LOADERS: Record<string, () => Promise<{ default: unknown }>> = {
+  "money-understood": () => import("@/content/library/money-understood.json"),
+  "creating-your-own-opportunities": () =>
+    import("@/content/library/creating-your-own-opportunities.json"),
+  "building-your-financial-security": () =>
+    import("@/content/library/building-your-financial-security.json"),
+  "understanding-your-little-one": () =>
+    import("@/content/library/understanding-your-little-one.json"),
+  "guiding-your-growing-child": () =>
+    import("@/content/library/guiding-your-growing-child.json"),
+  "supporting-your-childs-growing-independence": () =>
+    import("@/content/library/supporting-your-childs-growing-independence.json"),
+};
+
 async function loadContent(slug: string): Promise<LibraryBookContent | null> {
-  if (slug === "money-understood") {
-    const data = await import("@/content/library/money-understood.json");
-    return data.default as unknown as LibraryBookContent;
-  }
-  return null;
+  const loader = CONTENT_LOADERS[slug];
+  if (!loader) return null;
+  const data = await loader();
+  return data.default as unknown as LibraryBookContent;
 }
 
 export default async function LibraryBookPage({
