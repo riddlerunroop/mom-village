@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
+import AccountForm from "./AccountForm";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -57,33 +58,19 @@ export default async function AccountPage() {
           label="Phone"
           value={user!.phone ? `+${user!.phone.replace(/^\+/, "")}` : "—"}
         />
-        <Row label="Your name" value={profile?.mom_name || "Not set"} />
-        {profile?.baby_name && <Row label="Baby's name" value={profile.baby_name} />}
-        {profile?.baby_dob && (
-          <Row
-            label="Baby's DOB"
-            value={new Date(profile.baby_dob).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          />
-        )}
-        {!profile?.baby_dob && profile?.due_date && (
-          <Row
-            label="Due date"
-            value={new Date(profile.due_date).toLocaleDateString("en-IN", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
-          />
-        )}
-        {profile?.city && <Row label="City" value={profile.city} />}
         <Row label="Membership" value={subscriptionLabel} />
       </div>
 
-      <div className="flex items-center gap-5">
+      <h2 className="font-display text-lg text-indigo mb-4">Edit your details</h2>
+      <AccountForm
+        momName={profile?.mom_name ?? ""}
+        babyName={profile?.baby_name ?? ""}
+        city={profile?.city ?? ""}
+        babyDob={profile?.baby_dob ?? ""}
+        dueDate={profile?.due_date ?? ""}
+      />
+
+      <div className="flex items-center gap-5 mt-8">
         <Link
           href="/"
           className="text-xs font-semibold text-ink/60 hover:text-indigo transition-colors"
