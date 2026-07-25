@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
-import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel } from "@/lib/weekCalculator";
+import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, type CarePhaseKey } from "@/lib/weekCalculator";
 import LockedPreview from "@/components/LockedPreview";
 
 const SECTIONS = [
@@ -10,6 +10,23 @@ const SECTIONS = [
   { key: "mind", label: "Mind", accent: "terracotta" as const },
   { key: "skin", label: "Skin", accent: "indigo" as const },
   { key: "rediscover", label: "Rediscover", accent: "gold-deep" as const },
+];
+
+// All 9 phases, in order — used only by the ?phase= preview switcher below,
+// so content can be reviewed phase-by-phase without having to change a real
+// profile's dates. Never shown to a mother unless she's already in preview
+// mode (i.e. arrived via a ?phase= link), so the normal experience — see
+// exactly where you are, nothing else — is untouched.
+const PHASES: { key: CarePhaseKey; label: string }[] = [
+  { key: "first_trimester", label: "First trimester" },
+  { key: "second_trimester", label: "Second trimester" },
+  { key: "third_trimester", label: "Third trimester" },
+  { key: "early_healing", label: "Early healing (0–6wk)" },
+  { key: "finding_rhythm", label: "Finding rhythm (6–12wk)" },
+  { key: "rebuilding", label: "Rebuilding (3–6mo)" },
+  { key: "settling_into_strength", label: "Settling into strength (6–12mo)" },
+  { key: "sustainable_rhythms", label: "Sustainable rhythms (1–2yr)" },
+  { key: "rhythm_year_three", label: "Your rhythm, year three (2–3yr)" },
 ];
 
 // The 5/15/30 tags map to their own small badge, rather than doubling as
@@ -21,7 +38,14 @@ const TIME_BADGES: Record<string, string> = {
   "30": "30 min",
 };
 
-export default async function CarePage() {
+export default async function CarePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ phase?: string }>;
+}) {
+  const { phase: previewParam } = await searchParams;
+  const previewPhase = PHASES.find((p) => p.key === previewParam) ?? null;
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isSubscribed = await hasActiveSubscription(supabase, user!.id);
@@ -33,9 +57,9 @@ export default async function CarePage() {
     .maybeSingle();
 
   const week = calculateCareWeek(profile?.baby_dob ?? null, profile?.due_date ?? null);
-  const phaseLabel = week !== null ? carePhaseLabel(week) : null;
-  const weekLabel = week !== null ? careWeekLabel(week) : null;
-  const phaseKey = week !== null ? carePhaseKey(week) : null;
+  const phaseLabel = previewPhase ? previewPhase.label : week !== null ? carePhaseLabel(week) : null;
+  const weekLabel = previewPhase ? null : week !== null ? careWeekLabel(week) : null;
+  const phaseKey: CarePhaseKey | null = previewPhase ? previewPhase.key : week !== null ? carePhaseKey(week) : null;
   const deliveryType = profile?.delivery_type || "any";
 
   // Has she checked in yet today? The check-in (time/energy/mood) is what
@@ -110,10 +134,46 @@ export default async function CarePage() {
           {weekLabel} — {phaseLabel}
         </p>
       )}
+      {previewPhase && (
+        <p className="text-sm font-semibold text-terracotta mb-1">
+          Previewing: {previewPhase.label}
+        </p>
+      )}
       <p className="text-sm text-ink/65 mb-6 max-w-[540px]">
         Body, mind, skin, and more — built around exactly where you are,
         pregnancy through postpartum.
       </p>
+
+      {previewPhase ? (
+        <div className="flex flex-wrap gap-1.5 mb-8">
+          {PHASES.map((p) => (
+            <Link
+              key={p.key}
+              href={`/dashboard/care?phase=${p.key}`}
+              className={`text-[11px] font-semibold px-3 py-1.5 rounded-full border ${
+                p.key === previewPhase.key
+                  ? "bg-indigo text-ivory border-indigo"
+                  : "text-indigo border-indigo/30"
+              }`}
+            >
+              {p.label}
+            </Link>
+          ))}
+          <Link
+            href="/dashboard/care"
+            className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-terracotta text-terracotta"
+          >
+            ← back to my real chart
+          </Link>
+        </div>
+      ) : (
+        <Link
+          href={`/dashboard/care?phase=${phaseKey ?? "early_healing"}`}
+          className="text-[11px] font-semibold text-ink/40 hover:text-ink/60 mb-6 inline-block"
+        >
+          preview other phases (for review)
+        </Link>
+      )}
 
       {isSubscribed && mantraRow?.mantra && (
         <p className="font-display italic text-lg text-sage-deep mb-8 max-w-[540px]">

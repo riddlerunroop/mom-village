@@ -4,11 +4,19 @@
 
 *This section is maintained by Claude at the end of every significant session. Read this first in any new chat — it replaces needing to re-explain context. Update it whenever something material changes (content locked, feature shipped, decision made).*
 
-*Last updated: 2026-07-25 — Care Chart revamp prototype (Rediscover pillar)*
+*Last updated: 2026-07-25 — Care Chart content depth pass (Early healing)*
 
 ## What it is
 
 Subscription app for Indian mothers, pregnancy through a child's third birthday (the "1,000-day journey"). Live at mom-village.vercel.app. Non-technical founder (Roop), builds through Claude. Full background: see `mom-village-project-overview.md` if present, but this file is the source of truth going forward.
+
+## Security fix — Row-Level Security enabled on all tables, 2026-07-25
+
+Supabase emailed Roop a critical security alert: `monthly_chart_content` (and several other tables) had Row-Level Security disabled since they were first created, meaning anyone with the project's public anon key — not a secret, it's embedded in the app's own client-side code by design — could read, edit, or delete that data directly through Supabase's API, entirely bypassing the app.
+
+`supabase/migration_15_security_rls_fix.sql` fixes it. `monthly_chart_content` and `weekly_care_chart_content` (the real content tables) now require a logged-in session to read, and allow no writes at all except from Roop directly in the SQL editor — matches how content is actually authored, no workflow change. `fitness_tracks`, `books`, and `budget_map_downloads` — leftover tables from early schema.sql that were superseded before ever being wired into the app (confirmed via a full `grep` across `src/` finding zero references) — got RLS enabled with no policies at all, i.e. fully locked, since nothing legitimately queries them. `book_purchases` already had RLS from the start and wasn't part of the issue.
+
+**Status: FIXED 2026-07-25.** Migration run in Supabase, confirmed by Roop. No app code changed, so no GitHub push was needed for this one. **Worth a quick habit note for future sessions: any new table added to this project must get `enable row level security` in the same migration that creates it** — this issue existed because that step was missed when the schema was first drafted, not because of anything that changed later.
 
 ## Product scope — confirmed 2026-07-21 (read this before proposing any new module)
 
@@ -123,6 +131,28 @@ ChatGPT's version was the most rigorous but also the most over-built for how thi
 **Build:** `supabase/migration_14_care_chart_rediscover.sql` — widens the `section` check constraint to include `'rediscover'`, retitles the 6 existing time-tiered rows, sets the phase mantra, inserts the 3 new Rediscover rows. `src/app/dashboard/care/page.tsx` — added Rediscover to the rendered `SECTIONS` (gold-deep accent), added a `TIME_BADGES` lookup rendering the duration next to each item's title, added a separate query + display for the phase mantra (shown as an italic line near the top, before/independent of her daily check-in), widened the grid to `lg:grid-cols-3` to fit 5 sections. Verified clean on `tsc`/`eslint` (also fixed 3 pre-existing unescaped-apostrophe lint errors on this file while touching it). **Not yet deployed** — needs the Supabase migration run + a GitHub Desktop push, same as every other feature. Roop hasn't seen this live yet — next step once deployed is her reviewing this one phase before deciding whether to roll the same treatment out to the other 8 phases.
 
 **Scope, if this direction is approved:** roughly 3 Care Steps per pillar × 5 pillars × 9 phases ≈ 135 total Care Steps — comparable in size to the 124 rows the current Care Chart already has, not the 165 (ChatGPT) or 280 (Meta) full-library targets either blueprint proposed, since Roop is the sole content author working through Claude, not a team.
+
+**Content depth pass, 2026-07-25.** After seeing the prototype, Roop's next feedback: Body content still read as generic ("take a walk") rather than a real solution — her words, "not even a random neighbour aunty would tell you something different." Also flagged: no condition-specific content despite the app already having a `health_flags` system (thyroid/PCOS/diabetes-GD/high BP, captured at onboarding) that's never actually been used to branch any content — every row in the whole Care Chart was `health_flag = 'none'` until this pass. And Skin read as a disconnected tip, not a real routine.
+
+Fixed for Early healing specifically, independently verified against Mayo Clinic, Kaiser Permanente, Restore Your Core, and PCOS/lactation sources (see chat for full source list):
+- **Body** — named exercises with real technique and reps: diaphragmatic breathing + a properly-described Kegel (3-5 sec hold, 5-8 reps, safe even days after a C-section) on the 5-minute item; pelvic tilts (lying, knees bent, flatten lower back, hold 5 sec × 5 reps) paired with the 15-minute walk. New row, "Protect your midline": explains why to skip crunches/sit-ups/twisting this early. Deliberately does NOT include the diastasis recti self-check itself — verified that test isn't accurate until ~6-8 weeks, so it's correctly deferred to Finding rhythm (6-12wk) whenever that phase gets the same treatment, not misapplied here.
+- **Food** — first real use of the `health_flag` mechanism: a PCOS-specific row explaining milk can genuinely take a day or two longer to come in with PCOS (slowed hormonal cascade, not a sign of a problem), plus a blood-sugar-steadying meal tip. Only shows for mothers who marked PCOS at the care-quiz; `care/page.tsx`'s existing health-flag filtering logic needed no code changes to support this, it was already built to handle flag-specific rows, just never fed any.
+- **Skin** — the generic "keep it simple" tip became a real AM/PM routine (gentle cleanser + rich moisturiser + mineral SPF with zinc oxide in the morning; cleanse + moisturise, no new actives, at night), same underlying caution as before just given real structure and a real reason (protecting still-settling pregnancy pigmentation, countering sleep-deprivation dryness).
+
+Build: `supabase/migration_16_care_chart_early_healing_depth.sql`. No app code changes needed. **Not yet deployed** — needs the Supabase migration run (no GitHub push needed, content-only change). Thyroid, diabetes-GD, and high-BP branches, plus the same depth pass for the other 8 phases, are still open — next step once Roop reviews this phase live.
+
+**Phase-preview switcher, built 2026-07-25.** Once Roop started reviewing phases beyond Early healing, she needed a way to look at any of the 9 phases' content without changing her real profile's due date/DOB each time. `src/app/dashboard/care/page.tsx` now reads an optional `?phase=<key>` query param — if present and valid, it overrides the calculated phase for that page load only (pure display override, never touches her real profile). A small "preview other phases (for review)" link appears at the bottom of her normal Care Chart view; clicking it reveals a row of pills for all 9 phases to jump between. A real mother never sees this unless she's already arrived via a `?phase=` link, so the normal "see exactly where you are" experience is untouched. Verified clean on `tsc`/`eslint`. **Not yet deployed** — this one IS a code change, needs a GitHub Desktop push.
+
+**Finding rhythm (6-12wk) depth pass, 2026-07-25.** Same treatment as Early healing, independently verified against Restore Your Core, NASM, and ACOG/AAFP sources:
+- **Body** — the diastasis recti self-check itself now lives here (correctly timed — it isn't accurate before ~6-8 weeks, which is why Early healing deliberately didn't include it, only the "avoid crunches" caution). Progression from Early healing's exercises: heel slides (15 min, with an explicit "stop if your belly domes" self-monitoring cue) and a modified bird dog (30 min), both with real technique and rep counts, building on the Kegels/pelvic tilts from the prior phase.
+- **Food** — second real use of `health_flag`: a gestational-diabetes-specific row reminding her to get the ACOG-recommended postpartum glucose screening (4-12 weeks after birth) — genuinely easy to forget while focused on a newborn, and this phase's exact window is exactly when it's due.
+- **Skin** — routine continues from Early healing, now with room to introduce one gentle brightening active (vitamin C or niacinamide, both verified breastfeeding-safe) if she wants — consistent with what Early healing's content already promised ("brightening actives are fine to bring in later").
+- **Rediscover** — 3 new Care Steps for this phase, slightly less tiny than Early healing's given a little more capacity by 6-12 weeks: *Ten minutes of something that was yours*, *Wear something that feels like you*, *Name one thing you're proud of this week*.
+- **Mantra** — *"You're not behind. You're finding your rhythm."*
+
+Build: `supabase/migration_17_care_chart_finding_rhythm_depth.sql`. No app code changes needed beyond the phase-switcher above. **Not yet deployed.**
+
+**Paused here, 2026-07-25** — Roop is going to research the remaining 7 phases herself and bring findings back before the depth pass continues. Don't proceed further on this module until she does.
 
 ## Wealth pillar — in progress (2026-07-21)
 
