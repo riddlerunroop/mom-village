@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+
+// Transcribes a recorded voice memory via OpenAI's Whisper API — Claude
+// doesn't take raw audio, so this is a separate service, same pattern as
+// the ANTHROPIC_API_KEY dependency added for vaccination card reading.
+// Returns a transcript only; she always reviews/edits it before anything
+// is saved (see MemoriesClient.tsx) — speech-to-text can mishear a
+// medicine name or a date, and this is exactly the kind of detail that
+// matters later when she's trying to recall it.
+export async function POST(req: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      { error: "Voice transcription isn't set up yet — OPENAI_API_KEY is missing." },
+      { status: 500 }
+    );
+  }
+
+  const formData = await req.formData();
+  const audio = formData.get("audio");
+
+  if (!audio || !(audio instanceof Blob)) {
+    return NextResponse.json({ error: "No audio provided" }, { status: 400 });
+  }
+
+  const whisperForm = new FormData();
+  whisperForm.append("file", audio, "memory.webm");
+  whisperForm.append("model", "whisper-1");
+
+  const whisperRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: whisperForm,
+  });
+
+  if (!whisperRes.ok) {
+    return NextResponse.json(
+      { error: "Couldn't transcribe that — try recording again, or type it instead." },
+      { status: 500 }
+    );
+  }
+
+  const { text } = (await whisperRes.json()) as { text: string };
+  return NextResponse.json({ transcript: text?.trim() || "" });
+}

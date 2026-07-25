@@ -4,7 +4,7 @@
 
 *This section is maintained by Claude at the end of every significant session. Read this first in any new chat — it replaces needing to re-explain context. Update it whenever something material changes (content locked, feature shipped, decision made).*
 
-*Last updated: 2026-07-25 — Care Chart content depth pass (Early healing)*
+*Last updated: 2026-07-25 — Voice-log memories + recall built*
 
 ## What it is
 
@@ -323,9 +323,25 @@ All five new JSON files live at `src/content/library/*.json` alongside `money-un
 - **Roop's UX call, same day: homepage nav tabs should actually lead somewhere, not just scroll.** Logged-out visitors clicking "Monthly chart" / "Fitness" / "Library" / "Community" in the homepage nav were just anchor-scrolling to marketing copy about each pillar. Roop's call (agreed): clicking should lead toward actually getting the feature, prompting a subscribe screen if she isn't a member. Built a `next`-param redirect chain through the whole logged-out funnel: homepage nav links now point to `/login?next=/dashboard/xxx`; `src/app/login/page.tsx` reads `next` and, after OTP verification (or if already logged in), sends her either straight to `next` (if onboarding's done) or to `/onboarding?next=<next>` (if new); `src/app/onboarding/page.tsx` reads the same `next` param and redirects there after her profile is saved. End result: she lands exactly on the pillar page she originally clicked, where the existing `LockedPreview` component already prompts her to subscribe if she isn't one yet — no new gating logic needed, just preserving intent through the auth/onboarding funnel. Both pages now use a `Suspense`-wrapped inner component since `useSearchParams()` requires it. Logged-in members still get the direct `memberNavLinks` behavior from the earlier fix (nav goes straight to `/dashboard/*`, no login detour).
 - **Bug found by Roop, same day: account page showed a blank email.** Root cause — Mom Village auth is phone/OTP-based (`src/app/login/page.tsx`, `signInWithOtp`/`verifyOtp` with a phone number), not email/password, so `supabase.auth.getUser()`'s `user.email` is always empty for every mom in this app. The dashboard header link and the account page were both built assuming email. Fixed both to show `user.phone` instead (dashboard header in `src/app/dashboard/layout.tsx`, account page's row in `src/app/dashboard/account/page.tsx`, relabeled "Email" → "Phone"). **Note for future sessions: this app has no email field for users at all — always use phone, not email, as the identifying/display field.** The account page is still view-only, not editable — Roop flagged wanting to edit her details (name, baby's DOB/due date, city) from there; not yet built, offered to her as a next step.
 
+## Voice-log memories + recall — built 2026-07-25
+
+Scoped 2026-07-21, deprioritized behind vaccination tracking, picked back up once Roop asked "what should we work on" and chose it from a short list of ready-to-build options. Narrowly scoped per the original product-scope decision: log a short voice note or photo in the moment (a symptom and what medicine she gave, a milestone like "started walking today"), then later ask the app to recall it — the ONE place in the app with a conversational interface, deliberately not a general chatbot.
+
+**Two setup decisions confirmed with Roop before building:** (1) speech-to-text needs a separate service since Claude doesn't take raw audio — went with OpenAI's Whisper API (matches the ~$0.006/min estimate already given), same "she sets up a key, adds billing, adds it to Vercel" pattern as `ANTHROPIC_API_KEY` for vaccination card reading. (2) the original scope mentioned recall pulling from "voice logs, photos, and vaccination timeline," but no general photo-journal feature existed anywhere in the app — Roop chose to build real photo logging in this same pass rather than defer it, so recall now draws from all three.
+
+**Build:**
+- `supabase/migration_18_voice_photo_memories.sql` — `user_voice_logs` (transcript + audio path) and `user_photo_logs` (caption + photo path) tables, both with standard per-user RLS; two new private Storage buckets (`voice-logs`, `memory-photos`) with the same per-user-folder policy pattern as the existing `vaccination-cards` bucket.
+- `src/app/api/memories/transcribe/route.ts` — server-side route, sends the recorded audio to OpenAI Whisper, returns a transcript. She always sees and can edit the transcript before anything saves — same "never trust automatic extraction silently" principle as the vaccination card reader, since mis-heard medicine names or dates matter later.
+- `src/app/api/memories/recall/route.ts` — server-side route, pulls her own voice transcripts + photo captions + vaccination records and asks Claude to answer her question using ONLY that data, explicitly instructed to say so rather than guess if the answer isn't in her own logged entries.
+- `src/app/dashboard/memories/page.tsx` + `MemoriesClient.tsx` — subscription-gated page: a recall question box up top, voice recording (browser `MediaRecorder` → transcribe → review/edit → save) and photo logging (upload + optional caption) side by side, and a merged reverse-chronological timeline of everything she's logged. Photo URLs are served as short-lived signed URLs (1hr), matching the private-bucket design.
+- Linked from the Monthly Chart dashboard home (`src/app/dashboard/page.tsx`, "log a memory →"), same placement pattern as vaccination tracking — not given its own nav tab, since it's a bounded addition, not a 6th pillar.
+- `.env.local.example` documents the new `OPENAI_API_KEY` requirement alongside the existing `ANTHROPIC_API_KEY` note (recall also uses Anthropic, so that key now does double duty). Verified clean on `tsc`/`eslint`.
+
+**Status: code complete, not yet deployed.** Roop needs to: (1) run `migration_18_voice_photo_memories.sql` in Supabase, (2) get an OpenAI API key at platform.openai.com, add billing, and add `OPENAI_API_KEY` to Vercel's environment variables (same steps as the Anthropic key setup back on 2026-07-22), then (3) push the code via GitHub Desktop.
+
 ## Other pillars/features still fully unbuilt
 
-Voice-log memories + recall (scoping started 2026-07-21 — AI cost estimate given to Roop: transcription ~$0.006/min via a separate speech-to-text service since Claude API doesn't take raw audio, recall reasoning a few hundredths of a cent per query via Claude — well under ₹1/month per active user; Roop deprioritized this behind vaccination tracking, not yet resumed). Razorpay is intentionally saved for last (see above). Library's purchase/bundle/download flow and the remaining five books' in-app readers depend on the same two items respectively (see Library pillar section above).
+Razorpay is intentionally saved for last (see above). Library's purchase/bundle/download flow and the remaining five books' in-app readers depend on the same two items respectively (see Library pillar section above). Push notifications and Community moderation/reporting remain explicitly deferred (see their sections above).
 
 ## Tech stack
 

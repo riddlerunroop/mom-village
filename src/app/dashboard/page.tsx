@@ -74,6 +74,9 @@ export default async function DashboardPage() {
         <Link href="/dashboard/vaccinations" className="text-xs font-semibold text-sage-deep">
           track vaccinations →
         </Link>
+        <Link href="/dashboard/memories" className="text-xs font-semibold text-sage-deep">
+          log a memory →
+        </Link>
       </div>
 
       <div className="mb-10">
