@@ -9,7 +9,17 @@ const SECTIONS = [
   { key: "food", label: "Food", accent: "sage" as const },
   { key: "mind", label: "Mind", accent: "terracotta" as const },
   { key: "skin", label: "Skin", accent: "indigo" as const },
+  { key: "rediscover", label: "Rediscover", accent: "gold-deep" as const },
 ];
+
+// The 5/15/30 tags map to their own small badge, rather than doubling as
+// the item's title — so a mother sees a real name for what she's being
+// asked to do, with the duration shown alongside it, not standing in for it.
+const TIME_BADGES: Record<string, string> = {
+  "5": "5 min",
+  "15": "15 min",
+  "30": "30 min",
+};
 
 export default async function CarePage() {
   const supabase = await createClient();
@@ -38,6 +48,19 @@ export default async function CarePage() {
         .select("time_available, energy_score, mood_score")
         .eq("user_id", user!.id)
         .eq("checkin_date", today)
+        .maybeSingle()
+    : { data: null };
+
+  // This phase's mantra — a single short line of warmth, stored once per
+  // phase (not per row), looked up separately since it isn't tied to
+  // today's specific check-in-matched items.
+  const { data: mantraRow } = isSubscribed && phaseKey
+    ? await supabase
+        .from("weekly_care_chart_content")
+        .select("mantra")
+        .eq("phase_key", phaseKey)
+        .not("mantra", "is", null)
+        .limit(1)
         .maybeSingle()
     : { data: null };
 
@@ -87,10 +110,16 @@ export default async function CarePage() {
           {weekLabel} — {phaseLabel}
         </p>
       )}
-      <p className="text-sm text-ink/65 mb-10 max-w-[540px]">
+      <p className="text-sm text-ink/65 mb-6 max-w-[540px]">
         Body, mind, skin, and more — built around exactly where you are,
         pregnancy through postpartum.
       </p>
+
+      {isSubscribed && mantraRow?.mantra && (
+        <p className="font-display italic text-lg text-sage-deep mb-8 max-w-[540px]">
+          &ldquo;{mantraRow.mantra}&rdquo;
+        </p>
+      )}
 
       {!isSubscribed ? (
         <LockedPreview
@@ -100,7 +129,7 @@ export default async function CarePage() {
       ) : !todayCheckin ? (
         <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
           <p className="font-display italic text-lg text-sage-deep mb-4">
-            One quick check-in and today's chart is ready for you.
+            One quick check-in and today&apos;s chart is ready for you.
           </p>
           <Link
             href="/care-checkin"
@@ -110,7 +139,7 @@ export default async function CarePage() {
           </Link>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-5">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {bySection.map((section) => (
             <div
               key={section.key}
@@ -125,13 +154,20 @@ export default async function CarePage() {
 
               {section.items.length === 0 ? (
                 <p className="text-sm text-ink/55 italic">
-                  Nothing tagged for today's mix yet — check back soon.
+                  Nothing tagged for today&apos;s mix yet — check back soon.
                 </p>
               ) : (
                 <ul className="space-y-3">
                   {section.items.map((item) => (
                     <li key={item.id}>
-                      <p className="text-sm font-semibold text-ink">{item.title}</p>
+                      <p className="text-sm font-semibold text-ink">
+                        {item.title}
+                        {TIME_BADGES[item.time_option] && (
+                          <span className="ml-2 text-[11px] font-semibold text-sage-deep align-middle">
+                            · {TIME_BADGES[item.time_option]}
+                          </span>
+                        )}
+                      </p>
                       <p className="text-[13px] text-ink/65 mt-0.5">{item.body}</p>
                     </li>
                   ))}
@@ -146,7 +182,7 @@ export default async function CarePage() {
         href="/care-checkin"
         className="text-xs font-semibold text-sage-deep mt-8 inline-block"
       >
-        update today's check-in →
+        update today&apos;s check-in →
       </Link>
     </main>
   );
