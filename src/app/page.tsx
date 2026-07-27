@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 // where she'll see the subscribe prompt if she isn't a member yet.
 const navLinks = [
   { label: "Monthly chart", href: "/login?next=/dashboard" },
+  { label: "Wealth", href: "/login?next=/dashboard/wealth" },
   { label: "Fitness", href: "/login?next=/dashboard/care" },
   { label: "Library", href: "/login?next=/dashboard/library" },
   { label: "Community", href: "/login?next=/dashboard/community" },
@@ -17,46 +18,68 @@ const navLinks = [
 // instead of scrolling past marketing copy she's already bought into.
 const memberNavLinks = [
   { label: "Monthly chart", href: "/dashboard" },
+  { label: "Wealth", href: "/dashboard/wealth" },
   { label: "Fitness", href: "/dashboard/care" },
   { label: "Library", href: "/dashboard/library" },
   { label: "Community", href: "/dashboard/community" },
 ];
 
+// Four pillars, matching what's actually built — 2026-07-27 pre-Razorpay
+// review found Wealth was missing entirely and Community's copy promised
+// anonymity the real feature doesn't have (real profile names, one open
+// forum, no groups). Both fixed here.
 const pillars = [
   {
     num: "1",
     title: "Monthly chart",
-    body: "Money, growth, fitness, and what's changing — unlocked on the first of every month, from her stage, not a stranger's average.",
+    body: "Money, growth, and what's changing — a new chart unlocked on the first of every month, matched to her actual stage.",
     href: "/dashboard",
   },
   {
     num: "2",
+    title: "Wealth",
+    body: "Government schemes that lower your real costs, a savings plan for these years, and books on money and work — for your own footing, not just hers.",
+    href: "/dashboard/wealth",
+  },
+  {
+    num: "3",
     title: "The library",
     body: "Six books on money and parenting, written for the Indian home. Free with membership, or buy individually.",
     href: "/dashboard/library",
   },
   {
-    num: "3",
-    title: "The circle",
-    body: "Small group spaces to vent, ask, and be understood. No profiles, no performing — just moms who are where you are.",
+    num: "4",
+    title: "Community",
+    body: "One open forum under your real name — search past discussions, ask anything, and see what other mothers at your stage are actually going through.",
     href: "/dashboard/community",
   },
 ];
 
-const fitCards = [
-  { label: "Body", title: "Recovery, at her pace", body: "C-section and normal delivery timelines, 5-minute resets, and diabetes-safe movement — never crunches, never rushed." },
-  { label: "Food", title: "Nourishment, not restriction", body: "Feeding-friendly meals and diabetes-friendly plates — support for her supply and her health, without overcounting calories." },
-  { label: "Mind", title: "Support for the hard days", body: "Postpartum depression support, quieting negative thoughts, and keeping toxic energy at a distance." },
-  { label: "Life", title: "Days that feel manageable", body: "Simple time and health routines with baby, so nothing feels endless — and room to just be happy." },
+// Shortened deliberately (2026-07-27) — this used to be two long grids (10
+// cards, plus two non-functional "Normal delivery / C-section" toggle
+// buttons) describing a structure that didn't match what's actually built.
+// Now: the five real pillars, one line each, matching Body/Food/Mind/Skin/
+// Rediscover across all 9 phases.
+const careCards = [
+  { label: "Body", body: "Named exercises for pregnancy through year three — never a generic \"go for a walk.\"" },
+  { label: "Food", body: "Real guidance for your stage, with PCOS- and gestational-diabetes-specific notes where they apply." },
+  { label: "Mind", body: "A weekly mantra and real tools for hard days, not just \"stay positive.\"" },
+  { label: "Skin", body: "A real morning-and-night routine for your stage, not just \"keep it simple.\"" },
+  { label: "Rediscover", body: "Small things that are just for you — not baby-related, not another chore." },
 ];
 
-const trackCards = [
-  { tag: "Body", title: "Diastasis recti recovery", body: "A safe, progressive closure track — no crunches, no full planks, ever." },
-  { tag: "Body", title: "C-section timeline", body: "Week 1 to month 3 — what's safe to try, and when, physically and mentally." },
-  { tag: "Mind", title: "What's normal, what's not", body: "Understanding postpartum lows — and knowing exactly when and how to get real support." },
-  { tag: "Life", title: "A 2-minute happiness ritual", body: "Small, doable practices for the days that feel like too much." },
-  { tag: "Body", title: "Ready for more", body: "30-45 minute progressive plans for when she has real energy and time back — no rush to get there." },
-  { tag: "Food", title: "Problem-specific plates", body: "PCOS, thyroid, anemia — eating built around her actual health picture, not a generic diet." },
+// Illustrative preview of one real month's chart — same six categories and
+// visual language as the actual member dashboard (see
+// src/components/MonthlyChartGrid.tsx), so a visitor can see roughly what
+// unlocks the day she joins before committing. Labelled as an example, not
+// live data.
+const previewCards = [
+  { label: "Baby's Development", accent: "gold", line: "What's changing for her this month, in plain language." },
+  { label: "Mum's Wellbeing", accent: "terracotta", line: "What's normal for your body right now, and what's worth a call." },
+  { label: "Buy / Arrange Now", accent: "sage", line: "What's actually worth buying this month — nothing you don't need yet." },
+  { label: "Hold Off On", accent: "gold", line: "What to skip for now, so you're not buying ahead of her." },
+  { label: "Movement & Rest", accent: "sage", line: "What kind of activity and rest actually fits this stage." },
+  { label: "Appointments & Safety", accent: "terracotta", line: "Checkups, screenings, and warning signs worth knowing about." },
 ];
 
 const books = [
@@ -107,7 +130,7 @@ export default async function Home() {
         <div className="font-display text-[22px] font-semibold text-indigo shrink-0">
           mom<span className="text-gold-deep">village</span>
         </div>
-        <ul className="hidden lg:flex gap-7 text-sm text-ink shrink-0">
+        <ul className="hidden lg:flex gap-6 text-sm text-ink shrink-0">
           {(user ? memberNavLinks : navLinks).map((l) => (
             <li key={l.href} className="whitespace-nowrap">
               <Link href={l.href} className="hover:text-gold-deep transition-colors">
@@ -179,12 +202,18 @@ export default async function Home() {
               </Link>
             ) : (
               <>
-                <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full border-[1.5px] border-indigo text-indigo">
+                <Link
+                  href={dest("/budget-calculator")}
+                  className="text-sm font-semibold px-[22px] py-[11px] rounded-full border-[1.5px] border-indigo text-indigo hover:bg-indigo/5 transition-colors"
+                >
                   Get the ₹49 budget map
-                </button>
-                <button className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory">
+                </Link>
+                <Link
+                  href={dest("/dashboard")}
+                  className="text-sm font-semibold px-[22px] py-[11px] rounded-full bg-gold-deep text-ivory hover:opacity-90 transition-opacity"
+                >
                   Join for ₹299/month
-                </button>
+                </Link>
               </>
             )}
           </div>
@@ -264,20 +293,20 @@ export default async function Home() {
               what&apos;s inside
             </div>
             <h2 className="text-[32px] text-indigo mt-2">
-              Three things, always with you
+              Four things, always with you
             </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-7">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {pillars.map((p) => (
               <Link
                 key={p.num}
                 href={dest(p.href)}
-                className="block bg-ivory-2 rounded-t-[120px] rounded-b-2xl px-6.5 pt-11 pb-7.5 text-center border border-line hover:border-gold-deep/40 transition-colors"
+                className="block bg-ivory-2 rounded-t-[100px] rounded-b-2xl px-6 pt-10 pb-7 text-center border border-line hover:border-gold-deep/40 transition-colors"
               >
-                <div className="w-13 h-13 rounded-full bg-gold text-ink flex items-center justify-center font-display font-semibold text-lg mx-auto mb-4.5">
+                <div className="w-12 h-12 rounded-full bg-gold text-ink flex items-center justify-center font-display font-semibold text-lg mx-auto mb-4">
                   {p.num}
                 </div>
-                <h3 className="text-[19px] text-indigo mb-2.5">{p.title}</h3>
+                <h3 className="text-[18px] text-indigo mb-2.5">{p.title}</h3>
                 <p className="text-sm text-ink/70">{p.body}</p>
               </Link>
             ))}
@@ -285,10 +314,12 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* FITNESS */}
+      {/* CARE — shortened 2026-07-27; used to be two long grids describing a
+          structure that no longer matched what's built, plus two
+          non-functional "Normal delivery / C-section" toggle buttons. */}
       <section id="fitness" className="py-20 px-8 bg-ivory-2">
         <div className="max-w-[1080px] mx-auto">
-          <div className="text-center max-w-[560px] mx-auto mb-8">
+          <div className="text-center max-w-[560px] mx-auto mb-10">
             <div className="text-xs tracking-[0.12em] uppercase text-terracotta font-semibold">
               more than a workout
             </div>
@@ -296,67 +327,59 @@ export default async function Home() {
               Her body, mind, and days — cared for too
             </h2>
             <p className="text-ink/68 text-[15px] mt-3">
-              Built around how she delivered, how she&apos;s feeding, and how
-              she&apos;s really doing — not a generic &quot;bounce back&quot; plan.
+              Matched to her pregnancy or postpartum stage — not a generic
+              &quot;bounce back&quot; plan, and never crunches or guilt.
             </p>
           </div>
-          <div className="flex justify-center gap-3 mb-1">
-            <button className="text-sm font-semibold px-5 py-2.25 rounded-full bg-sage-deep text-ivory border-[1.5px] border-sage-deep">
-              Normal delivery
-            </button>
-            <button className="text-sm font-semibold px-5 py-2.25 rounded-full text-sage-deep border-[1.5px] border-sage-deep">
-              C-section recovery
-            </button>
-          </div>
-          <p className="text-center text-[13px] text-ink/60 italic mb-8">
-            Starts at 5 minutes. Grows with her — 30 to 45 minute sessions
-            unlock once she&apos;s ready, usually well into year one.
-          </p>
-          <div className="grid md:grid-cols-4 gap-5 mb-3">
-            {fitCards.map((c) => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4.5 mb-8">
+            {careCards.map((c) => (
               <Link
                 key={c.label}
                 href={dest("/dashboard/care")}
-                className="block bg-ivory rounded-2xl p-6 border border-line border-t-[3px] border-t-sage hover:border-sage-deep/50 transition-colors"
+                className="block bg-ivory rounded-2xl p-5.5 border border-line border-t-[3px] border-t-sage hover:border-sage-deep/50 transition-colors"
               >
                 <div className="text-[11px] uppercase tracking-wide font-bold text-sage-deep mb-2.5">
                   {c.label}
                 </div>
-                <h4 className="text-base text-indigo mb-2">{c.title}</h4>
-                <p className="text-[13px] text-ink/72">{c.body}</p>
+                <p className="text-[13px] text-ink/72 leading-snug">{c.body}</p>
               </Link>
             ))}
           </div>
-          <p className="text-center text-[13px] text-sage-deep italic font-display mt-8 mb-14">
-            Every plan is diastasis-recti safe by default. Mind-care content is
-            written with a perinatal mental health professional, with clear
-            guidance on when to reach out for real support.
+          <p className="text-center text-[13px] text-sage-deep italic font-display">
+            Every medical claim here is independently checked against sources
+            like ACOG, WHO, and Mayo Clinic before it&apos;s published — see the
+            note near pricing below.
           </p>
+        </div>
+      </section>
 
-          <div className="text-center mb-7">
-            <div className="text-xs tracking-[0.12em] uppercase text-terracotta font-semibold">
-              if you need more, opt in
+      {/* PREVIEW — new 2026-07-27, answers "what happens after I join?" with
+          an illustrative example of one real month's chart, same six
+          categories and layout as the actual member dashboard. */}
+      <section className="py-20 px-8">
+        <div className="max-w-[1080px] mx-auto">
+          <div className="text-center max-w-[560px] mx-auto mb-4">
+            <div className="text-xs tracking-[0.12em] uppercase text-gold-deep font-semibold">
+              what you&apos;ll actually see
             </div>
-            <h3 className="text-2xl text-indigo mt-2">A peek inside</h3>
-            <p className="text-ink/68 text-sm mt-2.5 max-w-[480px] mx-auto">
-              Not everyone needs all of these — but if one applies to you,
-              it&apos;s one tap away. No pressure to take on more than
-              you&apos;re ready for.
+            <h2 className="text-[32px] text-indigo mt-2">
+              A peek at one month&apos;s chart
+            </h2>
+            <p className="text-ink/68 text-[15px] mt-3">
+              This is an example, not your real data — the day you join,
+              you&apos;ll see this same layout filled in for your own stage.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-4.5">
-            {trackCards.map((t) => (
-              <Link
-                key={t.title}
-                href={dest("/dashboard/care")}
-                className="block bg-indigo rounded-2xl p-5.5 text-ivory hover:opacity-95 transition-opacity"
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
+            {previewCards.map((c) => (
+              <div
+                key={c.label}
+                className="bg-ivory-2 rounded-2xl border border-line p-6"
+                style={{ borderTop: `3px solid var(--color-${c.accent})` }}
               >
-                <span className="inline-block text-[10px] font-bold uppercase tracking-wide text-gold bg-gold/[0.14] px-2.5 py-1 rounded-full mb-3">
-                  {t.tag}
-                </span>
-                <h4 className="text-base mb-2">{t.title}</h4>
-                <p className="text-[13px] text-ivory/70">{t.body}</p>
-              </Link>
+                <h3 className="font-display text-lg text-indigo mb-2">{c.label}</h3>
+                <p className="text-sm text-ink/70 leading-snug">{c.line}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -435,7 +458,7 @@ export default async function Home() {
         <div className="max-w-[1080px] mx-auto">
           <div className="text-center max-w-[560px] mx-auto mb-12">
             <div className="text-xs tracking-[0.12em] uppercase text-sage-deep font-semibold">
-              from the circle
+              from the community
             </div>
             <h2 className="text-[32px] text-indigo mt-2">Real talk, real village</h2>
           </div>
@@ -467,33 +490,68 @@ export default async function Home() {
             </div>
             <h2 className="text-[32px] text-indigo mt-2">Simple, honest pricing</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-6 max-w-[720px] mx-auto">
+          <div className="grid md:grid-cols-2 gap-6 max-w-[720px] mx-auto mb-10">
             <div className="rounded-[20px] p-8.5 border border-line bg-ivory-2">
               <div className="text-[13px] uppercase tracking-wide font-semibold opacity-70">
                 Budget map
               </div>
               <div className="font-display text-[34px] my-2">₹49</div>
-              <ul className="text-sm space-y-0">
-                <li className="py-1.5 border-t border-black/[0.08]">Full 0–3 year cost planner</li>
-                <li className="py-1.5 border-t border-black/[0.08]">One-time download</li>
-                <li className="py-1.5 border-t border-black/[0.08]">No login needed</li>
+              <ul className="text-sm space-y-0 mb-4">
+                <li className="py-1.5 border-t border-black/[0.08]">A stage-by-stage cost breakdown — pregnancy &amp; delivery, newborn essentials, first year, toddler years</li>
+                <li className="py-1.5 border-t border-black/[0.08]">Exactly which government schemes lower your real cost (JSSK, PMSMA, PMMVY, free immunizations)</li>
+                <li className="py-1.5 border-t border-black/[0.08]">A realistic, judgment-free number — not an inflated shopping list</li>
               </ul>
+              <Link
+                href={dest("/budget-calculator")}
+                className="block text-center text-sm font-semibold px-6 py-2.5 rounded-full border-[1.5px] border-indigo text-indigo hover:bg-indigo/5 transition-colors"
+              >
+                Get the budget map
+              </Link>
             </div>
             <div className="rounded-[20px] p-8.5 bg-indigo text-ivory">
               <div className="text-[13px] uppercase tracking-wide font-semibold opacity-70">
                 Village membership
               </div>
               <div className="font-display text-[34px] my-2">₹299/mo</div>
-              <ul className="text-sm space-y-0">
+              <ul className="text-sm space-y-0 mb-4">
                 <li className="py-1.5 border-t border-ivory/15">Monthly chart, every month</li>
                 <li className="py-1.5 border-t border-ivory/15">All 6 books, included</li>
-                <li className="py-1.5 border-t border-ivory/15">Full access to the circle</li>
+                <li className="py-1.5 border-t border-ivory/15">Full access to Wealth, Care Chart, and Community</li>
               </ul>
+              <Link
+                href={dest("/dashboard")}
+                className="block text-center text-sm font-semibold px-6 py-2.5 rounded-full bg-gold-deep text-ivory hover:opacity-90 transition-opacity"
+              >
+                Join the village
+              </Link>
             </div>
           </div>
-          <p className="text-center font-display italic text-[15px] text-sage-deep mt-7">
+          <p className="text-center font-display italic text-[15px] text-sage-deep mb-10">
             Most months, what you save covers what you spend.
           </p>
+
+          {/* CREDIBILITY + SAFETY — added 2026-07-27 per Roop's review.
+              Personal-bio line intentionally left as a placeholder — needs
+              her own words, not invented credentials. */}
+          <div className="max-w-[640px] mx-auto bg-ivory-2 rounded-2xl border border-line p-7 text-center">
+            <p className="text-sm text-ink/80 leading-relaxed mb-3">
+              {/* TODO (Roop): replace with your own 1-2 line story/background */}
+              Mom&apos;s Village is built by Roop, an Indian mother who built
+              the resource she couldn&apos;t find herself.
+            </p>
+            <p className="text-sm text-ink/80 leading-relaxed">
+              Every medical, financial, and government-scheme claim in the app
+              is independently checked against primary sources — WHO, CDC,
+              ACOG, Mayo Clinic, RBI, SEBI, and official Indian government
+              portals — before it&apos;s published, not just written from
+              memory.
+            </p>
+            <p className="text-xs text-ink/50 mt-4 italic">
+              This app offers general guidance, not medical or financial
+              advice. Always check with your own doctor before starting or
+              changing any exercise, feeding, or recovery routine.
+            </p>
+          </div>
         </div>
       </section>
 

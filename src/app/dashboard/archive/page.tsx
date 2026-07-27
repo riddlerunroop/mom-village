@@ -32,7 +32,7 @@ export default async function ArchivePage() {
       </div>
       <h1 className="font-display text-[30px] text-indigo mb-2">Your archive</h1>
       <p className="text-sm text-ink/65 mb-10 max-w-[540px]">
-        Every month you've already passed, always here to revisit — whether
+        Every month you&apos;ve already passed, always here to revisit — whether
         you missed it the first time or just want to look back.
       </p>
 

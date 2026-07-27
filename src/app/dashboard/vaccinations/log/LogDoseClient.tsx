@@ -169,7 +169,7 @@ export default function LogDoseClient() {
         Photograph the card
       </h1>
       <p className="text-sm text-ink/65 mb-8">
-        We'll try to read the vaccine and date for you — always double-check
+        We&apos;ll try to read the vaccine and date for you — always double-check
         before saving, handwriting can be hard to read.
       </p>
 

@@ -71,12 +71,27 @@ export default function PushSubscribeButton() {
       if (!user) return;
 
       const json = subscription.toJSON();
-      await supabase.from("user_push_subscriptions").insert({
-        user_id: user.id,
-        endpoint: json.endpoint!,
-        p256dh: json.keys!.p256dh!,
-        auth: json.keys!.auth!,
-      });
+      // Upsert on endpoint, not a plain insert: the endpoint is unique per
+      // browser subscription, so if this device already has a row (e.g. it
+      // was cleaned up server-side after a delivery failure but the
+      // browser-level subscription itself is still live), this updates that
+      // row instead of failing against the unique constraint.
+      const { error: upsertError } = await supabase
+        .from("user_push_subscriptions")
+        .upsert(
+          {
+            user_id: user.id,
+            endpoint: json.endpoint!,
+            p256dh: json.keys!.p256dh!,
+            auth: json.keys!.auth!,
+          },
+          { onConflict: "endpoint" }
+        );
+
+      if (upsertError) {
+        setError("Couldn't turn on reminders — try again in a moment.");
+        return;
+      }
 
       setStatus("subscribed");
     } catch {

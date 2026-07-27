@@ -104,7 +104,7 @@ export default function CareCheckinPage() {
           </div>
 
           <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
-            How's your energy today?
+            How&apos;s your energy today?
           </label>
           <div className="flex justify-between gap-1.5 mb-2">
             {SCALE.map((n) => (
@@ -164,8 +164,8 @@ export default function CareCheckinPage() {
           </button>
 
           <p className="text-[11px] text-ink/50 mt-4 text-center italic">
-            However you answer today is exactly right — as long as you're
-            okay, that's what matters.
+            However you answer today is exactly right — as long as you&apos;re
+            okay, that&apos;s what matters.
           </p>
         </form>
       </div>

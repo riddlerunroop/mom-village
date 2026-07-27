@@ -48,7 +48,7 @@ export default async function WealthPage() {
             className="block bg-ivory-2 rounded-2xl border border-line p-7 hover:border-gold-deep/40 transition-colors"
           >
             <div className="text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold mb-2">
-              what you're entitled to
+              what you&apos;re entitled to
             </div>
             <h3 className="font-display text-xl text-indigo mb-2">
               Government Benefits &amp; Savings Directory

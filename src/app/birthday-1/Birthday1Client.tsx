@@ -48,14 +48,14 @@ export default function Birthday1Client({ babyName }: { babyName: string }) {
         <p className="text-ivory/75 text-[15px] mb-8 leading-relaxed">
           {babyName === "your little one" ? "She's" : `${babyName} is`} one
           today. However this year actually went — the hard nights, the
-          small wins, the moments you'll never quite remember and the ones
-          you'll never forget — you got here. Both of you.
+          small wins, the moments you&apos;ll never quite remember and the ones
+          you&apos;ll never forget — you got here. Both of you.
         </p>
 
         <div className="bg-ivory/10 rounded-2xl p-6 mb-8 text-left">
           <p className="text-ivory text-sm leading-relaxed font-display italic">
-            "The first year isn't really about the baby learning to walk.
-            It's about you learning you could carry this — and did."
+            &ldquo;The first year isn&apos;t really about the baby learning to walk.
+            It&apos;s about you learning you could carry this — and did.&rdquo;
           </p>
         </div>
 

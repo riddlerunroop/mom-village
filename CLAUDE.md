@@ -4,6 +4,40 @@
 
 *This section is maintained by Claude at the end of every significant session. Read this first in any new chat — it replaces needing to re-explain context. Update it whenever something material changes (content locked, feature shipped, decision made).*
 
+## Pre-Razorpay site health audit — 2026-07-27
+
+Roop's instruction before touching Razorpay: "I want the website to work properly before Razorpay — analyse it." Full pass across the codebase and the live deployed site.
+
+**Fixed:**
+- 34 pre-existing ESLint problems (33 errors, 1 unused-import warning) across 10 files that had never been touched by a full-repo lint run before — all unescaped `'`/`"` characters inside JSX text (`react/no-unescaped-entities`) in `birthday-1/2/3`, `care-checkin`, `care-quiz`, `dashboard/archive`, `dashboard/vaccinations` (page + log), `dashboard/wealth`, and `welcome-baby`. Whole repo now verified clean on `npx eslint .` and `npx tsc --noEmit`, not just files touched in a given session.
+- A real edge-case bug in `PushSubscribeButton.tsx`: it used a plain `insert` instead of an `upsert`, so a device re-subscribing after its DB row was cleaned up (e.g. after a delivery failure) would silently fail against the `endpoint` unique constraint. Changed to `upsert(..., { onConflict: "endpoint" })` and now surfaces the error instead of assuming success. This also exposed that `migration_23` never added an UPDATE policy on `user_push_subscriptions` (only SELECT/INSERT/DELETE) — added in `supabase/migration_24_push_subscriptions_update_policy.sql`. **Not yet deployed** — needs the migration run plus a GitHub Desktop push.
+
+**Checked, no issues found:**
+- Every internal `href`/`Link` target in `src/` resolves to a real route; every `fetch("/api/...")` call matches a real API route.
+- Every pillar/content page consistently gates on `hasActiveSubscription` and actually branches on the result (no orphaned checks). Auth protection for everything under `/dashboard/*` comes from the shared `dashboard/layout.tsx` (`redirect("/login")` if no user) rather than per-page middleware — confirmed this covers every page under it, including ones using non-null `user!.id` assertions.
+- Live homepage and login page fetch and render without errors.
+
+**Real finding, not yet acted on — flagged to Roop, needs a decision, not a silent fix:** the public homepage's marketing copy has drifted from what's actually built and wasn't updated as pillars were built out:
+- The Community section promises "No profiles, no performing" and describes "small group spaces" — but the actual built Community (confirmed scope, migration_11) is a single flat forum showing mothers' **real profile names**, not anonymous, and has no groups to join. A mother reading the homepage would form a false expectation about anonymity before joining.
+- The Wealth pillar isn't mentioned or linked anywhere on the public homepage (nav or content sections) despite being a fully built pillar — schemes directory, savings guidance, the budget calculator, and a cross-linked book.
+- The "more than a workout" Care Chart section describes a structure (Normal-delivery/C-section toggle, Body/Food/Mind/Life categories, "diastasis recti recovery," problem-specific plates) that doesn't match what was actually built this session (Body/Food/Mind/Skin/Rediscover across all 9 phases spanning pregnancy through year three, "Care Step" naming, named exercises) — reads like earlier planning-stage copy that was never reconciled with the real build.
+
+This is a content/promise-accuracy issue, not a functional bug — worth a decision from Roop on whether/how to update the homepage copy before real payments start, since overselling or misdescribing what's included matters more once money's involved.
+
+**Homepage rebuilt, 2026-07-27, based on Roop's own review of the live page (she gave it a genuinely thorough read and flagged specific, correct issues).** Her top finding was the real one: both hero buttons ("Get the ₹49 budget map" and "Join for ₹299/month") were plain `<button>` elements with no `href`/`onClick` at all — completely dead, the main conversion paths did nothing. Fixed, along with a second instance of the exact same bug found while shortening the fitness section (the "Normal delivery" / "C-section recovery" toggle buttons were also non-functional decoration).
+
+Full list of what changed in `src/app/page.tsx`:
+- **Hero buttons fixed** — both now real links via the existing `dest()` helper (routes through login/onboarding if logged out, straight to the real page if already a member).
+- **Wealth added as a 4th pillar card** (was completely missing from the homepage despite being a full built pillar) — pillars section is now "Four things," not three.
+- **Community copy corrected** — no longer promises "no profiles, no performing" / "small group spaces"; now accurately describes the real one-open-forum-under-your-real-name feature.
+- **Fitness/Care section drastically shortened** — replaced two long grids (10 cards total) plus the dead toggle buttons with five short cards, one per real pillar (Body/Food/Mind/Skin/Rediscover). Also removed the unverified "written with a perinatal mental health professional" claim (no such reviewer is actually part of this project's workflow) and replaced it with the true, strong claim: every medical claim is independently checked against sources like ACOG/WHO/Mayo Clinic before publishing — which matches this project's actual, extensively-documented verification discipline.
+- **New "what you'll actually see" preview section** — an illustrative mockup of one month's chart using the same six real categories and visual language as the actual `MonthlyChartGrid` component, clearly labelled as an example rather than live data. This answers Roop's "what happens after I join?" ask; a real screenshot of the live dashboard would be even stronger if she wants to swap one in later (Claude didn't have a logged-in session to capture one directly this pass).
+- **Credibility + medical-safety block added near pricing** — states the independent-verification workflow (true and strong) plus a standard "general guidance, not medical/financial advice, check with your doctor" disclaimer. **Contains one placeholder Claude could not fill in honestly: a one-line "who built this" bio.** Currently reads "built by Roop, an Indian mother who built the resource she couldn't find herself" — generic on purpose, since fabricating credentials/qualifications would be dishonest. Roop should replace this with her own words (and mention any real relevant background, if she has any) before this goes live for real.
+- **₹49 budget map pricing card fixed** — removed the "No login needed" bullet, which is currently false (the route requires full sign-in + subscription until Razorpay's standalone-purchase flow exists — see the Budget Planner section above). Replaced with three concrete lines describing exactly what the buyer receives (stage-by-stage cost breakdown, named government schemes, realistic non-inflated numbers) plus a real "Get the budget map" button on both pricing cards.
+- Books section and community testimonials section left as-is (already accurate).
+
+Verified clean on `tsc`/`eslint`. **Not yet deployed** — needs a GitHub Desktop push. **Needs Roop's input before it's truly done:** the placeholder bio line near pricing.
+
 *Last updated: 2026-07-25 — Voice-log memories + recall built*
 
 ## What it is
@@ -288,7 +322,7 @@ left join community_threads t on t.id = r.thread_id
 left join community_replies rep on rep.id = r.reply_id
 order by r.created_at desc;
 ```
-Verified clean on `tsc`/`eslint`. **Not yet deployed** — needs the Supabase migration run plus a GitHub Desktop push.
+Verified clean on `tsc`/`eslint`. **Status: FULLY LIVE, confirmed 2026-07-27.** Migration run in Supabase (verified via query), code pushed via GitHub Desktop.
 
 ## Roadmap decision — native app confirmed, 2026-07-21
 
@@ -308,7 +342,7 @@ Added `web-push` + `@types/web-push` to `package.json` (same "Vercel installs it
 - `CRON_SECRET` — any long random string Roop makes up herself, used as-is in Vercel's environment variables.
 All four go into Vercel exactly like `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` did (Settings → Environment Variables), then the app needs a redeploy for them to take effect.
 
-**Status: built, not yet deployed.** Needs: the Supabase migration run, all four new environment variables added to Vercel, and a GitHub Desktop push (`vercel.json` is new at the repo root, so make sure GitHub Desktop picks it up alongside the usual `src/`/`supabase/` changes).
+**Status: FULLY LIVE, confirmed 2026-07-27.** Migration run in Supabase (verified via query), all five environment variables added to Vercel (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`), code pushed via GitHub Desktop. A mother can turn on reminders from her account page, and the daily vaccination-reminder cron job is live.
 
 ### Original deferral reasoning, 2026-07-21 (superseded above for the web half)
 

@@ -47,19 +47,19 @@ export default function Birthday2Client({ babyName }: { babyName: string }) {
           two whole years
         </div>
         <h1 className="font-display text-[38px] text-ivory mb-4 leading-tight">
-          Two years. Look how far you've both come.
+          Two years. Look how far you&apos;ve both come.
         </h1>
         <p className="text-ivory/75 text-[15px] mb-8 leading-relaxed">
           {babyName === "your little one" ? "They're" : `${babyName} is`} two
           today — no longer a baby, fully a little person with their own
-          words, will, and ways. And you've been there for every single day
-          of it. That's not a small thing. That's the whole thing.
+          words, will, and ways. And you&apos;ve been there for every single day
+          of it. That&apos;s not a small thing. That&apos;s the whole thing.
         </p>
 
         <div className="bg-ivory/10 rounded-2xl p-6 mb-8 text-left">
           <p className="text-ivory text-sm leading-relaxed font-display italic">
-            "You didn't just keep them alive for two years. You gave them a
-            world to feel safe in. Everything they become starts there."
+            &ldquo;You didn&apos;t just keep them alive for two years. You gave them a
+            world to feel safe in. Everything they become starts there.&rdquo;
           </p>
         </div>
 

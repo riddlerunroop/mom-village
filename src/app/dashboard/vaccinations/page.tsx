@@ -76,13 +76,13 @@ export default async function VaccinationsPage() {
       </Link>
 
       <div className="mb-2 text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold">
-        {babyName}'s vaccination card
+        {babyName}&apos;s vaccination card
       </div>
       <h1 className="font-display text-[30px] text-indigo mb-2">Vaccinations</h1>
       <p className="text-sm text-ink/65 mb-8 max-w-[560px]">
         Track doses against the government schedule, and log a new one by
         photographing the card — this is a reference, not medical advice;
-        always follow your pediatrician's guidance.
+        always follow your pediatrician&apos;s guidance.
       </p>
 
       {!isSubscribed ? (
@@ -93,7 +93,7 @@ export default async function VaccinationsPage() {
       ) : !profile?.baby_dob ? (
         <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
           <p className="font-display italic text-lg text-sage-deep">
-            Once your baby's born, their vaccination schedule will show up
+            Once your baby&apos;s born, their vaccination schedule will show up
             here.
           </p>
         </div>

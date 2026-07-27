@@ -37,7 +37,7 @@ export default function WelcomeBabyClient({
     <div className="min-h-screen bg-indigo flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-[480px] text-center">
         <div className="text-xs uppercase tracking-[0.14em] text-gold font-semibold mb-4">
-          she's here
+          she&apos;s here
         </div>
         <h1 className="font-display text-[36px] text-ivory mb-4 leading-tight">
           Welcome to the other side.
@@ -53,7 +53,7 @@ export default function WelcomeBabyClient({
         {hasGap && (
           <div className="bg-ivory/10 rounded-2xl p-6 mb-8 text-left">
             <p className="text-ivory text-sm leading-relaxed">
-              You're already at <strong>{currentMonthLabel.toLowerCase()}</strong> —
+              You&apos;re already at <strong>{currentMonthLabel.toLowerCase()}</strong> —
               no need to rush and catch up. Everything from her very first
               weeks, including the essentials on safe sleep and feeding, is
               saved and waiting for you, whenever you want it. Nothing is

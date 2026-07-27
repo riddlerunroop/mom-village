@@ -53,23 +53,23 @@ export default function Birthday3Client({ babyName }: { babyName: string }) {
           {babyName === "your little one" ? "They're" : `${babyName} is`}{" "}
           three today — from the very first flutter you felt, through
           every month since, to the little person standing in front of you
-          now. Neither of you are who you were when this started. That's
+          now. Neither of you are who you were when this started. That&apos;s
           the whole point.
         </p>
 
         <div className="bg-ivory/10 rounded-2xl p-6 mb-8 text-left">
           <p className="text-ivory text-sm leading-relaxed font-display italic">
-            "Before this began, you didn't know this person yet — and now
-            you can't imagine your life without them. That's not luck.
-            That's what you built, one ordinary day at a time."
+            &ldquo;Before this began, you didn&apos;t know this person yet — and now
+            you can&apos;t imagine your life without them. That&apos;s not luck.
+            That&apos;s what you built, one ordinary day at a time.&rdquo;
           </p>
         </div>
 
         <p className="text-ivory/75 text-[15px] mb-8 leading-relaxed">
           This is also where our day-by-day chart wraps up — we walked
-          with you from that very first month to this birthday, and it's
+          with you from that very first month to this birthday, and it&apos;s
           been an honour to be part of the village along the way. Whatever
-          comes next for your family, you're carrying it forward with a
+          comes next for your family, you&apos;re carrying it forward with a
           bond three years in the making.
         </p>
 
