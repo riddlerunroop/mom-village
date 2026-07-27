@@ -70,6 +70,13 @@ export default async function LibraryBookPage({
 
   const content = meta.hasReader ? await loadContent(slug) : null;
 
+  const { data: progress } = await supabase
+    .from("user_reading_progress")
+    .select("page_index")
+    .eq("user_id", user!.id)
+    .eq("book_slug", slug)
+    .maybeSingle();
+
   if (!content) {
     return (
       <main className="max-w-[900px] mx-auto px-6 py-10 text-center">
@@ -88,6 +95,11 @@ export default async function LibraryBookPage({
 
   const related = RELATED_PAGE[slug];
 
+  // Clamp against the book's actual page count in case content changed
+  // since her progress was last saved.
+  const maxLeaf = content.pages.length + 1; // last content page or the end page
+  const initialPage = Math.max(0, Math.min(progress?.page_index ?? 0, maxLeaf));
+
   return (
     <main className="max-w-[900px] mx-auto px-6 py-8">
       {related && (
@@ -98,7 +110,13 @@ export default async function LibraryBookPage({
           </Link>
         </p>
       )}
-      <BookReader title={meta.title} cover={meta.cover} pages={content.pages} />
+      <BookReader
+        title={meta.title}
+        cover={meta.cover}
+        pages={content.pages}
+        bookSlug={slug}
+        initialPage={initialPage}
+      />
     </main>
   );
 }

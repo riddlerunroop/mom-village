@@ -3,6 +3,7 @@
 import { forwardRef, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import HTMLFlipBook from "react-pageflip";
+import { createClient } from "@/lib/supabase/client";
 import type { LibraryBlock, LibraryPage } from "@/types/library-content";
 
 function Block({ block }: { block: LibraryBlock }) {
@@ -145,14 +146,21 @@ export default function BookReader({
   title,
   cover,
   pages,
+  bookSlug,
+  initialPage = 0,
 }: {
   title: string;
   cover: string;
   pages: LibraryPage[];
+  bookSlug: string;
+  initialPage?: number;
 }) {
+  const supabase = useMemo(() => createClient(), []);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const bookRef = useRef<HTMLFlipBook>(null);
-  const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(initialPage);
+  const [showResumeNote, setShowResumeNote] = useState(initialPage > 0);
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalLeaves = pages.length + 2; // cover + content pages + end page
 
@@ -167,9 +175,33 @@ export default function BookReader({
     }
   };
 
+  // Debounced save so flipping quickly through several pages doesn't fire a
+  // write per page — only the position she settles on gets saved, about
+  // 700ms after her last flip.
+  const saveProgress = (pageIndex: number) => {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current);
+    saveTimeout.current = setTimeout(async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from("user_reading_progress").upsert(
+        {
+          user_id: user.id,
+          book_slug: bookSlug,
+          page_index: pageIndex,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,book_slug" }
+      );
+    }, 700);
+  };
+
   const handleFlip = (e: { data: number }) => {
     setCurrent(e.data);
+    setShowResumeNote(false);
     playTurn();
+    saveProgress(e.data);
   };
 
   const goNext = () => {
@@ -208,6 +240,12 @@ export default function BookReader({
         </div>
       </div>
 
+      {showResumeNote && (
+        <p className="text-[11px] text-sage-deep font-semibold mb-2">
+          Picking up where you left off
+        </p>
+      )}
+
       <div className="relative select-none">
         <HTMLFlipBook
           ref={bookRef}
@@ -226,6 +264,7 @@ export default function BookReader({
           useMouseEvents={true}
           className="library-flipbook"
           style={{}}
+          startPage={initialPage}
           onFlip={handleFlip}
         >
           {bookElements}
