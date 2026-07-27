@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import ReplyForm from "./ReplyForm";
+import ReportButton from "./ReportButton";
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
@@ -74,18 +75,21 @@ export default async function ThreadPage({
         <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-wrap mb-4">
           {thread.body}
         </p>
-        <div className="flex items-center gap-3 text-xs text-ink/50">
-          <span className="font-semibold text-sage-deep">
-            {namesByUserId[thread.user_id]}
-          </span>
-          <span>·</span>
-          <span>{formatWhen(thread.created_at)}</span>
-          {thread.tags && thread.tags.length > 0 && (
-            <>
-              <span>·</span>
-              <span>{thread.tags.join(", ")}</span>
-            </>
-          )}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 text-xs text-ink/50">
+            <span className="font-semibold text-sage-deep">
+              {namesByUserId[thread.user_id]}
+            </span>
+            <span>·</span>
+            <span>{formatWhen(thread.created_at)}</span>
+            {thread.tags && thread.tags.length > 0 && (
+              <>
+                <span>·</span>
+                <span>{thread.tags.join(", ")}</span>
+              </>
+            )}
+          </div>
+          <ReportButton threadId={thread.id} />
         </div>
       </div>
 
@@ -104,12 +108,15 @@ export default async function ThreadPage({
             <p className="text-sm text-ink/80 leading-relaxed whitespace-pre-wrap mb-3">
               {reply.body}
             </p>
-            <div className="flex items-center gap-3 text-xs text-ink/50">
-              <span className="font-semibold text-sage-deep">
-                {namesByUserId[reply.user_id]}
-              </span>
-              <span>·</span>
-              <span>{formatWhen(reply.created_at)}</span>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-xs text-ink/50">
+                <span className="font-semibold text-sage-deep">
+                  {namesByUserId[reply.user_id]}
+                </span>
+                <span>·</span>
+                <span>{formatWhen(reply.created_at)}</span>
+              </div>
+              <ReportButton replyId={reply.id} />
             </div>
           </div>
         ))}

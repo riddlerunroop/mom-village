@@ -278,13 +278,39 @@ Confirmed with Roop: **Orkut Communities model.** Topic-based discussion threads
 
 **Built 2026-07-21 — not yet migrated/deployed.** `supabase/migration_11_community.sql` (creates `community_threads` + `community_replies` with full-text search via a generated `tsvector` column, drops the old unused groups-based draft tables from `schema.sql`, adds a `community_author_names` view so mothers can see each other's names without loosening `profiles`' own-row-only RLS), `src/app/dashboard/community/page.tsx` (thread list + search bar, subscription-gated), `src/app/dashboard/community/new/page.tsx` + `NewThreadClient.tsx` (start a thread, free-text tags), `src/app/dashboard/community/[threadId]/page.tsx` + `ReplyForm.tsx` (thread detail + replies). Nav entry already existed in `DashboardNav.tsx` from earlier scaffolding — no change needed there.
 
-**Status: FULLY LIVE 2026-07-21.** Migration ran successfully in Supabase (after one fix — the original `search_doc` generated column used `to_tsvector`, which Postgres treats as STABLE not IMMUTABLE, so generated columns rejected it; switched to a plain column filled by a BEFORE INSERT/UPDATE trigger instead). Code committed and pushed via GitHub Desktop, deploying on Vercel. A mother can now open Community, search past discussions, start a new thread, and reply — under her real profile name, no groups to join. Nothing left to do here unless Roop wants moderation/reporting added (explicitly deferred) or asks for changes.
+**Status: FULLY LIVE 2026-07-21.** Migration ran successfully in Supabase (after one fix — the original `search_doc` generated column used `to_tsvector`, which Postgres treats as STABLE not IMMUTABLE, so generated columns rejected it; switched to a plain column filled by a BEFORE INSERT/UPDATE trigger instead). Code committed and pushed via GitHub Desktop, deploying on Vercel. A mother can now open Community, search past discussions, start a new thread, and reply — under her real profile name, no groups to join.
+
+**Moderation/reporting — built 2026-07-27,** picked up as part of Roop's "finish building everything" instruction. Minimum viable version, matching how every other piece of content in this app is reviewed — no in-app admin panel. `supabase/migration_22_community_moderation.sql` adds an `is_hidden` flag to both `community_threads` and `community_replies` (hidden content stops showing for everyone, including its own author — a real moderation action, not a personal filter) and a `community_reports` table (insert-only via RLS; no select policy, since Roop reviews reports directly in Supabase as the table owner, same as every other content review in this project). `src/app/dashboard/community/[threadId]/ReportButton.tsx` is a small client component wired next to both the thread and every reply — a mother can flag something with a short reason. To hide something after reviewing a report, Roop runs `update community_threads set is_hidden = true where id = '...'` (or the equivalent on `community_replies`) directly in Supabase's SQL editor — reversible by setting it back to `false`. A handy review query to save in Supabase:
+```sql
+select r.id, r.reason, r.created_at, t.title as thread_title, t.body as thread_body, rep.body as reply_body
+from community_reports r
+left join community_threads t on t.id = r.thread_id
+left join community_replies rep on rep.id = r.reply_id
+order by r.created_at desc;
+```
+Verified clean on `tsc`/`eslint`. **Not yet deployed** — needs the Supabase migration run plus a GitHub Desktop push.
 
 ## Roadmap decision — native app confirmed, 2026-07-21
 
 Roop confirmed mom-village is planned as **both a website and a native app**, with the app eventually launching on Google Play and the App Store. Not started, no timeline set — noted here so future sessions don't assume web-only. This surfaced while scoping push notifications (see below) and matters for that build specifically: native push uses APNs/FCM, different from Web Push.
 
-## Push notifications — explicitly deferred, 2026-07-21
+## Push notifications — web half built 2026-07-27
+
+Scoped 2026-07-21 (see below for the original deferral reasoning), picked up as part of Roop's "finish building everything" instruction. Built the **web** half only — the native half still waits on the native app existing at all, which hasn't started. Designed once, so the same `src/lib/push.ts` and `user_push_subscriptions` table can serve all three originally-scoped use cases (vaccination due-date reminders, weekly Care Chart nudges, monthly chart delivery messages) — only vaccination reminders actually send today; the other two are straightforward to add later as their own cron routes calling the same `sendPushToUser()`.
+
+**Build:** `supabase/migration_23_push_subscriptions.sql` — `user_push_subscriptions` (one row per subscribed device, standard per-user RLS) and `user_vaccination_reminder_log` (internal bookkeeping, no RLS policies, written only by the cron job via the service-role key — tracks the last date each mother was reminded so the same "due today" push never sends twice). `public/sw.js` — the service worker: shows a notification on `push`, opens/focuses the right page on `notificationclick`. `src/lib/supabase/service.ts` — a service-role Supabase client (bypasses RLS), used only by server-side cron routes that need to look across every mother at once, never by anything a browser can trigger. `src/lib/push.ts` — `sendPushToUser(userId, payload)`, configured with VAPID keys, sends to every device a mother's subscribed on and quietly drops any subscription the browser reports as gone (410/404). `src/components/PushSubscribeButton.tsx` — client component handling the permission request + service-worker registration + `pushManager.subscribe()` + saving the subscription; wired into a new "Reminders" card on the account page (`src/app/dashboard/account/page.tsx`). `src/app/api/cron/vaccination-reminders/route.ts` — the first real trigger: runs daily via Vercel Cron (`vercel.json`, 3:30am UTC / 9am IST), checks every subscribed+actively-subscribed mother with a baby already born, and sends one batched notification the day any UIP dose's due window opens (not yet a repeat nudge for doses that go on to become overdue unlogged — a reasonable future refinement, not built here). Auth'd via a `CRON_SECRET` bearer check so the route can't be triggered by guessing its URL.
+
+Added `web-push` + `@types/web-push` to `package.json` (same "Vercel installs it automatically on next deploy" pattern as every other dependency added this way). Verified clean on `tsc`/`eslint`.
+
+**New setup steps for Roop, same "generate once, paste into Vercel" pattern as the Anthropic/OpenAI keys:**
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — a matched key pair Claude generated for this project (values given in chat) — not a third-party account, just a key pair unique to Mom Village's push setup.
+- `SUPABASE_SERVICE_ROLE_KEY` — from Supabase → Project Settings → API → the `service_role` key (different from the existing anon key already in use everywhere else).
+- `CRON_SECRET` — any long random string Roop makes up herself, used as-is in Vercel's environment variables.
+All four go into Vercel exactly like `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` did (Settings → Environment Variables), then the app needs a redeploy for them to take effect.
+
+**Status: built, not yet deployed.** Needs: the Supabase migration run, all four new environment variables added to Vercel, and a GitHub Desktop push (`vercel.json` is new at the repo root, so make sure GitHub Desktop picks it up alongside the usual `src/`/`supabase/` changes).
+
+### Original deferral reasoning, 2026-07-21 (superseded above for the web half)
 
 Roop wants real push notifications eventually (vaccination due-date reminders, weekly Care Chart nudges, monthly chart delivery messages) across both web and the future native app. This is real infrastructure (service worker + subscription storage + a trigger mechanism for web; APNs/FCM for native) and was deliberately **not** built as a side effect of vaccination tracking. Sequencing decision: ship vaccination tracking now with an in-app due/overdue banner (no new infra), build push notifications later as its own dedicated thread — designed once, serving all three use cases above.
 

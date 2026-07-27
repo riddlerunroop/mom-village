@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import AccountForm from "./AccountForm";
+import PushSubscribeButton from "@/components/PushSubscribeButton";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -69,6 +70,14 @@ export default async function AccountPage() {
         babyDob={profile?.baby_dob ?? ""}
         dueDate={profile?.due_date ?? ""}
       />
+
+      <div className="bg-ivory-2 rounded-2xl border border-line p-6 mt-8">
+        <h2 className="font-display text-lg text-indigo mb-1">Reminders</h2>
+        <p className="text-sm text-ink/65 mb-4">
+          Get a notification on this device when a vaccination dose is due.
+        </p>
+        <PushSubscribeButton />
+      </div>
 
       <div className="flex items-center gap-5 mt-8">
         <Link
