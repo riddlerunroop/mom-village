@@ -222,7 +222,7 @@ export default async function CarePage({
                     <li key={item.id}>
                       <p className="text-sm font-semibold text-ink">
                         {item.title}
-                        {TIME_BADGES[item.time_option] && (
+                        {TIME_BADGES[item.time_option] && item.title !== TIME_BADGES[item.time_option] && (
                           <span className="ml-2 text-[11px] font-semibold text-sage-deep align-middle">
                             · {TIME_BADGES[item.time_option]}
                           </span>

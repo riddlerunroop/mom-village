@@ -152,7 +152,28 @@ Build: `supabase/migration_16_care_chart_early_healing_depth.sql`. No app code c
 
 Build: `supabase/migration_17_care_chart_finding_rhythm_depth.sql`. No app code changes needed beyond the phase-switcher above. **Not yet deployed.**
 
-**Paused here, 2026-07-25** — Roop is going to research the remaining 7 phases herself and bring findings back before the depth pass continues. Don't proceed further on this module until she does.
+**"Paused here" note above is superseded, 2026-07-27.** Roop reviewed the live Care Chart herself (screenshot from ~18 months postpartum: a card literally reading "30 min · 30 min / Your regular routine — whatever 'fit' means for you now.") and gave a new instruction: stop pausing phase-by-phase for her research — build the full depth-pass treatment across all remaining phases now, then do one comprehensive top-to-bottom review afterward and keep improving as needed. See the "All 9 phases now depth-passed" section below for what this produced.
+
+## Care Chart — all 9 phases now depth-passed, 2026-07-27
+
+Two things happened in the same pass, triggered by Roop's screenshot:
+
+**1. UI bug fix.** The screenshot's "30 min · 30 min" was a real display bug, not just weak content: for any phase not yet given the depth-pass treatment, the row's `title` column was literally the raw string "30 min" (or "5 min"/"15 min"), and the `TIME_BADGES` lookup added earlier in the project (to show duration as a small badge next to a real title) was rendering that same string a second time right next to itself. Fixed in `src/app/dashboard/care/page.tsx` with a guard — the badge only renders if `item.title !== TIME_BADGES[item.time_option]`. Verified clean on `tsc`/`eslint`.
+
+**2. Content depth pass extended to the remaining 7 phases.** Early healing and Finding rhythm already had this treatment (see above). Applied the same methodology to First trimester, Second trimester, Third trimester, Rebuilding (3-6mo), Settling into strength (6-12mo), Sustainable rhythms (1-2yr), and Your rhythm year three (2-3yr) — **all 9 phases are now depth-passed.** For each: named exercises with real technique/reps (bodyweight squats, glute bridges, forward lunges, standing pelvic tilts, cat-cow, bird dog, heel-slide-style progressions matched to the phase), a Rediscover pillar with 3 real Care Steps, and a phase mantra. Pregnancy phases' Food/Mind/Skin sections were already reasonably specific in the original lock, so those were largely left as-is (only lightly restructured into AM/PM where it helped); Body was consistently the weakest section across every unfinished phase and got the most rewriting, matching Roop's original complaint.
+
+New health-flag-gated rows added (independently verified — ACOG/AAFP/Mayo Clinic pregnancy-exercise-safety guidance, NASM/ACE strength-exercise technique, thyroid.org/ATA postpartum thyroiditis timing — see chat for full source list):
+- First trimester (`high_bp`): chronic-hypertension monitoring reminder.
+- Second trimester (`none`, universal): the 24-28 week glucose screening reminder — applies to all pregnant mothers, not flag-gated, since it's a universal test. (`pcos`): PCOS-specific reminder not to skip that same test, given higher GDM risk.
+- Third trimester (`high_bp`): preeclampsia-vigilance specifics (home BP checks, same-day-call warning signs).
+- Rebuilding, 3-6mo (`thyroid`): postpartum thyroiditis explainer — the 4-8 month window where unusual fatigue/low exercise tolerance can be thyroid-related, not just normal tiredness.
+- (PCOS and gestational-diabetes flags were already covered at Early healing and Finding rhythm respectively — see above.)
+
+Sustainable rhythms' Body section is the one from Roop's original screenshot — its 30-minute row is now titled "Whatever 'fit' means today" (previously the literal string "30 min", which is what caused the badge duplication) with an expanded body, while deliberately keeping the same non-prescriptive, anti-diet-culture spirit Roop had already approved ("consistency with something you don't dread beats an 'ideal' routine you abandon").
+
+Build: `supabase/migration_19_care_chart_pregnancy_depth.sql` (First/Second/Third trimester) and `supabase/migration_20_care_chart_later_postpartum_depth.sql` (Rebuilding/Settling into strength/Sustainable rhythms/Your rhythm year three). Both verified for balanced SQL syntax before being handed off. `src/app/dashboard/care/page.tsx`'s badge-bug fix is a code change. **Not yet deployed — needs both migrations run in Supabase (same paste-into-SQL-editor step as every other migration) plus a GitHub Desktop push for the `care/page.tsx` fix.** Once live, this is the "everything built" milestone Roop asked for — her planned next step is the full A-to-Z review pass across all 9 phases.
+
+**Still unconfirmed from earlier sessions, worth double-checking alongside this batch:** whether `migration_16` (Early healing depth pass) was actually run in Supabase, and whether the birth-date-prompt/confirm-birth feature was actually pushed via GitHub Desktop — both were built and verified but never got an explicit "done" from Roop.
 
 ## Wealth pillar — in progress (2026-07-21)
 
@@ -337,7 +358,7 @@ Scoped 2026-07-21, deprioritized behind vaccination tracking, picked back up onc
 - Linked from the Monthly Chart dashboard home (`src/app/dashboard/page.tsx`, "log a memory →"), same placement pattern as vaccination tracking — not given its own nav tab, since it's a bounded addition, not a 6th pillar.
 - `.env.local.example` documents the new `OPENAI_API_KEY` requirement alongside the existing `ANTHROPIC_API_KEY` note (recall also uses Anthropic, so that key now does double duty). Verified clean on `tsc`/`eslint`.
 
-**Status: code complete, not yet deployed.** Roop needs to: (1) run `migration_18_voice_photo_memories.sql` in Supabase, (2) get an OpenAI API key at platform.openai.com, add billing, and add `OPENAI_API_KEY` to Vercel's environment variables (same steps as the Anthropic key setup back on 2026-07-22), then (3) push the code via GitHub Desktop.
+**Status: FULLY LIVE, confirmed 2026-07-26.** Migration ran in Supabase, `OPENAI_API_KEY` added to Vercel, code pushed via GitHub Desktop — all confirmed done by Roop. A mother can now log voice notes and photos and ask the app to recall them.
 
 ## Other pillars/features still fully unbuilt
 
