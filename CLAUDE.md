@@ -40,6 +40,10 @@ Verified clean on `tsc`/`eslint`. **Not yet deployed** — needs a GitHub Deskto
 
 *Last updated: 2026-07-25 — Voice-log memories + recall built*
 
+## Next session plan — Razorpay, 2026-07-27
+
+Roop's plan: start Razorpay integration tomorrow. **Before that, she needs to buy a custom domain** — currently the site is only on mom-village.vercel.app, and a real domain will help with Razorpay's business verification (looks more legitimate than a vercel.app subdomain) as well as the app generally. Next session should start with domain purchase + connecting it to Vercel (Vercel project settings → Domains, plus a couple of DNS records at whichever registrar she picks), before moving into Razorpay setup itself.
+
 ## What it is
 
 Subscription app for Indian mothers, pregnancy through a child's third birthday (the "1,000-day journey"). Live at mom-village.vercel.app. Non-technical founder (Roop), builds through Claude. Full background: see `mom-village-project-overview.md` if present, but this file is the source of truth going forward.
