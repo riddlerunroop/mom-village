@@ -54,6 +54,17 @@ export default async function SavingsPage() {
             Adviser.
           </DisclaimerBox>
 
+          <NoteCard>
+            <span className="font-semibold text-ink">Want to go deeper? </span>
+            This page is the quick-reference version. Our Library book{" "}
+            <Link href="/dashboard/library/building-your-financial-security" className="underline text-gold-deep font-semibold">
+              Building Your Financial Security
+            </Link>{" "}
+            covers everything here in more depth, plus wills, power of
+            attorney, business succession, and retirement planning — ground
+            this page doesn&apos;t get into.
+          </NoteCard>
+
           <Section title="Start with stability, not an investment product">
             <p className="text-sm text-ink/75">
               Pregnancy and early motherhood bring planned expenses,

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
@@ -5,6 +6,17 @@ import { getBookMeta } from "@/lib/library";
 import LockedPreview from "@/components/LockedPreview";
 import BookReader from "@/components/BookReader";
 import type { LibraryBookContent } from "@/types/library-content";
+
+// Book <-> in-app-page cross-links, keyed by slug. Reciprocal to the note
+// added on the Wealth pillar's Savings & Financial Planning Guidance page
+// (2026-07-27) — she can go from the quick-reference page to this book for
+// depth, or the other way around, from the book back to the quick version.
+const RELATED_PAGE: Record<string, { href: string; label: string }> = {
+  "building-your-financial-security": {
+    href: "/dashboard/wealth/savings",
+    label: "In a hurry? The Savings & Financial Planning page in Wealth covers the essentials from this book in a quick-reference format.",
+  },
+};
 
 // All six books now have their paginated content wired up — each was
 // converted from its locked manuscript via the same docx -> HTML ->
@@ -74,8 +86,18 @@ export default async function LibraryBookPage({
     );
   }
 
+  const related = RELATED_PAGE[slug];
+
   return (
     <main className="max-w-[900px] mx-auto px-6 py-8">
+      {related && (
+        <p className="text-xs text-ink/50 text-center mb-3">
+          {related.label}{" "}
+          <Link href={related.href} className="underline text-gold-deep font-semibold">
+            Open it →
+          </Link>
+        </p>
+      )}
       <BookReader title={meta.title} cover={meta.cover} pages={content.pages} />
     </main>
   );
