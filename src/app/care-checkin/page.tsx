@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const TIME_OPTIONS = [
@@ -10,10 +11,29 @@ const TIME_OPTIONS = [
   { value: "30", label: "30 min" },
 ];
 
-const SCALE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// Rebuilt 2026-07-28 per Roop's review: 5 labeled choices, not a bare 1-10
+// scale — matches how she answers a real question, not a slider she has to
+// interpret. Values map to the new 1-5 range on user_daily_checkin (see
+// migration_25).
+const ENERGY_OPTIONS = [
+  { value: 1, label: "Running on empty" },
+  { value: 2, label: "Low, but here" },
+  { value: 3, label: "Steady" },
+  { value: 4, label: "Good energy" },
+  { value: 5, label: "Feeling strong" },
+];
 
-export default function CareCheckinPage() {
+const MOOD_OPTIONS = [
+  { value: 1, label: "Heavy day" },
+  { value: 2, label: "A little low" },
+  { value: 3, label: "Okay" },
+  { value: 4, label: "Good" },
+  { value: 5, label: "Really good" },
+];
+
+function CareCheckinForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const [timeAvailable, setTimeAvailable] = useState<string | null>(null);
@@ -60,7 +80,7 @@ export default function CareCheckinPage() {
       return;
     }
 
-    router.push("/dashboard/care");
+    router.push(searchParams.get("next") || "/dashboard/care/chart");
   }
 
   return (
@@ -103,54 +123,44 @@ export default function CareCheckinPage() {
             ))}
           </div>
 
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-gold-deep mb-3">
             How&apos;s your energy today?
           </label>
-          <div className="flex justify-between gap-1.5 mb-2">
-            {SCALE.map((n) => (
+          <div className="flex flex-col gap-2 mb-7">
+            {ENERGY_OPTIONS.map((opt) => (
               <button
-                key={n}
+                key={opt.value}
                 type="button"
-                onClick={() => setEnergy(n)}
-                aria-label={`Energy ${n} out of 10`}
-                className={`flex-1 aspect-square rounded-full text-xs font-semibold border-[1.5px] transition-colors ${
-                  energy === n
+                onClick={() => setEnergy(opt.value)}
+                className={`text-left py-2.5 px-4 rounded-xl text-sm font-semibold border-[1.5px] transition-colors ${
+                  energy === opt.value
                     ? "bg-gold-deep text-ivory border-gold-deep"
-                    : "text-gold-deep border-gold-deep/40"
+                    : "text-ink/75 border-line hover:border-gold-deep/50"
                 }`}
               >
-                {n}
+                {opt.label}
               </button>
             ))}
-          </div>
-          <div className="flex justify-between text-[11px] text-ink/45 mb-7 px-0.5">
-            <span>running on empty</span>
-            <span>full of it</span>
           </div>
 
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-terracotta mb-3">
             How are you feeling today?
           </label>
-          <div className="flex justify-between gap-1.5 mb-2">
-            {SCALE.map((n) => (
+          <div className="flex flex-col gap-2 mb-7">
+            {MOOD_OPTIONS.map((opt) => (
               <button
-                key={n}
+                key={opt.value}
                 type="button"
-                onClick={() => setMood(n)}
-                aria-label={`Mood ${n} out of 10`}
-                className={`flex-1 aspect-square rounded-full text-xs font-semibold border-[1.5px] transition-colors ${
-                  mood === n
+                onClick={() => setMood(opt.value)}
+                className={`text-left py-2.5 px-4 rounded-xl text-sm font-semibold border-[1.5px] transition-colors ${
+                  mood === opt.value
                     ? "bg-terracotta text-ivory border-terracotta"
-                    : "text-terracotta border-terracotta/40"
+                    : "text-ink/75 border-line hover:border-terracotta/50"
                 }`}
               >
-                {n}
+                {opt.label}
               </button>
             ))}
-          </div>
-          <div className="flex justify-between text-[11px] text-ink/45 mb-7 px-0.5">
-            <span>heavy day</span>
-            <span>feeling good</span>
           </div>
 
           {error && <p className="text-terracotta text-sm mb-4">{error}</p>}
@@ -158,7 +168,7 @@ export default function CareCheckinPage() {
           <button
             type="submit"
             disabled={loading || !canSubmit}
-            className="w-full py-3 rounded-full bg-gold-deep text-ivory font-semibold text-sm disabled:opacity-50"
+            className="w-full py-3 rounded-full bg-gold-deep text-ivory font-semibold text-sm disabled:opacity-40 transition-opacity"
           >
             {loading ? "Just a moment…" : "Show me today's care chart"}
           </button>
@@ -170,5 +180,13 @@ export default function CareCheckinPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function CareCheckinPage() {
+  return (
+    <Suspense fallback={null}>
+      <CareCheckinForm />
+    </Suspense>
   );
 }

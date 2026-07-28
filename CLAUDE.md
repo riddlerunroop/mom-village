@@ -59,6 +59,28 @@ This also lines up with a real practical point: Razorpay's business verification
 9. **Budget Planner improvements** — explanatory text under choices; more inputs (delivery setting, city/cost range, insurance/government coverage, hand-me-down details); categorize output into essentials/optional/skip-for-now; save/revisit/update.
 10. **Domain purchase**, then **Razorpay integration** — only after the above is genuinely satisfactory to Roop.
 
+## Care module rebuild — first pass built 2026-07-28
+
+Second item off the backlog above (biggest remaining piece). This pass covers the structural/UX rebuild; the content-standard rewrite is prototyped on one phase, with the other 8 still to come — same incremental pattern used for every earlier Care Chart content pass (Early healing was the prototype phase then too).
+
+**Schema — `supabase/migration_25_care_module_rebuild_schema.sql`:**
+1. `user_daily_checkin.energy_score`/`mood_score` narrowed from a 1-10 scale to 1-5, matching the new 5-labeled-choice check-in (any existing rows are rescaled, not dropped).
+2. `user_care_progress` gained a `completed_date` column and its primary key widened to `(user_id, content_id, completed_date)` — previously a Care Step could only ever be marked done once, *permanently*, since the same content row resurfaces every time she picks the same time-available answer within a multi-week phase. Now it's a genuine daily completion history.
+3. `weekly_care_chart_content` gained four new nullable columns — `how_long`, `why_today`, `what_to_avoid`, `detail` — for the strict per-item content standard Roop asked for. Nullable and backward-compatible: phases not yet restructured keep rendering exactly as before (just the existing `body` field as "what to do").
+
+**Content — `supabase/migration_26_care_chart_early_healing_standard.sql`:** Early healing (0-6wk) restructured into the new standard as the prototype phase. Pure reformatting of already-locked, already-verified content (migration_16 and the original seed) into the discrete fields — no new medical claims introduced. **Still open: the same restructuring for the other 8 phases** (First/Second/Third trimester, Finding rhythm, Rebuilding, Settling into strength, Sustainable rhythms, Your rhythm year three) — next step once Roop's reviewed this one phase.
+
+**Code:**
+- Nav renamed **Fitness → Care** everywhere (`DashboardNav.tsx`, homepage nav/pillar links, the `#fitness` anchor → `#care`).
+- `/dashboard/care` is now a proper **landing page** (`src/app/dashboard/care/page.tsx`) — stage + week, this phase's real mantra (pulled from the DB, not separately-written copy that could drift), a one-line gentle completion note ("You've cared for yourself on N of the last 7 days" — no streak, no score, silent if 0), a preview of all 5 sections, and one primary action: "Build my care chart" (or "View today's care chart" / "Update today's check-in" if she's already checked in today).
+- The actual matched daily content moved to its own route, **`/dashboard/care/chart`** (`src/app/dashboard/care/chart/page.tsx`) — same matching logic as before (phase/delivery-type/time/health-flag), now rendering the new content fields when present via a shared `CareStepItem` component.
+- **Section labels renamed** for the chart view: Body → **Move**, Food → **Nourish**, Mind → **Reset**, Skin → **Care for yourself**, Rediscover unchanged. Purely a display change — the underlying DB `section` keys (`body`/`food`/`mind`/`skin`/`rediscover`) are untouched, so no content migration was needed for this part.
+- **`?phase=` preview switcher removed from the member-facing UI** — the "preview other phases (for review)" link and phase-pill row are gone from what a real mother sees. The underlying `?phase=` param still works if Roop types it into the URL directly for her own review; it's just no longer surfaced anywhere in the app.
+- **New `src/components/CareStepItem.tsx`** (client component) — renders each Care Step with a real "done" toggle (upserts/deletes a row in `user_care_progress` keyed to today's date), a strikethrough+dimmed done state, and — only while not yet done — "Why today" and "Avoid" lines plus an optional "Need more detail?" expandable, all shown only when the content row actually has them (so unrestructured phases degrade gracefully to just the existing description).
+- `src/app/care-checkin/page.tsx` rebuilt: the bare 1-10 energy/mood scales are now 5 labeled choices each (Energy: Running on empty / Low, but here / Steady / Good energy / Feeling strong. Mood: Heavy day / A little low / Okay / Good / Really good), full-width selectable rows with a clear filled state, and the submit button still only enables once time + energy + mood are all set. Takes an optional `?next=` so it can return her to `/dashboard/care/chart` specifically (wrapped in `Suspense` for `useSearchParams`, same pattern as login/onboarding).
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Not yet deployed** — needs both migrations run in Supabase (25 then 26, in order) plus a GitHub Desktop push.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):

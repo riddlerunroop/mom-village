@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 const navLinks = [
   { label: "Monthly chart", href: "/login?next=/dashboard" },
   { label: "Wealth", href: "/login?next=/dashboard/wealth" },
-  { label: "Fitness", href: "/login?next=/dashboard/care" },
+  { label: "Care", href: "/login?next=/dashboard/care" },
   { label: "Library", href: "/login?next=/dashboard/library" },
   { label: "Community", href: "/login?next=/dashboard/community" },
   { label: "Pricing", href: "#pricing" },
@@ -19,7 +19,7 @@ const navLinks = [
 const memberNavLinks = [
   { label: "Monthly chart", href: "/dashboard" },
   { label: "Wealth", href: "/dashboard/wealth" },
-  { label: "Fitness", href: "/dashboard/care" },
+  { label: "Care", href: "/dashboard/care" },
   { label: "Library", href: "/dashboard/library" },
   { label: "Community", href: "/dashboard/community" },
 ];
@@ -317,7 +317,7 @@ export default async function Home() {
       {/* CARE — shortened 2026-07-27; used to be two long grids describing a
           structure that no longer matched what's built, plus two
           non-functional "Normal delivery / C-section" toggle buttons. */}
-      <section id="fitness" className="py-20 px-8 bg-ivory-2">
+      <section id="care" className="py-20 px-8 bg-ivory-2">
         <div className="max-w-[1080px] mx-auto">
           <div className="text-center max-w-[560px] mx-auto mb-10">
             <div className="text-xs tracking-[0.12em] uppercase text-terracotta font-semibold">
