@@ -36,13 +36,44 @@ Full list of what changed in `src/app/page.tsx`:
 - **₹49 budget map pricing card fixed** — removed the "No login needed" bullet, which is currently false (the route requires full sign-in + subscription until Razorpay's standalone-purchase flow exists — see the Budget Planner section above). Replaced with three concrete lines describing exactly what the buyer receives (stage-by-stage cost breakdown, named government schemes, realistic non-inflated numbers) plus a real "Get the budget map" button on both pricing cards.
 - Books section and community testimonials section left as-is (already accurate).
 
-Verified clean on `tsc`/`eslint`. **Not yet deployed** — needs a GitHub Desktop push. **Needs Roop's input before it's truly done:** the placeholder bio line near pricing.
+Verified clean on `tsc`/`eslint`. **Status: pushed to GitHub 2026-07-27, deploying on Vercel.** **Still needs Roop's input before it's truly done:** the placeholder bio line near pricing.
 
 *Last updated: 2026-07-25 — Voice-log memories + recall built*
 
-## Next session plan — Razorpay, 2026-07-27
+## Sequencing decision, superseding the plan below — 2026-07-28
 
-Roop's plan: start Razorpay integration tomorrow. **Before that, she needs to buy a custom domain** — currently the site is only on mom-village.vercel.app, and a real domain will help with Razorpay's business verification (looks more legitimate than a vercel.app subdomain) as well as the app generally. Next session should start with domain purchase + connecting it to Vercel (Vercel project settings → Domains, plus a couple of DNS records at whichever registrar she picks), before moving into Razorpay setup itself.
+Roop did a full, detailed hands-on review of the live site (both as a visitor and as a subscriber) and gave a long list of real, specific feedback — UX, content depth, a full Care module redesign spec, and a list of "essential pages" the site is missing (About, Contact/Help, Privacy Policy, Terms of Use, Community Guidelines, Cancellation/Refund Policy, Safety & Emergency Support). Her call: **"we will do the razorpay after we satisfy ourselves with the website.. so before that let's finish all essential pages and rebuild / fix our modules."** Domain purchase + Razorpay (see below) are now sequenced *after* this work, not before it — this supersedes the "start Razorpay tomorrow" plan from 2026-07-27.
+
+This also lines up with a real practical point: Razorpay's business verification typically expects a live Privacy Policy, Terms of Use, and a stated Refund/Cancellation Policy anyway, so this isn't just polish-before-launch, it's likely a real prerequisite.
+
+**Full backlog from Roop's review, in the order it'll be worked through:**
+
+1. **Essential/legal pages — DONE, 2026-07-28.** See section below.
+2. **Care module full rebuild** (biggest remaining item) — rename Fitness → Care/Wellbeing in nav; redesign the Care landing page (stage display, stage-specific message, a preview of all 5 sections, primary "Build my care chart" CTA); remove the `?phase=` preview switcher from the member-facing UI (it was only ever meant for Roop's own review); redesign the daily check-in with 5 labeled energy choices and 5 labeled mood choices (replacing any bare scale), strong visual selected-states, and a primary button that only activates once all three inputs are set; restructure the daily chart into 5 sections (Move/Nourish/Reset/Care for yourself/Rediscover — note the renamed labels) with a strict per-item content standard (what to do, how long, why today, what to avoid, optional expandable detail); add a "done" control per action with a private, non-punitive completion history (gentle completion state, never a streak/score).
+3. **Dashboard scannability** — short bold takeaway + expandable detail per card; real functioning (saving) checkboxes or plain bullets instead of disabled-looking checkboxes; rename "Mum's Wellbeing" category (Roop suggested "Parenting & Your Wellbeing"); a "this month's three priorities" strip; make "track vaccinations"/"log a memory" look like real buttons; hide the phone number behind "My account"/name in the header.
+4. **Homepage hero refinement** — clarify ₹49-vs-membership distinction under the CTA buttons; move Fitness/Care nav item under a broader nav grouping (nav reads "a little crowded"); replace the blurred hero-arch visual with a crisper glimpse of the monthly chart.
+5. **Wealth usability** — turn the maternity cash-flow worksheet into an editable, saving, gap-calculating in-app planner; a "what to do first" checklist atop both Wealth pages; filters on the Benefits directory (stage, state, employment type, "show only what may apply to me").
+6. **Library orientation** — chapter contents/progress indicator/bookmarks/"continue reading" in the reader; a one-line description under each book cover on the shelf; cross-link books to relevant in-app actions.
+7. **Community safeguards** — visible guidelines + not-medical/financial-advice reminder (guidelines page done below; in-app reminder done below); block controls (report already built, migration_22); structured/selectable tags instead of free-text; empty-state topic prompts.
+8. **Account controls** — hide phone number behind a label/name; explain what changing baby's DOB affects; make the reminders toggle a real, clearly-confirmed control; membership management, privacy/deletion controls, safe child-detail editing.
+9. **Budget Planner improvements** — explanatory text under choices; more inputs (delivery setting, city/cost range, insurance/government coverage, hand-me-down details); categorize output into essentials/optional/skip-for-now; save/revisit/update.
+10. **Domain purchase**, then **Razorpay integration** — only after the above is genuinely satisfactory to Roop.
+
+## Essential/legal pages — built 2026-07-28
+
+First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):
+
+- `src/app/about/page.tsx` — what Mom's Village is, who built it, how content is verified.
+- `src/app/contact/page.tsx` — support contact. **Support email intentionally left unset** (`SUPPORT_EMAIL = null` shows a "being set up" message instead) — Roop's explicit call, 2026-07-28: *"i will make a different mail with domain name in picture"*, i.e. she wants a real address on her own domain once it's purchased, not her personal Gmail used long-term. **Action for Roop: once the domain from the plan above is live and you've made that inbox, give me the address and I'll wire it into this file (and it becomes a very quick, no-migration change).**
+- `src/app/privacy/page.tsx` — what's collected (phone/OTP, profile, voice/photo logs, vaccination photos, community posts, reading progress, push subscription, membership status), who else sees it (Supabase, Vercel, OpenAI for transcription, Anthropic for vaccination-card reading and recall — both scoped to only the data each feature needs), and **account deletion within 30 days of a verified request** — Roop's explicit decision, 2026-07-28 (chose the 30-day option over immediate deletion).
+- `src/app/terms/page.tsx` — service description, single-user-per-account clarification, explicit "not medical/financial/legal advice" section, Community is member-generated/not reviewed, membership/payment terms, acceptable use, liability limits, governing law (India).
+- `src/app/community-guidelines/page.tsx` — real-name expectation, what's welcome/not welcome, explicit "this isn't professional advice" note, how the report flow works (points to the report buttons built in migration_22), links to the Safety page for anything urgent.
+- `src/app/refund-policy/page.tsx` — **both refund decisions are Roop's explicit choices, 2026-07-28:** ₹299/month membership is **no refunds, cancel anytime** (cancelling stops future billing, no proration); the ₹49 budget map (and Library books/bundles) are **no refunds, instant digital delivery**, except for genuine delivery failures.
+- `src/app/safety/page.tsx` — India emergency numbers (112, Tele-MANAS 14416/1800-891-4416, KIRAN 1800-599-0019, Women Helpline 181, Childline 1098, cybercrime.gov.in/1930 — all previously verified for the Parenting Series books, reused here rather than re-verified from scratch), general pregnancy/postpartum warning signs pointing to the Care Chart's more detailed "Urgent care now" section, and a note that Community isn't for emergencies.
+
+**Wired in:** every page above is linked from the homepage footer (`src/app/page.tsx`) and from a new footer added to the dashboard shell (`src/app/dashboard/layout.tsx`) — previously the dashboard had no footer at all. Also added a small contextual safety link on the Care page (`/dashboard/care`) and a Community Guidelines reminder line on the Community page (`/dashboard/community`).
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Not yet deployed** — needs a GitHub Desktop commit + push, no Supabase migration required (no schema changes).
 
 ## What it is
 

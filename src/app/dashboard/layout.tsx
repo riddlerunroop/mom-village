@@ -94,6 +94,17 @@ export default async function DashboardLayout({
       </header>
       <DashboardNav promptBirth={promptBirth} />
       {children}
+      <footer className="border-t border-line mt-16 px-6 py-8">
+        <div className="max-w-[900px] mx-auto flex flex-wrap gap-x-5 gap-y-2 text-xs text-ink/45">
+          <Link href="/about" className="hover:text-indigo transition-colors">About</Link>
+          <Link href="/contact" className="hover:text-indigo transition-colors">Contact &amp; Help</Link>
+          <Link href="/privacy" className="hover:text-indigo transition-colors">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-indigo transition-colors">Terms of Use</Link>
+          <Link href="/community-guidelines" className="hover:text-indigo transition-colors">Community Guidelines</Link>
+          <Link href="/refund-policy" className="hover:text-indigo transition-colors">Cancellation &amp; Refund Policy</Link>
+          <Link href="/safety" className="hover:text-indigo transition-colors">Safety &amp; Emergency Support</Link>
+        </div>
+      </footer>
     </div>
   );
 }

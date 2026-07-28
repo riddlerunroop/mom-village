@@ -70,9 +70,17 @@ export default async function CommunityPage({
         the whole village, talking
       </div>
       <h1 className="font-display text-[30px] text-indigo mb-2">Community</h1>
-      <p className="text-sm text-ink/65 mb-8 max-w-[540px]">
+      <p className="text-sm text-ink/65 mb-2 max-w-[540px]">
         Start a discussion, or search to see if someone&apos;s already asked
         the same thing.
+      </p>
+      <p className="text-xs text-ink/45 mb-8">
+        Posts here are member experience, not medical or financial advice —
+        see our{" "}
+        <Link href="/community-guidelines" className="text-gold-deep underline">
+          Community Guidelines
+        </Link>
+        .
       </p>
 
       {!isSubscribed ? (

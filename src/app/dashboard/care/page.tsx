@@ -139,9 +139,16 @@ export default async function CarePage({
           Previewing: {previewPhase.label}
         </p>
       )}
-      <p className="text-sm text-ink/65 mb-6 max-w-[540px]">
+      <p className="text-sm text-ink/65 mb-2 max-w-[540px]">
         Body, mind, skin, and more — built around exactly where you are,
         pregnancy through postpartum.
+      </p>
+      <p className="text-xs text-ink/45 mb-6">
+        Feeling something that worries you right now?{" "}
+        <Link href="/safety" className="text-terracotta underline">
+          See warning signs and emergency numbers
+        </Link>
+        .
       </p>
 
       {previewPhase ? (

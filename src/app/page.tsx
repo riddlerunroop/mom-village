@@ -557,13 +557,24 @@ export default async function Home() {
 
       <Jaali />
       <footer className="bg-ink text-ivory py-12 px-8">
-        <div className="max-w-[1080px] mx-auto flex justify-between items-center flex-wrap gap-4">
-          <div className="font-display text-[22px] font-semibold text-ivory">
-            mom<span className="text-gold">village</span>
+        <div className="max-w-[1080px] mx-auto">
+          <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
+            <div className="font-display text-[22px] font-semibold text-ivory">
+              mom<span className="text-gold">village</span>
+            </div>
+            <div className="font-display italic text-sm opacity-70">
+              From your first positive test to her third birthday — we&apos;re
+              your village.
+            </div>
           </div>
-          <div className="font-display italic text-sm opacity-70">
-            From your first positive test to her third birthday — we&apos;re
-            your village.
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs opacity-60 border-t border-ivory/10 pt-6">
+            <Link href="/about" className="hover:opacity-100 transition-opacity">About</Link>
+            <Link href="/contact" className="hover:opacity-100 transition-opacity">Contact &amp; Help</Link>
+            <Link href="/privacy" className="hover:opacity-100 transition-opacity">Privacy Policy</Link>
+            <Link href="/terms" className="hover:opacity-100 transition-opacity">Terms of Use</Link>
+            <Link href="/community-guidelines" className="hover:opacity-100 transition-opacity">Community Guidelines</Link>
+            <Link href="/refund-policy" className="hover:opacity-100 transition-opacity">Cancellation &amp; Refund Policy</Link>
+            <Link href="/safety" className="hover:opacity-100 transition-opacity">Safety &amp; Emergency Support</Link>
           </div>
         </div>
       </footer>
