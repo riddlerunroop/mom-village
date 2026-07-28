@@ -95,6 +95,16 @@ Both `dashboard/page.tsx` (current month) and `dashboard/chart/[month]/page.tsx`
 
 Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_27_monthly_chart_progress.sql` run in Supabase plus a GitHub Desktop push.
 
+## Homepage hero refinement — built 2026-07-28
+
+Fourth item off the backlog above, in `src/app/page.tsx`:
+
+- **Nav de-crowded** — was 6 top-level items (Monthly chart, Wealth, Care, Library, Community, Pricing), per Roop's "reads a little crowded" note. Now 3: Monthly chart, an **Explore** dropdown (hover-reveal, pure CSS via Tailwind `group`/`group-hover`, no client JS needed) grouping Wealth/Care/Library/Community, and Pricing (guests only, matching the old member nav's behavior of hiding Pricing once she's already a member). Also removed the old duplicate `navLinks`/`memberNavLinks` arrays in favor of the existing `dest()` helper, which already handles guest-vs-member routing correctly — simpler code, same behavior.
+- **₹49-vs-membership clarified** — a new line under the two hero buttons (guests only): "₹49 is a one-time download — the budget map only. ₹299/month is full membership: the monthly chart, Care, Wealth, Community, and all 6 books, every month you're with us."
+- **Hero visual replaced** — the old right-column art was an abstract blurred gold glow inside an arch frame with a vague caption. Kept the arch silhouette and indigo gradient (the app's visual motif), but replaced the blur with a crisp, legible mini mockup of 3 real Monthly Chart categories (Baby's Development / Buy-Arrange Now / Appointments & Safety), clearly labelled "example — month 3," so a visitor sees something concrete instead of an abstract shape.
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .`. No Supabase migration (no schema changes) — **not yet deployed**, needs a GitHub Desktop push.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):

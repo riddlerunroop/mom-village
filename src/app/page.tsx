@@ -1,27 +1,28 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 
-// Logged-out visitors: clicking a pillar tab should lead toward actually
-// getting it, not just scroll to a pitch about it — so each one routes
-// through login (and onboarding, if she's new) and lands on the real page,
-// where she'll see the subscribe prompt if she isn't a member yet.
-const navLinks = [
-  { label: "Monthly chart", href: "/login?next=/dashboard" },
-  { label: "Wealth", href: "/login?next=/dashboard/wealth" },
-  { label: "Care", href: "/login?next=/dashboard/care" },
-  { label: "Library", href: "/login?next=/dashboard/library" },
-  { label: "Community", href: "/login?next=/dashboard/community" },
-  { label: "Pricing", href: "#pricing" },
-];
-
-// Once she's a member, these same tabs take her straight to the real page
-// instead of scrolling past marketing copy she's already bought into.
-const memberNavLinks = [
-  { label: "Monthly chart", href: "/dashboard" },
+// Nav restructured 2026-07-28 — Roop's review: "nav reads a little
+// crowded" (6 top-level items). Now just 3: Monthly chart, an "Explore"
+// dropdown grouping the other four pillars, and Pricing (guests only).
+// Every link still routes through login/onboarding for guests and straight
+// to the real page for members, via the dest() helper below — clicking a
+// pillar should lead toward actually getting it, not just scroll to a
+// pitch about it.
+const EXPLORE_ITEMS = [
   { label: "Wealth", href: "/dashboard/wealth" },
   { label: "Care", href: "/dashboard/care" },
   { label: "Library", href: "/dashboard/library" },
   { label: "Community", href: "/dashboard/community" },
+];
+
+// Illustrative mini preview used in the hero — a crisper, concrete glimpse
+// of the real Monthly Chart instead of the abstract blurred glow this
+// replaced (2026-07-28, per Roop's review). Same categories/visual
+// language as MonthlyChartGrid, clearly labelled as an example.
+const HERO_PREVIEW = [
+  { label: "Baby's Development", accent: "gold", line: "Her first real smile is likely this month — reflex before, meaning after." },
+  { label: "Buy / Arrange Now", accent: "sage", line: "A well-fitted infant car seat, if you don't have one yet." },
+  { label: "Appointments & Safety", accent: "terracotta", line: "Her 6-week checkup — growth, feeding, and your own recovery." },
 ];
 
 // Four pillars, matching what's actually built — 2026-07-27 pre-Razorpay
@@ -130,14 +131,38 @@ export default async function Home() {
         <div className="font-display text-[22px] font-semibold text-indigo shrink-0">
           mom<span className="text-gold-deep">village</span>
         </div>
-        <ul className="hidden lg:flex gap-6 text-sm text-ink shrink-0">
-          {(user ? memberNavLinks : navLinks).map((l) => (
-            <li key={l.href} className="whitespace-nowrap">
-              <Link href={l.href} className="hover:text-gold-deep transition-colors">
-                {l.label}
+        <ul className="hidden lg:flex gap-6 text-sm text-ink shrink-0 items-center">
+          <li className="whitespace-nowrap">
+            <Link href={dest("/dashboard")} className="hover:text-gold-deep transition-colors">
+              Monthly chart
+            </Link>
+          </li>
+          <li className="group relative whitespace-nowrap">
+            <span className="flex items-center gap-1 cursor-default hover:text-gold-deep transition-colors py-2">
+              Explore
+              <span className="text-[10px] mt-px">▾</span>
+            </span>
+            <div className="absolute left-0 top-full opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150 z-20">
+              <div className="bg-ivory rounded-xl border border-line shadow-lg py-2 mt-1 min-w-[160px]">
+                {EXPLORE_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={dest(item.href)}
+                    className="block px-4 py-2 text-sm text-ink hover:bg-ivory-2 hover:text-gold-deep transition-colors whitespace-nowrap"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </li>
+          {!user && (
+            <li className="whitespace-nowrap">
+              <Link href="#pricing" className="hover:text-gold-deep transition-colors">
+                Pricing
               </Link>
             </li>
-          ))}
+          )}
         </ul>
         <div className="flex items-center gap-4 shrink-0">
           {user ? (
@@ -217,15 +242,39 @@ export default async function Home() {
               </>
             )}
           </div>
+          {!user && (
+            <p className="text-[13px] text-ink/55 mb-5 max-w-[440px]">
+              ₹49 is a one-time download — the budget map only. ₹299/month is
+              full membership: the monthly chart, Care, Wealth, Community,
+              and all 6 books, every month you&apos;re with us.
+            </p>
+          )}
           <p className="font-display italic text-[13px] text-sage-deep">
             Built by a mom. Not a corporation selling diapers.
           </p>
         </div>
-        <div className="relative aspect-[3/4] rounded-t-[200px] rounded-b-2xl overflow-hidden border-[6px] border-ivory-2 flex items-end justify-center bg-gradient-to-b from-indigo to-[#2c4066]">
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[60%] h-[60%] rounded-full bg-[radial-gradient(circle,rgba(217,164,65,0.35)_0%,transparent_70%)]" />
-          <div className="relative z-10 text-ivory font-display text-sm text-center p-4.5 bg-indigo/55 w-full">
-            a home, month by month — from her first flutter to her third
-            birthday
+        <div className="relative aspect-[3/4] rounded-t-[200px] rounded-b-2xl overflow-hidden border-[6px] border-ivory-2 flex items-center justify-center bg-gradient-to-b from-indigo to-[#2c4066] p-7">
+          <div className="w-full bg-ivory rounded-2xl p-4 shadow-lg">
+            <div className="text-[9px] uppercase tracking-wide font-bold text-sage-deep mb-2.5 text-center">
+              example — month 3
+            </div>
+            <div className="space-y-2.5">
+              {HERO_PREVIEW.map((c) => (
+                <div
+                  key={c.label}
+                  className="rounded-lg p-2.5 bg-ivory-2 border-l-[3px]"
+                  style={{ borderColor: `var(--color-${c.accent})` }}
+                >
+                  <div className="text-[9px] uppercase tracking-wide font-bold text-ink/55 mb-0.5">
+                    {c.label}
+                  </div>
+                  <p className="text-[11px] text-ink/70 leading-snug">{c.line}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[9px] text-ink/40 italic text-center mt-3">
+              an example — yours is matched to her exact month
+            </p>
           </div>
         </div>
       </section>
