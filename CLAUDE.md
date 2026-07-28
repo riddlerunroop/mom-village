@@ -142,6 +142,21 @@ Seventh item off the backlog above. Two of the four asks were already done earli
 
 Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_30_community_blocks.sql` run in Supabase plus a GitHub Desktop push.
 
+## Account controls — built 2026-07-28
+
+Eighth item off the backlog above. Phone-number-in-header was already fixed earlier this session (shows her name now); this pass covers the rest.
+
+`supabase/migration_31_account_deletion_requests.sql` adds `account_deletion_requests` (insert-only from the app, same pattern as `community_reports` — Roop reviews and actions requests directly in Supabase, matching the Privacy Policy's existing 30-day promise).
+
+- **Explains what changing baby's DOB/due date affects** — new copy in `src/app/dashboard/account/AccountForm.tsx`: changing the date shifts which Monthly Chart/Care chart/vaccination schedule she sees immediately, but anything already logged (vaccination records, memories, check-ins) stays as-is.
+- **Safe child-detail editing** — the same form now requires a deliberate second confirm ("Yes, update it") before saving if the date field actually changed, showing exactly what's changing (old date → new date). No confirm needed for name/city edits, which aren't consequential the same way.
+- **Real on/off reminders toggle** — `src/components/PushSubscribeButton.tsx` previously only supported turning reminders on, with no way back. Added a confirmed "Turn off" action: unsubscribes the browser's push registration and deletes the matching row from `user_push_subscriptions`.
+- **Membership management card** — honest about current limits: explains cancel-anytime billing behavior when she has an active membership, but since Razorpay self-serve cancellation isn't built yet, points to Contact &amp; Help and the Refund Policy rather than faking a working in-app cancel button.
+- **Privacy &amp; deletion control** — new `src/components/DeleteAccountRequest.tsx`: a real "Request account deletion" button with a confirm step, inserting into `account_deletion_requests`. Shows "already requested" state if she has a pending request, so she can't double-submit.
+- **Blocked members list** — carried over from the Community safeguards pass above, already lives on this page.
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_31_account_deletion_requests.sql` run in Supabase plus a GitHub Desktop push.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):

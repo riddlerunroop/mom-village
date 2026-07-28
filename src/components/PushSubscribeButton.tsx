@@ -22,6 +22,8 @@ export default function PushSubscribeButton() {
   const supabase = createClient();
   const [status, setStatus] = useState<Status>("checking");
   const [error, setError] = useState("");
+  const [confirmingOff, setConfirmingOff] = useState(false);
+  const [disabling, setDisabling] = useState(false);
 
   useEffect(() => {
     async function check() {
@@ -99,6 +101,38 @@ export default function PushSubscribeButton() {
     }
   }
 
+  async function disable() {
+    setDisabling(true);
+    setError("");
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const subscription = reg ? await reg.pushManager.getSubscription() : null;
+      const endpoint = subscription?.endpoint;
+
+      if (subscription) {
+        await subscription.unsubscribe();
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && endpoint) {
+        await supabase
+          .from("user_push_subscriptions")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("endpoint", endpoint);
+      }
+
+      setStatus("idle");
+      setConfirmingOff(false);
+    } catch {
+      setError("Couldn't turn off reminders — try again in a moment.");
+    } finally {
+      setDisabling(false);
+    }
+  }
+
   if (status === "checking") return null;
 
   if (status === "unsupported") {
@@ -120,9 +154,39 @@ export default function PushSubscribeButton() {
 
   if (status === "subscribed") {
     return (
-      <p className="text-xs text-sage-deep font-semibold">
-        Reminders are on for this device
-      </p>
+      <div className="flex items-center gap-3">
+        <p className="text-xs text-sage-deep font-semibold">
+          Reminders are on for this device
+        </p>
+        {!confirmingOff ? (
+          <button
+            type="button"
+            onClick={() => setConfirmingOff(true)}
+            className="text-xs font-semibold text-ink/40 hover:text-terracotta underline"
+          >
+            Turn off
+          </button>
+        ) : (
+          <span className="flex items-center gap-2">
+            <span className="text-xs text-ink/60">Turn off reminders?</span>
+            <button
+              type="button"
+              onClick={disable}
+              disabled={disabling}
+              className="text-xs font-semibold text-terracotta"
+            >
+              {disabling ? "…" : "Yes, turn off"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingOff(false)}
+              className="text-xs font-semibold text-ink/40"
+            >
+              Cancel
+            </button>
+          </span>
+        )}
+      </div>
     );
   }
 
