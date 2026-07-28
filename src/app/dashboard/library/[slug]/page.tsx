@@ -16,6 +16,18 @@ const RELATED_PAGE: Record<string, { href: string; label: string }> = {
     href: "/dashboard/wealth/savings",
     label: "In a hurry? The Savings & Financial Planning page in Wealth covers the essentials from this book in a quick-reference format.",
   },
+  "money-understood": {
+    href: "/dashboard/wealth",
+    label: "Want to put this into practice? The Wealth pillar has the Budget Planner and Government Benefits directory this book talks about.",
+  },
+  "understanding-your-little-one": {
+    href: "/dashboard/care",
+    label: "Living this stage right now? Your Care chart has matched guidance for exactly where you and your baby are.",
+  },
+  "guiding-your-growing-child": {
+    href: "/dashboard/care",
+    label: "For the part of this that overlaps your child's early years, your Care chart has day-to-day guidance too.",
+  },
 };
 
 // All six books now have their paginated content wired up — each was

@@ -115,6 +115,19 @@ Fifth item off the backlog above. `supabase/migration_28_wealth_usability.sql` a
 
 Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_28_wealth_usability.sql` run in Supabase plus a GitHub Desktop push.
 
+## Library orientation — built 2026-07-28
+
+Sixth item off the backlog above. `supabase/migration_29_library_bookmarks.sql` adds `user_book_bookmarks` (per-user, per-book, per-page — a mother can bookmark any content page, not tied to chapter starts).
+
+- **Chapter contents + bookmarks panel** — `src/components/BookReader.tsx` now derives a real table of contents straight from the same page data it already renders (chapter breaks, numbers, titles — so it can never drift out of sync with the actual book), shown in a "Contents" dropdown alongside her saved bookmarks. Tapping either jumps straight to that page via `pageFlip().flip()`.
+- **Bookmark toggle** — a ★/☆ button next to Contents, live on any real content page (not the cover or end page), saving/removing instantly.
+- **Progress bar** — a thin bar under the top row showing how far through the book she is, replacing the plain "Page X of Y" text-only indicator (which is still shown underneath it).
+- **"Continue reading" on the shelf** — `src/app/dashboard/library/page.tsx` now queries her reading progress across all six books and surfaces up to 3 in-progress ones (most recently read first) as small cover-thumbnail cards right at the top, before the two series grids.
+- **One-line description under every cover** — the `tagline` field already existed in `src/lib/library.ts` but was never rendered on the shelf; now shown under each title.
+- **More cross-links to in-app actions** — extended the `RELATED_PAGE` lookup in `src/app/dashboard/library/[slug]/page.tsx` (built 2026-07-27 for Book 3 ↔ Savings page) to two more real connections: *Money, Understood* → Wealth pillar (Budget Planner + schemes directory), and both *Understanding Your Little One* and *Guiding Your Growing Child* → the Care chart, wherever their age range overlaps what Care actually covers (pregnancy–3yr). Deliberately did not force a link for *Creating Your Own Opportunities* or *Supporting Your Child's Growing Independence* — neither has a real matching in-app feature yet, and a fake cross-link would be worse than none.
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_29_library_bookmarks.sql` run in Supabase plus a GitHub Desktop push.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):

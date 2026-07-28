@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useMemo, useRef, useState } from "react";
+import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import HTMLFlipBook from "react-pageflip";
 import { createClient } from "@/lib/supabase/client";
@@ -160,9 +160,39 @@ export default function BookReader({
   const bookRef = useRef<HTMLFlipBook>(null);
   const [current, setCurrent] = useState(initialPage);
   const [showResumeNote, setShowResumeNote] = useState(initialPage > 0);
+  const [showContents, setShowContents] = useState(false);
+  const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalLeaves = pages.length + 2; // cover + content pages + end page
+
+  // Table of contents — derived straight from the same page data the
+  // reader already has, so it can never drift out of sync with the real
+  // chapter breaks. Leaf index = pages-array index + 1 (leaf 0 is the cover).
+  const chapters = useMemo(
+    () =>
+      pages
+        .map((p, i) => ({ ...p, leaf: i + 1 }))
+        .filter((p) => p.isChapterStart),
+    [pages]
+  );
+
+  useEffect(() => {
+    async function loadBookmarks() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from("user_book_bookmarks")
+        .select("page_index")
+        .eq("user_id", user.id)
+        .eq("book_slug", bookSlug);
+      setBookmarks(new Set((data || []).map((r) => r.page_index)));
+    }
+    loadBookmarks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookSlug]);
 
   const playTurn = () => {
     const a = audioRef.current;
@@ -210,6 +240,38 @@ export default function BookReader({
   const goPrev = () => {
     bookRef.current?.pageFlip().flipPrev();
   };
+  const jumpTo = (leaf: number) => {
+    bookRef.current?.pageFlip().flip(leaf);
+    setShowContents(false);
+  };
+
+  async function toggleBookmark() {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const isBookmarked = bookmarks.has(current);
+    const next = new Set(bookmarks);
+    if (isBookmarked) {
+      next.delete(current);
+      setBookmarks(next);
+      await supabase
+        .from("user_book_bookmarks")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("book_slug", bookSlug)
+        .eq("page_index", current);
+    } else {
+      next.add(current);
+      setBookmarks(next);
+      await supabase
+        .from("user_book_bookmarks")
+        .upsert(
+          { user_id: user.id, book_slug: bookSlug, page_index: current },
+          { onConflict: "user_id,book_slug,page_index" }
+        );
+    }
+  }
 
   const bookElements = useMemo(() => {
     const els = [<CoverPage key="cover" cover={cover} />];
@@ -220,18 +282,90 @@ export default function BookReader({
     return els;
   }, [pages, cover, title]);
 
+  const isContentPage = current >= 1 && current <= pages.length;
+  const sortedBookmarks = Array.from(bookmarks).sort((a, b) => a - b);
+
   return (
     <div className="flex flex-col items-center">
       <audio ref={audioRef} src="/sounds/page-turn.mp3" preload="auto" />
 
-      <div className="w-full max-w-[720px] flex items-center justify-between px-1 mb-3">
+      <div className="w-full max-w-[720px] flex items-center justify-between px-1 mb-2 gap-2">
         <Link
           href="/dashboard/library"
-          className="text-xs font-semibold text-ink/60 hover:text-ink px-3 py-1.5 rounded-full border border-line"
+          className="text-xs font-semibold text-ink/60 hover:text-ink px-3 py-1.5 rounded-full border border-line shrink-0"
         >
           ← Shelf
         </Link>
-        <div className="text-xs text-ink/50 font-semibold">
+        <div className="flex items-center gap-2">
+          {isContentPage && (
+            <button
+              type="button"
+              onClick={toggleBookmark}
+              aria-label={bookmarks.has(current) ? "Remove bookmark" : "Bookmark this page"}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                bookmarks.has(current)
+                  ? "bg-gold-deep border-gold-deep text-ivory"
+                  : "border-line text-ink/60 hover:text-ink"
+              }`}
+            >
+              {bookmarks.has(current) ? "★ Bookmarked" : "☆ Bookmark"}
+            </button>
+          )}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowContents((s) => !s)}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full border border-line text-ink/60 hover:text-ink"
+            >
+              Contents
+            </button>
+            {showContents && (
+              <div className="absolute right-0 top-full mt-1.5 w-72 max-h-[360px] overflow-y-auto bg-ivory rounded-xl border border-line shadow-lg z-30 py-2">
+                {sortedBookmarks.length > 0 && (
+                  <div className="px-3 pb-2 mb-1 border-b border-line">
+                    <p className="text-[10px] uppercase tracking-wide font-bold text-gold-deep mb-1.5">
+                      Your bookmarks
+                    </p>
+                    {sortedBookmarks.map((leaf) => (
+                      <button
+                        key={leaf}
+                        type="button"
+                        onClick={() => jumpTo(leaf)}
+                        className="block w-full text-left text-[12px] text-ink/75 hover:text-gold-deep py-1"
+                      >
+                        ★ Page {leaf}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <p className="px-3 text-[10px] uppercase tracking-wide font-bold text-sage-deep mb-1">
+                  Chapters
+                </p>
+                {chapters.map((c) => (
+                  <button
+                    key={c.leaf}
+                    type="button"
+                    onClick={() => jumpTo(c.leaf)}
+                    className="block w-full text-left px-3 py-1.5 text-[12.5px] text-ink/80 hover:bg-ivory-2 hover:text-indigo"
+                  >
+                    <span className="text-ink/40 mr-1.5">{c.chapterNumber}.</span>
+                    {c.chapterTitle}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-[720px] px-1 mb-3">
+        <div className="h-1 rounded-full bg-ivory-2 overflow-hidden">
+          <div
+            className="h-full bg-gold-deep rounded-full transition-all"
+            style={{ width: `${Math.min(100, (current / totalLeaves) * 100)}%` }}
+          />
+        </div>
+        <div className="text-[11px] text-ink/45 font-semibold mt-1 text-center">
           {current === 0
             ? "Cover"
             : current > pages.length
