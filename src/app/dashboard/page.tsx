@@ -6,6 +6,12 @@ import { getCurrentSeason } from "@/lib/season";
 import LockedPreview from "@/components/LockedPreview";
 import MonthlyChartGrid from "@/components/MonthlyChartGrid";
 
+const PRIORITY_LABELS: Record<string, string> = {
+  appointments_safety: "Safety this month",
+  buy_now: "Worth buying",
+  baby_development: "What's changing",
+};
+
 export default async function DashboardPage() {
   const supabase = await createClient();
 
@@ -39,6 +45,32 @@ export default async function DashboardPage() {
         .order("sort_order")
     : { data: null };
 
+  // Which of this month's items she's already checked off — real, saving
+  // checkboxes now (2026-07-28), not disabled decoration. See
+  // migration_27_monthly_chart_progress.sql.
+  let completedIds = new Set<string>();
+  if (isSubscribed && chartContent && chartContent.length > 0) {
+    const { data: doneRows } = await supabase
+      .from("user_monthly_chart_progress")
+      .select("content_id")
+      .eq("user_id", user!.id)
+      .in("content_id", chartContent.map((c) => c.id));
+    completedIds = new Set((doneRows || []).map((r) => r.content_id));
+  }
+
+  // "This month's three priorities" — a short strip surfacing the single
+  // most important item from each of the three highest-stakes sections
+  // (safety first, then a real spending/arranging decision, then what's
+  // changing for her), rather than making her scan all six cards to find
+  // what matters most. Pulled from the same locked content, not new copy.
+  const PRIORITY_SECTIONS = ["appointments_safety", "buy_now", "baby_development"];
+  const priorities = PRIORITY_SECTIONS.map((sectionKey) => {
+    const item = (chartContent || [])
+      .filter((c) => c.section === sectionKey)
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0];
+    return item ? { ...item, sectionKey } : null;
+  }).filter((x): x is NonNullable<typeof x> => x !== null);
+
   const babyName = profile!.baby_name || "your little one";
   const momFirstName = profile!.mom_name ? `, ${profile!.mom_name}` : "";
   const promptBirth = shouldPromptBirth(profile!.due_date, profile!.baby_dob);
@@ -67,15 +99,21 @@ export default async function DashboardPage() {
       <p className="text-sm text-ink/65 mb-6">
         What she needs, what&apos;s changing, and what to expect this month.
       </p>
-      <div className="flex flex-wrap gap-x-5 gap-y-2 mb-6">
+      <div className="flex flex-wrap items-center gap-3 mb-6">
         <Link href="/dashboard/archive" className="text-xs font-semibold text-sage-deep">
           ← look back at past months
         </Link>
-        <Link href="/dashboard/vaccinations" className="text-xs font-semibold text-sage-deep">
-          track vaccinations →
+        <Link
+          href="/dashboard/vaccinations"
+          className="text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] border-sage-deep text-sage-deep hover:bg-sage-deep/5 transition-colors"
+        >
+          Track vaccinations
         </Link>
-        <Link href="/dashboard/memories" className="text-xs font-semibold text-sage-deep">
-          log a memory →
+        <Link
+          href="/dashboard/memories"
+          className="text-xs font-semibold px-4 py-2 rounded-full border-[1.5px] border-terracotta text-terracotta hover:bg-terracotta/5 transition-colors"
+        >
+          Log a memory
         </Link>
       </div>
 
@@ -97,7 +135,31 @@ export default async function DashboardPage() {
           teaser={`You're at ${label.toLowerCase()} — join to see exactly what to buy, skip, and expect this month, with fresh guidance unlocked every month after.`}
         />
       ) : (
-        <MonthlyChartGrid items={chartContent || []} />
+        <>
+          {priorities.length > 0 && (
+            <div className="mb-8">
+              <div className="text-xs uppercase tracking-[0.12em] text-gold-deep font-semibold mb-3">
+                this month&apos;s three priorities
+              </div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {priorities.map((item, i) => (
+                  <div
+                    key={item.id}
+                    className="bg-indigo rounded-2xl p-4"
+                  >
+                    <div className="text-[10px] uppercase tracking-wide font-bold text-gold mb-1.5">
+                      {PRIORITY_LABELS[item.sectionKey] || "Worth knowing"}
+                    </div>
+                    <p className="text-[13px] text-ivory/90 leading-snug">
+                      {i + 1}. {item.body}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <MonthlyChartGrid items={chartContent || []} completedIds={completedIds} />
+        </>
       )}
     </main>
   );

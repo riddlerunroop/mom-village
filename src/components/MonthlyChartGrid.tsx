@@ -4,10 +4,17 @@
 // looking back. Six real categories, matching how the locked content was
 // actually authored (not the original placeholder Money/Development/
 // Environment scaffold).
+//
+// 2026-07-28: "Mum's Wellbeing" renamed "Parenting & Your Wellbeing" per
+// Roop's review, and each item now renders via MonthlyChartItem (real
+// saving checkbox + bold takeaway/expandable detail) instead of a
+// permanently-disabled checkbox and one dense paragraph.
+
+import MonthlyChartItem from "./MonthlyChartItem";
 
 export const CHART_SECTIONS = [
   { key: "baby_development", label: "Baby's Development", accent: "gold" as const },
-  { key: "mum_wellbeing", label: "Mum's Wellbeing", accent: "terracotta" as const },
+  { key: "mum_wellbeing", label: "Parenting & Your Wellbeing", accent: "terracotta" as const },
   { key: "buy_now", label: "Buy / Arrange Now", accent: "sage" as const },
   { key: "hold_off", label: "Hold Off On", accent: "gold" as const },
   { key: "movement_rest", label: "Movement & Rest", accent: "sage" as const },
@@ -21,7 +28,13 @@ export type ChartContentItem = {
   sort_order: number | null;
 };
 
-export default function MonthlyChartGrid({ items }: { items: ChartContentItem[] }) {
+export default function MonthlyChartGrid({
+  items,
+  completedIds = new Set(),
+}: {
+  items: ChartContentItem[];
+  completedIds?: Set<string>;
+}) {
   const bySection = CHART_SECTIONS.map((section) => ({
     ...section,
     items: items
@@ -46,14 +59,12 @@ export default function MonthlyChartGrid({ items }: { items: ChartContentItem[] 
           ) : (
             <ul className="space-y-3">
               {section.items.map((item) => (
-                <li key={item.id} className="flex items-start gap-2.5">
-                  <input
-                    type="checkbox"
-                    className="mt-1 shrink-0 accent-gold-deep"
-                    disabled
-                  />
-                  <p className="text-sm text-ink/85 leading-snug">{item.body}</p>
-                </li>
+                <MonthlyChartItem
+                  key={item.id}
+                  id={item.id}
+                  body={item.body}
+                  initiallyDone={completedIds.has(item.id)}
+                />
               ))}
             </ul>
           )}

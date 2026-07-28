@@ -81,6 +81,20 @@ Second item off the backlog above (biggest remaining piece). This pass covers th
 
 Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Not yet deployed** — needs both migrations run in Supabase (25 then 26, in order) plus a GitHub Desktop push.
 
+## Dashboard scannability — built 2026-07-28
+
+Third item off the backlog above. All from Roop's review of the Monthly Chart dashboard home:
+
+- **Real, saving checkboxes** — previously every checkbox on the Monthly Chart was permanently `disabled`, pure decoration. `supabase/migration_27_monthly_chart_progress.sql` adds `user_monthly_chart_progress` (simple per-user-per-item completion, no date column needed — unlike the Care Chart, each Monthly Chart content row belongs to exactly one specific month, so a permanent checkmark is the right model, not a daily-resetting one). New `src/components/MonthlyChartItem.tsx` (client component) owns the toggle.
+- **Short bold takeaway + expandable detail** — the same component splits each item's already-locked body text at its first sentence boundary (UI-only, regex-based), showing that first sentence bold and the rest behind a "Read more" toggle. Deliberately not a rewrite of the 1,031 already-locked Monthly Chart content rows — this reformats how they're *displayed*, not what they say.
+- **"Mum's Wellbeing" renamed "Parenting & Your Wellbeing"** — in `src/components/MonthlyChartGrid.tsx`'s `CHART_SECTIONS`, per Roop's suggestion. Display-only; the underlying DB section key (`mum_wellbeing`) is unchanged.
+- **"This month's three priorities" strip** — new block above the six-category grid on `src/app/dashboard/page.tsx`, surfacing the single top item from each of Safety / Worth buying / What's changing (pulled from `appointments_safety`, `buy_now`, `baby_development` respectively — the lowest `sort_order` item in each). Same locked content, just surfaced prominently instead of requiring her to scan all six cards. Not shown on the past-month archive view (`dashboard/chart/[month]/page.tsx`) — that page kept its plain 6-card grid, since "priorities" only makes sense for the month she's actually living through.
+- **Vaccinations/memories now look like real buttons** — the two dashboard-home links (`track vaccinations` / `log a memory`) were plain text links; restyled as pill buttons (sage-deep and terracotta outlines respectively) so they read as actions, not afterthought text.
+
+Both `dashboard/page.tsx` (current month) and `dashboard/chart/[month]/page.tsx` (archive) now fetch and pass real completion state into `MonthlyChartGrid`, so checkboxes persist correctly whether she's looking at "now" or a past month.
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_27_monthly_chart_progress.sql` run in Supabase plus a GitHub Desktop push.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):

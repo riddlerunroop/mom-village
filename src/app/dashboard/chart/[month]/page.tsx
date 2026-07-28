@@ -59,6 +59,16 @@ export default async function PastMonthChartPage({
         .order("sort_order")
     : { data: null };
 
+  let completedIds = new Set<string>();
+  if (isSubscribed && chartContent && chartContent.length > 0) {
+    const { data: doneRows } = await supabase
+      .from("user_monthly_chart_progress")
+      .select("content_id")
+      .eq("user_id", user!.id)
+      .in("content_id", chartContent.map((c) => c.id));
+    completedIds = new Set((doneRows || []).map((r) => r.content_id));
+  }
+
   const babyName = profile?.baby_name || "your little one";
 
   return (
@@ -85,7 +95,7 @@ export default async function PastMonthChartPage({
           teaser="Join to unlock every month, past and present, whenever you want to look back."
         />
       ) : (
-        <MonthlyChartGrid items={chartContent || []} />
+        <MonthlyChartGrid items={chartContent || []} completedIds={completedIds} />
       )}
     </main>
   );
