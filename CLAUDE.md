@@ -128,6 +128,20 @@ Sixth item off the backlog above. `supabase/migration_29_library_bookmarks.sql` 
 
 Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_29_library_bookmarks.sql` run in Supabase plus a GitHub Desktop push.
 
+## Community safeguards — built 2026-07-28
+
+Seventh item off the backlog above. Two of the four asks were already done earlier this session (visible Community Guidelines page, and the in-app "not medical/financial advice" reminder line on the Community page itself) — this pass covers the remaining two: block controls and structured tags, plus empty-state prompts as a bonus scannability fix.
+
+`supabase/migration_30_community_blocks.sql` adds `user_blocks` (blocker_id/blocked_id, RLS scoped to the blocker managing her own list only — private, not visible to or actionable by the blocked member).
+
+- **Block button** — new `src/app/dashboard/community/[threadId]/BlockButton.tsx`, shown next to Report on any thread or reply that isn't her own. Confirms before blocking, then filters that member out.
+- **Blocked content actually disappears** — `src/app/dashboard/community/page.tsx` excludes blocked members' threads from the list query; `[threadId]/page.tsx` filters blocked members' replies out of any thread she opens.
+- **Reversible** — new `src/components/BlockedList.tsx`, shown in a new "Blocked members" card on the account page (`src/app/dashboard/account/page.tsx`), listing anyone she's blocked with a real Unblock button. Blocking was deliberately not built as a one-way action.
+- **Structured tags** — `src/app/dashboard/community/new/NewThreadClient.tsx`'s free-text comma-separated tags field replaced with 10 selectable topic chips (Pregnancy, Newborn, Feeding, Sleep, Postpartum recovery, Milestones, Toddler behaviour, Money & schemes, Work & career, Just venting) covering the app's real scope. Same `tags text[]` column, no schema change needed.
+- **Empty-state topic prompts** — when Community has no discussions yet, `community/page.tsx` now shows 5 clickable starter questions instead of a bare "start the first one" line; clicking one jumps to the new-thread form with the title prefilled (`?title=` param, `NewThreadClient` wrapped in `Suspense` for `useSearchParams`, same pattern as login/onboarding/care-checkin).
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_30_community_blocks.sql` run in Supabase plus a GitHub Desktop push.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):

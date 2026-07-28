@@ -1,21 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function NewThreadClient() {
+// Structured, selectable topics — replacing the old free-text
+// comma-separated tags field per Roop's 2026-07-28 review. Covers the
+// app's real scope (pregnancy through age 3, plus money/work) rather than
+// letting tags drift into anything typed. A mother can still pick more
+// than one.
+const TOPIC_TAGS = [
+  "Pregnancy",
+  "Newborn",
+  "Feeding",
+  "Sleep",
+  "Postpartum recovery",
+  "Milestones",
+  "Toddler behaviour",
+  "Money & schemes",
+  "Work & career",
+  "Just venting",
+];
+
+function NewThreadForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(searchParams.get("title") || "");
   const [body, setBody] = useState("");
-  const [tagsInput, setTagsInput] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const canSubmit = title.trim().length > 0 && body.trim().length > 0;
+
+  function toggleTag(tag: string) {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,18 +58,13 @@ export default function NewThreadClient() {
       return;
     }
 
-    const tags = tagsInput
-      .split(",")
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
-
     const { data, error: insertError } = await supabase
       .from("community_threads")
       .insert({
         user_id: user.id,
         title: title.trim(),
         body: body.trim(),
-        tags,
+        tags: selectedTags,
       })
       .select("id")
       .single();
@@ -102,15 +122,24 @@ export default function NewThreadClient() {
         />
 
         <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
-          Tags <span className="normal-case font-normal text-ink/40">(optional, comma-separated)</span>
+          Topic <span className="normal-case font-normal text-ink/40">(optional, pick any that fit)</span>
         </label>
-        <input
-          type="text"
-          value={tagsInput}
-          onChange={(e) => setTagsInput(e.target.value)}
-          placeholder="e.g. feeding, 7 months, solids"
-          className="w-full rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink mb-6 focus:outline-none focus:border-gold-deep"
-        />
+        <div className="flex flex-wrap gap-1.5 mb-6">
+          {TOPIC_TAGS.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => toggleTag(tag)}
+              className={`text-[11.5px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                selectedTags.includes(tag)
+                  ? "bg-sage-deep text-ivory border-sage-deep"
+                  : "text-sage-deep border-sage-deep/40"
+              }`}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
 
         {error && <p className="text-terracotta text-sm mb-4">{error}</p>}
 
@@ -123,5 +152,13 @@ export default function NewThreadClient() {
         </button>
       </form>
     </main>
+  );
+}
+
+export default function NewThreadClient() {
+  return (
+    <Suspense fallback={null}>
+      <NewThreadForm />
+    </Suspense>
   );
 }

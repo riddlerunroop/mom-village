@@ -10,6 +10,18 @@ import LockedPreview from "@/components/LockedPreview";
 // anonymous. See supabase/migration_11_community.sql for the schema this
 // reads from, and CLAUDE.md's "Community pillar" section for the full scope
 // decision (this replaced an earlier groups-based draft).
+
+// Starter prompts for the empty state, added 2026-07-28 per Roop's review —
+// a blank "no discussions yet" asks a lot of the very first mother to open
+// Community. Clicking one jumps straight to a prefilled new-thread form.
+const STARTER_PROMPTS = [
+  "What's one thing that surprised you about this stage?",
+  "Anyone else's baby doing something new this week?",
+  "What's a government scheme you wish you'd known about earlier?",
+  "How did you decide when (or whether) to go back to work?",
+  "What's something you needed to hear today?",
+];
+
 export default async function CommunityPage({
   searchParams,
 }: {
@@ -31,11 +43,23 @@ export default async function CommunityPage({
   }[] = [];
 
   if (isSubscribed) {
+    // Anyone she's blocked stays filtered out of the whole list, not just
+    // hidden inside a thread — see migration_30_community_blocks.sql.
+    const { data: blockedRows } = await supabase
+      .from("user_blocks")
+      .select("blocked_id")
+      .eq("blocker_id", user!.id);
+    const blockedIds = (blockedRows || []).map((b) => b.blocked_id);
+
     let query = supabase
       .from("community_threads")
       .select("id, title, body, tags, reply_count, last_activity_at, user_id")
       .order("last_activity_at", { ascending: false })
       .limit(50);
+
+    if (blockedIds.length > 0) {
+      query = query.not("user_id", "in", `(${blockedIds.join(",")})`);
+    }
 
     if (q && q.trim().length > 0) {
       query = query.textSearch("search_doc", q.trim(), {
@@ -118,9 +142,23 @@ export default async function CommunityPage({
 
           {threads.length === 0 && !q ? (
             <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
-              <p className="font-display italic text-lg text-sage-deep">
+              <p className="font-display italic text-lg text-sage-deep mb-5">
                 No discussions yet — start the first one.
               </p>
+              <p className="text-xs uppercase tracking-wide font-semibold text-ink/40 mb-3">
+                Not sure what to ask? Try one of these:
+              </p>
+              <div className="flex flex-col gap-2 max-w-[440px] mx-auto">
+                {STARTER_PROMPTS.map((prompt) => (
+                  <Link
+                    key={prompt}
+                    href={`/dashboard/community/new?title=${encodeURIComponent(prompt)}`}
+                    className="text-sm text-ink/75 bg-ivory rounded-xl border border-line px-4 py-2.5 hover:border-gold-deep/40 hover:text-indigo transition-colors text-left"
+                  >
+                    {prompt}
+                  </Link>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="space-y-3">

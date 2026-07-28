@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import ReplyForm from "./ReplyForm";
 import ReportButton from "./ReportButton";
+import BlockButton from "./BlockButton";
 
 function formatWhen(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", {
@@ -44,6 +45,15 @@ export default async function ThreadPage({
     .select("id, body, created_at, user_id")
     .eq("thread_id", threadId)
     .order("created_at", { ascending: true });
+
+  // Filter out replies from anyone she's blocked — personal, private, not
+  // visible to the blocked member. See migration_30_community_blocks.sql.
+  const { data: blockedRows } = await supabase
+    .from("user_blocks")
+    .select("blocked_id")
+    .eq("blocker_id", user!.id);
+  const blockedIds = new Set((blockedRows || []).map((b) => b.blocked_id));
+  const visibleReplies = (replies || []).filter((r) => !blockedIds.has(r.user_id));
 
   const allUserIds = Array.from(
     new Set([thread.user_id, ...(replies || []).map((r) => r.user_id)])
@@ -89,18 +99,23 @@ export default async function ThreadPage({
               </>
             )}
           </div>
-          <ReportButton threadId={thread.id} />
+          <div className="flex items-center gap-3">
+            {thread.user_id !== user!.id && (
+              <BlockButton userId={thread.user_id} authorName={namesByUserId[thread.user_id]} />
+            )}
+            <ReportButton threadId={thread.id} />
+          </div>
         </div>
       </div>
 
       <h2 className="font-display text-lg text-indigo mb-4">
-        {(replies || []).length === 0
+        {visibleReplies.length === 0
           ? "No replies yet"
-          : `${replies!.length} ${replies!.length === 1 ? "reply" : "replies"}`}
+          : `${visibleReplies.length} ${visibleReplies.length === 1 ? "reply" : "replies"}`}
       </h2>
 
       <div className="space-y-4 mb-8">
-        {(replies || []).map((reply) => (
+        {visibleReplies.map((reply) => (
           <div
             key={reply.id}
             className="bg-ivory rounded-xl border border-line p-5"
@@ -116,7 +131,12 @@ export default async function ThreadPage({
                 <span>·</span>
                 <span>{formatWhen(reply.created_at)}</span>
               </div>
-              <ReportButton replyId={reply.id} />
+              <div className="flex items-center gap-3">
+                {reply.user_id !== user!.id && (
+                  <BlockButton userId={reply.user_id} authorName={namesByUserId[reply.user_id]} />
+                )}
+                <ReportButton replyId={reply.id} />
+              </div>
             </div>
           </div>
         ))}

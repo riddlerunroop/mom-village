@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import SignOutButton from "@/components/SignOutButton";
 import AccountForm from "./AccountForm";
 import PushSubscribeButton from "@/components/PushSubscribeButton";
+import BlockedList from "@/components/BlockedList";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -77,6 +78,15 @@ export default async function AccountPage() {
           Get a notification on this device when a vaccination dose is due.
         </p>
         <PushSubscribeButton />
+      </div>
+
+      <div className="bg-ivory-2 rounded-2xl border border-line p-6 mt-8">
+        <h2 className="font-display text-lg text-indigo mb-1">Blocked members</h2>
+        <p className="text-sm text-ink/65 mb-4">
+          Mothers you&apos;ve blocked in Community — you won&apos;t see their
+          posts or replies. Unblock anytime.
+        </p>
+        <BlockedList />
       </div>
 
       <div className="flex items-center gap-5 mt-8">
