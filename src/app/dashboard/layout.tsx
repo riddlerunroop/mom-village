@@ -26,7 +26,7 @@ export default async function DashboardLayout({
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("due_date, baby_dob, birth_welcome_seen, birthday_1_seen, birthday_2_seen, birthday_3_seen")
+    .select("due_date, baby_dob, birth_welcome_seen, birthday_1_seen, birthday_2_seen, birthday_3_seen, mom_name")
     .eq("id", user!.id)
     .maybeSingle();
 
@@ -87,7 +87,7 @@ export default async function DashboardLayout({
             href="/dashboard/account"
             className="text-xs font-semibold text-ink/60 hover:text-indigo transition-colors"
           >
-            {user!.phone ? `+${user!.phone.replace(/^\+/, "")}` : "Your account"}
+            {profile!.mom_name ? profile!.mom_name.split(" ")[0] : "My account"}
           </Link>
           <SignOutButton />
         </div>
