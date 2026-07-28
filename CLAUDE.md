@@ -105,6 +105,16 @@ Fourth item off the backlog above, in `src/app/page.tsx`:
 
 Verified clean on `npx tsc --noEmit` and `npx eslint .`. No Supabase migration (no schema changes) — **not yet deployed**, needs a GitHub Desktop push.
 
+## Wealth usability — built 2026-07-28
+
+Fifth item off the backlog above. `supabase/migration_28_wealth_usability.sql` adds two tables: `user_maternity_plan` (one row per user, a jsonb blob of her worksheet numbers) and `user_wealth_checklist` (generic per-item completion, reused across both Wealth pages via globally-unique item keys).
+
+- **Maternity cash-flow planner, made real** — the static print-yourself `Worksheet` table (12 line items, blank ₹ columns) is replaced by `src/components/MaternityPlanner.tsx` on the Savings page: real number inputs for each line item (clearly marked add/subtract), auto-saving (700ms debounce, same pattern as the Library reader's reading-progress save), and her **funding gap calculated live** instead of left to her own arithmetic. Same exact 12 items and guidance copy as the original locked worksheet — no content changed, just made interactive.
+- **"What to do first" checklist, real and saving** — new `src/components/WealthChecklist.tsx`, a small reusable checklist with real persistence (`user_wealth_checklist`). Placed atop the Wealth home page ("Before you dive in": check schemes, get your budget number, start your maternity plan) and atop the Savings page ("What to do first": the first 5 steps of that page's existing 8-step order, as checkable items linking back to the fuller explanation below).
+- **Filters on the Benefits directory** — `src/components/SchemesFilterList.tsx`, wired into a restructured `src/app/dashboard/wealth/schemes/page.tsx` (the 8 schemes moved from static JSX into tagged data — same exact wording, just tagged with stage/employment/state-scope metadata). Three real filter dimensions: **stage** (pregnancy / first year / 1–6 years), **employment type** (organized-sector employee / unorganized, self-employed, or not currently working / all), and **state** (same everywhere / rules vary by state / all). Plus a **"show only what may apply to me"** toggle — deliberately honest about its limits: it auto-applies her actual pregnancy/postpartum/early-childhood stage (computed from her existing profile dates, the one thing we genuinely know), and says so explicitly in a caption, rather than silently pretending to filter by employment type or state we don't actually have on file. Adding real employment-type/state capture would need a new onboarding question — not done here, flagged as a future option if Roop wants deeper personalization later.
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_28_wealth_usability.sql` run in Supabase plus a GitHub Desktop push.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):

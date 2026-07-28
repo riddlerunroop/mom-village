@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import LockedPreview from "@/components/LockedPreview";
+import WealthChecklist from "@/components/WealthChecklist";
 
 export default async function WealthPage() {
   const supabase = await createClient();
@@ -28,6 +29,15 @@ export default async function WealthPage() {
         />
       ) : (
         <div className="space-y-5">
+          <WealthChecklist
+            title="Before you dive in"
+            items={[
+              { key: "wealth_check_schemes", label: "Check which government schemes you may qualify for", href: "/dashboard/wealth/schemes" },
+              { key: "wealth_check_budget", label: "Get your realistic budget number", href: "/budget-calculator" },
+              { key: "wealth_check_maternity_plan", label: "Start your maternity cash-flow plan", href: "/dashboard/wealth/savings" },
+            ]}
+          />
+
           <Link
             href="/budget-calculator"
             className="block bg-indigo rounded-2xl p-7 text-ivory hover:opacity-95 transition-opacity"

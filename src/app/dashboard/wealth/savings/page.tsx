@@ -9,9 +9,10 @@ import {
   NoteCard,
   BulletList,
   NumberedList,
-  Worksheet,
   SourceFooter,
 } from "@/components/ContentDoc";
+import MaternityPlanner from "@/components/MaternityPlanner";
+import WealthChecklist from "@/components/WealthChecklist";
 
 // Content locked 2026-07-21. Source: "Wealth - Savings and Planning
 // Guidance (LOCKED).md" — drafted, ChatGPT-reviewed, independently
@@ -43,6 +44,17 @@ export default async function SavingsPage() {
         />
       ) : (
         <>
+          <WealthChecklist
+            title="What to do first"
+            items={[
+              { key: "savings_check_entitlements", label: "Claim what you're already entitled to", href: "/dashboard/wealth/schemes" },
+              { key: "savings_check_buffer", label: "Build a small, accessible buffer" },
+              { key: "savings_check_debt", label: "Keep required debt payments current" },
+              { key: "savings_check_maternity_plan", label: "Fill in your maternity cash-flow plan below" },
+              { key: "savings_check_insurance", label: "Review your health & life cover" },
+            ]}
+          />
+
           <DisclaimerBox>
             This is general education. It doesn&apos;t know your income,
             expenses, debts, employment benefits, family situation, tax
@@ -166,32 +178,7 @@ export default async function SavingsPage() {
               Your emergency fund is for the unexpected. A maternity fund is
               for the costs and income changes you can reasonably see coming.
             </p>
-            <Worksheet
-              rows={[
-                "Antenatal appointments and tests",
-                "Delivery and hospital costs",
-                "Expected insurance or government contribution (subtract)",
-                "Medicines and postnatal care",
-                "Travel and support costs",
-                "Essential one-time baby purchases",
-                "Monthly household essentials during leave",
-                "Loan and insurance payments during leave",
-                "Income expected during paid leave (subtract)",
-                "Income lost during unpaid or reduced-pay leave",
-                "Childcare after you return to work",
-                "Government or employer cash benefits (subtract)",
-                "Your estimated funding gap",
-              ]}
-            />
-            <p className="text-sm text-ink/75">
-              Try not to treat every baby-related purchase as essential — a
-              shorter necessities list protects your cash for healthcare,
-              food, housing, and any income gap. Come back and update this
-              once you get a hospital quote, insurance confirmation, or
-              updated leave information — and don&apos;t count an insurance
-              claim or benefit as money in hand until you understand what it
-              takes to actually receive it.
-            </p>
+            <MaternityPlanner />
           </Section>
 
           <Section title="Build an accessible emergency fund">
