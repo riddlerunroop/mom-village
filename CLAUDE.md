@@ -157,6 +157,23 @@ Eighth item off the backlog above. Phone-number-in-header was already fixed earl
 
 Verified clean on `npx tsc --noEmit` and `npx eslint .`. **Not yet deployed** — needs `migration_31_account_deletion_requests.sql` run in Supabase plus a GitHub Desktop push.
 
+## Budget Planner improvements — built 2026-07-28
+
+Ninth and final content/UX item off the backlog above before domain purchase + Razorpay. `src/lib/budgetCalculator.ts`, `src/app/budget-calculator/BudgetCalculatorClient.tsx`, `supabase/migration_32_budget_plan_save.sql`.
+
+- **Explanatory text under every choice** — each toggle question in the calculator now has a one-line `helpText` under its label explaining what the choice affects (e.g. "A C-section typically costs more at a private hospital — this only affects the estimate, not what actually happens during delivery"), not just the bare options as before.
+- **New inputs:**
+  - **City tier** (Metro / Tier-2 city / Smaller town), asked only when she picks a private delivery — adjusts the private delivery cost range directionally (metro wider/higher, smaller town lower). Deliberately labelled as a directional adjustment, not a precisely sourced citywide average — real hospital pricing varies too much to responsibly claim a verified multiplier, and the line's own note says so.
+  - **Insurance/government coverage** (Private insurance / Govt. scheme / None / Not sure), also asked only for private delivery — deliberately does **not** change the number shown (same honesty-over-fake-personalization principle used on the Wealth schemes filter), just adds a results-page note pointing her to check her own policy/scheme's specifics before assuming a lower cost.
+  - **Hand-me-down detail** — the old plain yes/no is now followed by a 4-category multi-select (clothing & bedding / diapering supplies / furniture / feeding gear) when she says yes, each independently lowering the relevant line item's estimate rather than one blanket "has hand-me-downs" discount.
+  - New **"Furniture (cot/crib, stroller) & feeding basics"** line item added to Newborn essentials, tagged optional — many families skip a separate cot/stroller entirely, so this was previously invisible rather than mis-tagged as required.
+- **Categorized essentials/optional/skip-for-now** — every `BudgetLine` now carries a `necessity` tag (`essential` / `optional` / `skip_for_now`), shown as a small colored pill on each line item plus a 3-box summary strip under the main total (e.g. delivery/antenatal/food/clothing/diapering/immunizations = essential; doctor-visit buffer, furniture, undecided-feeding placeholder = optional/worth budgeting for; toddler play & learning materials = can skip for now, since it's the most deferrable/improvisable line in the whole calculator).
+- **Save/revisit/update** — `user_budget_plan` (one row per user, `inputs` jsonb + `updated_at`) lets her leave and come back. On load, if she has a saved plan, her answers are pre-filled and her results are shown immediately (recomputed fresh from the saved inputs against the current calculator logic, never a stale stored total) with a "last updated" banner. "Edit my answers" returns to the pre-filled form; recalculating re-saves. The calculation itself stays a pure, stateless function exactly as before — only the *inputs* are persisted, not the output.
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .`; also sanity-checked the calculator's new logic directly (twins/not-pregnant correctly skips the pregnancy stage; metro/C-section/government-scheme scenario produces sensible numbers with the right callouts). **Not yet deployed** — needs `migration_32_budget_plan_save.sql` run in Supabase plus a GitHub Desktop push.
+
+**This closes out item 9 — everything on Roop's 2026-07-28 review backlog except domain purchase + Razorpay (item 10) is now built**, pending her deploying the still-outstanding migrations/pushes from this and the preceding several sessions.
+
 ## Essential/legal pages — built 2026-07-28
 
 First item off the backlog above. Six new standalone public pages, all outside both the marketing homepage and the subscriber dashboard, sharing a new minimal shell component (`src/components/LegalPage.tsx` — wordmark header linking home, consistent footer linking every other page in the set):
