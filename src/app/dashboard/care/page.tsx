@@ -140,6 +140,26 @@ export default async function CareLandingPage() {
         </div>
       )}
 
+      {isSubscribed && (
+        <Link
+          href="/dashboard/care/mental-health"
+          className="block bg-ivory-2 rounded-2xl border border-terracotta/30 p-5 mb-6 hover:border-terracotta/60 transition-colors"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-wide font-bold text-terracotta mb-1">
+                Mental health &amp; support
+              </div>
+              <p className="text-[13px] text-ink/70 leading-snug">
+                How you&apos;re feeling matters, any day — not just the ones
+                a weekly card happens to land on.
+              </p>
+            </div>
+            <span className="text-terracotta text-lg flex-shrink-0">→</span>
+          </div>
+        </Link>
+      )}
+
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {SECTION_PREVIEWS.map((s) => (
           <div

@@ -13,6 +13,7 @@
 // two check-in answers every other part of Care already uses.
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 // Recovery route — postpartum-only, added with the Early healing batch
@@ -192,6 +193,61 @@ const ROUTE_LABEL: Record<keyof RecoveryRoute, string> = {
   caesarean: "Caesarean birth",
   complications: "Complications / restrictions",
 };
+
+// Heavy-day safety bridge — new 2026-07-29, Phase 1 of the Maternal Mental
+// Health / PPD integration (see CLAUDE.md). Shown only when her check-in's
+// mood lands on "heavy day" — the one moment the app already knows she's
+// having a hard time, so it's the natural place to gently offer more than
+// just that day's Reset card. Deliberately not a screening tool: one soft
+// question, never scored, and every answer (including "no"/declining) still
+// leads to the same real support options, never a dead end.
+function HeavyDaySafetyBridge() {
+  const [answer, setAnswer] = useState<"" | "yes" | "maybe" | "no">("");
+
+  return (
+    <div className="mt-5 bg-terracotta/10 rounded-2xl border border-terracotta/30 p-5">
+      <p className="text-sm text-ink/80 mb-3">
+        Sounds like today is a heavy one. Is anything about how you&apos;re
+        feeling worrying you right now?
+      </p>
+      {!answer ? (
+        <div className="flex flex-wrap gap-2">
+          {(["yes", "maybe", "no"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setAnswer(v)}
+              className="text-sm font-semibold px-5 py-2 rounded-full border-[1.5px] border-terracotta/50 text-terracotta"
+            >
+              {v === "yes" ? "Yes" : v === "maybe" ? "Maybe" : "No, I'm okay"}
+            </button>
+          ))}
+        </div>
+      ) : answer === "yes" || answer === "maybe" ? (
+        <div>
+          <p className="text-sm text-ink/75 mb-3">
+            Thank you for saying so. Please don&apos;t sit with it alone —
+            real support is close by.
+          </p>
+          <Link
+            href="/safety"
+            className="inline-block text-sm font-semibold px-6 py-2.5 rounded-full bg-terracotta text-ivory"
+          >
+            Go to emergency numbers and support →
+          </Link>
+        </div>
+      ) : (
+        <p className="text-sm text-ink/70">
+          Okay — glad to hear it. If that changes, today or any day,{" "}
+          <Link href="/dashboard/care/mental-health" className="font-semibold text-terracotta underline">
+            support is always here
+          </Link>
+          .
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function CareWeekContent({
   week,
@@ -387,6 +443,8 @@ export default function CareWeekContent({
         </WeekCard>
       </div>
 
+      {resetKey === "heavy_day" && <HeavyDaySafetyBridge />}
+
       {visibleConditionNotes.length > 0 && (
         <div className="mt-5 bg-terracotta/5 rounded-2xl border border-terracotta/20 p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-terracotta mb-2">
@@ -407,6 +465,19 @@ export default function CareWeekContent({
           For your care team
         </p>
         <p className="text-[13px] text-ink/70">{week.for_your_care_team}</p>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-3 bg-ivory-2 rounded-2xl border border-line px-5 py-4">
+        <p className="text-[13px] text-ink/65">
+          However Reset landed for you today, support isn&apos;t limited to
+          this one card.
+        </p>
+        <Link
+          href="/dashboard/care/mental-health"
+          className="shrink-0 text-[13px] font-semibold text-terracotta underline"
+        >
+          Mental health &amp; support →
+        </Link>
       </div>
     </div>
   );

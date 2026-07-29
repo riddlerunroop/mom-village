@@ -255,37 +255,68 @@ export default async function CareChartPage({
           healthFlags={healthFlags}
         />
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {bySection.map((section) => (
-            <div
-              key={section.key}
-              className="bg-ivory-2 rounded-2xl border border-line p-6"
-              style={{
-                borderTop: `3px solid var(--color-${section.accent})`,
-              }}
-            >
-              <h3 className="font-display text-lg text-indigo mb-3">
-                {section.label}
-              </h3>
+        <>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {bySection.map((section) => (
+              <div
+                key={section.key}
+                className="bg-ivory-2 rounded-2xl border border-line p-6"
+                style={{
+                  borderTop: `3px solid var(--color-${section.accent})`,
+                }}
+              >
+                <h3 className="font-display text-lg text-indigo mb-3">
+                  {section.label}
+                </h3>
 
-              {section.items.length === 0 ? (
-                <p className="text-sm text-ink/55 italic">
-                  Nothing tagged for today&apos;s mix yet — check back soon.
-                </p>
-              ) : (
-                <ul className="space-y-2.5">
-                  {section.items.map((item) => (
-                    <CareStepItem
-                      key={item.id}
-                      item={item}
-                      initiallyDone={doneIds.has(item.id)}
-                    />
-                  ))}
-                </ul>
-              )}
+                {section.items.length === 0 ? (
+                  <p className="text-sm text-ink/55 italic">
+                    Nothing tagged for today&apos;s mix yet — check back soon.
+                  </p>
+                ) : (
+                  <ul className="space-y-2.5">
+                    {section.items.map((item) => (
+                      <CareStepItem
+                        key={item.id}
+                        item={item}
+                        initiallyDone={doneIds.has(item.id)}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {todayCheckin.mood_score <= 1 && (
+            <div className="mt-5 bg-terracotta/10 rounded-2xl border border-terracotta/30 p-5">
+              <p className="text-sm text-ink/80 mb-2">
+                Sounds like today is a heavy one. If anything about how
+                you&apos;re feeling is worrying you, real support is close
+                by.
+              </p>
+              <Link
+                href="/dashboard/care/mental-health"
+                className="inline-block text-sm font-semibold px-6 py-2.5 rounded-full bg-terracotta text-ivory"
+              >
+                Mental health &amp; support →
+              </Link>
             </div>
-          ))}
-        </div>
+          )}
+
+          <div className="mt-5 flex items-center justify-between gap-3 bg-ivory-2 rounded-2xl border border-line px-5 py-4">
+            <p className="text-[13px] text-ink/65">
+              However today feels, support isn&apos;t limited to a single
+              card.
+            </p>
+            <Link
+              href="/dashboard/care/mental-health"
+              className="shrink-0 text-[13px] font-semibold text-terracotta underline"
+            >
+              Mental health &amp; support →
+            </Link>
+          </div>
+        </>
       )}
 
       {isSubscribed && todayCheckin && (
