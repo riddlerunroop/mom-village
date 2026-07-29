@@ -77,17 +77,23 @@ export function careWeekLabel(week: number): string {
 }
 
 // Converts the "weeks to go" convention `calculateCareWeek` already uses
-// (negative before birth) into the forward-counting pregnancy week number
-// (1 = week 1 of pregnancy, ~40 = full term) that the week-by-week Care
-// Chart rebuild is authored and looked up by — matching how every mother
-// and clinician already talks about pregnancy ("I'm 18 weeks"), rather than
-// a countdown. Standard 40-week due-date convention: pregnancy_week = 40 +
-// weeks_to_go (e.g. 27 weeks to go → week 13, the end of first trimester,
-// consistent with carePhaseKey's own -27 threshold above). Returns null
-// once baby is born (care_week >= 0) or before conception-adjacent tracking
-// starts — the week-by-week table is pregnancy-only for now.
-export function pregnancyWeekNumber(careWeek: number): number | null {
-  if (careWeek >= 0) return null;
+// (negative before birth, 0+ after) into the forward-counting journey week
+// number that the week-by-week Care Chart rebuild is authored and looked up
+// by — matching how every mother and clinician already talks about
+// pregnancy ("I'm 18 weeks"), rather than a countdown. Standard 40-week
+// due-date convention: journey_week = 40 + care_week (e.g. 27 weeks to go →
+// week 13, the end of first trimester, consistent with carePhaseKey's own
+// -27 threshold above; birth itself, care_week 0, → week 40 = full term).
+//
+// Postpartum weeks continue the SAME forward count rather than restarting —
+// week 40 = week 0 postpartum, week 46 = week 6 postpartum, and so on up to
+// week 196 = week 156 postpartum (the third birthday) — per Roop's explicit
+// 2026-07-29 instruction that mothers get a genuinely unique weekly chart
+// entry for her full three-year tenure, not a drop to monthly cadence after
+// early postpartum. (Renamed from pregnancyWeekNumber, which this function
+// was called before it covered postpartum too — one call site, in
+// dashboard/care/chart/page.tsx.)
+export function journeyWeekNumber(careWeek: number): number {
   const week = 40 + careWeek;
   if (week < 1) return 1; // clamp very early entries (due date just set) to week 1
   return week;

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
-import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, pregnancyWeekNumber, type CarePhaseKey } from "@/lib/weekCalculator";
+import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, journeyWeekNumber, type CarePhaseKey } from "@/lib/weekCalculator";
 import LockedPreview from "@/components/LockedPreview";
 import CareStepItem from "@/components/CareStepItem";
 import CareWeekContent, { type CareWeekRow } from "@/components/CareWeekContent";
@@ -87,20 +87,21 @@ export default async function CareChartPage({
     : { data: null };
   const healthFlags: string[] = careProfile?.health_flags || [];
 
-  // New week-by-week content (currently Second trimester, weeks 14-26 only
-  // — see migration_33/34) takes priority over the old phase-based system
-  // whenever a row exists for her exact pregnancy week. Skipped entirely in
-  // Roop's own ?phase= preview mode, since that browses phases, not weeks.
-  // Falls through to the old system below for every week not yet converted
-  // (First trimester, Third trimester, all of postpartum).
-  const pregWeekNum = !previewPhase && week !== null ? pregnancyWeekNumber(week) : null;
-  const { data: weekRow } = isSubscribed && pregWeekNum
+  // New week-by-week content — currently pregnancy weeks 1-39 (First/Second/
+  // Third trimester, migrations 33-36) plus postpartum weeks 0-6 (Early
+  // healing, migrations 37-38) — takes priority over the old phase-based
+  // system whenever a row exists for her exact journey week. Skipped
+  // entirely in Roop's own ?phase= preview mode, since that browses phases,
+  // not weeks. Falls through to the old system below for every week not yet
+  // converted (postpartum weeks 7+, Finding rhythm onward).
+  const journeyWeekNum = !previewPhase && week !== null ? journeyWeekNumber(week) : null;
+  const { data: weekRow } = isSubscribed && journeyWeekNum
     ? await supabase
         .from("care_chart_week_content")
         .select(
-          "week_number, theme_title, mantra, priority, journey, what_you_may_notice, move, nourish, hydration_goal, reset, care_for_yourself, your_corner, support_moment, celebrate_this_week, for_your_care_team"
+          "week_number, theme_title, mantra, priority, journey, what_you_may_notice, move, nourish, hydration_goal, feeding_comfort, rest_support, reset, care_for_yourself, your_corner, support_moment, celebrate_this_week, for_your_care_team, condition_notes"
         )
-        .eq("week_number", pregWeekNum)
+        .eq("week_number", journeyWeekNum)
         .maybeSingle()
     : { data: null };
   const newWeekContent = weekRow as CareWeekRow | null;
@@ -250,6 +251,8 @@ export default async function CareChartPage({
           timeAvailable={todayCheckin.time_available}
           moodScore={todayCheckin.mood_score}
           doneCardKeys={doneCardKeys}
+          deliveryType={deliveryType}
+          healthFlags={healthFlags}
         />
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
