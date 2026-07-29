@@ -103,6 +103,22 @@ Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo) — pure co
 
 **This closes the "Rebuilding through Settling into strength" arc — postpartum weeks 0-52, the full first year, all drafted, reviewed and now live in Supabase.**
 
+## Your rhythm, year three — Part 1 (postpartum weeks 105-130) — content locked, NOT YET DEPLOYED, 2026-07-29
+
+Eighth batch of the postpartum week-by-week build, first of two parts closing the entire rebuild. Covers postpartum weeks 105-130 (roughly 2 years to 2 years 6 months). No schema changes needed beyond `migration_43` (already added for Sustainable Rhythms Part 2). Week-number convention unchanged: postpartum week 105 = week_number 145, week 130 = week_number 170.
+
+**Batching, confirmed with Roop via AskUserQuestion:** this 52-week phase ("Your rhythm, year three," weeks 105-156) split into two 26-week batches, matching how Sustainable Rhythms was split. Part 1 here; Part 2 (weeks 131-156, week_number 171-196) will carry through to the third birthday and close the entire postpartum rebuild.
+
+**Content — `supabase/migration_45_care_chart_week_content_your_rhythm_year_three_part1.sql`.** Claude drafted the full 26-week base version, continuing every decision established in Sustainable Rhythms Part 2: no "Choose your recovery route" block, real named coping techniques woven into every week's Reset section per Roop's standing instruction, one dedicated general-wellbeing check-in week (120, "How are you, really"), and condition_notes on the closing week (130, all four flags).
+
+**Different process this batch, worth flagging plainly.** Roop uploaded a file back for review ("preview.md") that turned out to be byte-for-byte identical to Claude's own base draft — diffed directly, 2421 lines, zero differences. The external AI-app review pass evidently didn't happen this time. Flagged this to Roop via AskUserQuestion rather than silently treating the upload as a real review; she confirmed locking Claude's own base draft as final for this batch. Content carries the same standard as every prior batch's *drafting* stage (grounded in claims already independently verified earlier in this project — no new numeric/clinical claims introduced this batch) but has **not** been through the second-AI-app review pass every other batch in this series has had. Worth keeping in mind if Roop wants a closer look at this specific batch later.
+
+Content parsed programmatically from Claude's own markdown draft (a new parser, `parse_yr3p1.py`, adapted from `parse_sr1.py`'s dash-underlined-header format, since this draft was authored directly rather than pandoc-converted from a docx) and round-trip validated via the same state-machine SQL-literal parser as every prior migration: 53 jsonb blocks, zero errors. All 26 week_numbers (145-170) present, no gaps/duplicates, zero stray backslashes.
+
+No code changes needed — `mental_health_note` rendering was already built for Sustainable Rhythms Part 2. **Status: `migration_45_care_chart_week_content_your_rhythm_year_three_part1.sql` run in Supabase, confirmed by Roop — LOCKED and LIVE.** No GitHub push was needed for this one (content-only migration, no code changed).
+
+Next batch: Your rhythm, year three Part 2 (postpartum weeks 131-156, week_number 171-196) — closes the entire postpartum week-by-week rebuild at the third birthday.
+
 ## Sustainable rhythms — Part 2 (postpartum weeks 79-104) — content locked, NOT YET DEPLOYED, 2026-07-29
 
 Seventh batch of the postpartum week-by-week build, closing Sustainable Rhythms in full (Parts 1 and 2 together = weeks 53-104) and reaching the second birthday. Week-number convention unchanged: postpartum week 79 = week_number 119, week 104 = week_number 144.
