@@ -70,6 +70,7 @@ export type CareWeekRow = {
   your_corner: string;
   support_moment: string;
   celebrate_this_week: string;
+  mental_health_note?: string | null;
   for_your_care_team: string;
   condition_notes?: ConditionNote[] | null;
 };
@@ -441,6 +442,18 @@ export default function CareWeekContent({
         <WeekCard title="Celebrate this week" accent="gold-deep">
           {week.celebrate_this_week}
         </WeekCard>
+
+        {week.mental_health_note && (
+          <WeekCard title="Mental health & support" accent="terracotta">
+            <p className="mb-2">{week.mental_health_note}</p>
+            <Link
+              href="/dashboard/care/mental-health"
+              className="font-semibold text-terracotta underline text-[13px]"
+            >
+              Open Mental health & support →
+            </Link>
+          </WeekCard>
+        )}
       </div>
 
       {resetKey === "heavy_day" && <HeavyDaySafetyBridge />}

@@ -1,0 +1,34 @@
+-- Care Chart week-by-week rebuild — mental_health_note column, 2026-07-29.
+--
+-- One new nullable text column on care_chart_week_content: `mental_health_note`.
+--
+-- Context: Roop's explicit instruction this session — "whatever we are
+-- drafting should also include the mental methods for postpartum depression
+-- as well" — following the PPD/Mental Health Phase 1 build (persistent hub,
+-- Reset footer, heavy-day safety bridge; see CLAUDE.md). Sustainable Rhythms
+-- Part 2's reviewed doc ("Care Chart — Postpartum Sustainable Rhythms Part 2
+-- — Final Move Reset and Mental Health Edition") independently converged on
+-- the same idea from the other direction: it adds a dedicated per-week
+-- "MENTAL HEALTH & SUPPORT" card to every one of its 26 weeks, sitting in
+-- the same card sequence as Celebrate this week / For your care team, not
+-- just referenced in a footer.
+--
+-- The text is identical boilerplate across all 26 weeks in this batch
+-- ("If low mood, anxiety, numbness, anger, frightening thoughts or feeling
+-- unlike yourself is continuing or worsening, open Mental health & support.
+-- We can help you choose the next step.") — but it's stored as its own
+-- column rather than folded into an existing field, for two reasons: (1) it
+-- preserves the reviewer's real editorial intent of giving mental health
+-- equal card-level visual weight alongside Move/Nourish/Reset, not just a
+-- page-bottom footer link; (2) it leaves room for future batches to write
+-- week-specific variants of this note if a reviewed doc ever does, without
+-- needing another schema change.
+--
+-- Nullable and additive, same pattern as feeding_comfort/rest_support
+-- (migration_37) and how_long/why_today/what_to_avoid/detail
+-- (migration_25) — weeks before this batch simply leave it null, and the
+-- existing persistent hub footer + heavy-day safety bridge already built
+-- into CareWeekContent.tsx continue to cover those weeks regardless.
+
+alter table care_chart_week_content
+  add column if not exists mental_health_note text;

@@ -99,7 +99,7 @@ export default async function CareChartPage({
     ? await supabase
         .from("care_chart_week_content")
         .select(
-          "week_number, theme_title, mantra, priority, journey, what_you_may_notice, move, nourish, hydration_goal, feeding_comfort, rest_support, reset, care_for_yourself, your_corner, support_moment, celebrate_this_week, for_your_care_team, condition_notes"
+          "week_number, theme_title, mantra, priority, journey, what_you_may_notice, move, nourish, hydration_goal, feeding_comfort, rest_support, reset, care_for_yourself, your_corner, support_moment, celebrate_this_week, mental_health_note, for_your_care_team, condition_notes"
         )
         .eq("week_number", journeyWeekNum)
         .maybeSingle()
