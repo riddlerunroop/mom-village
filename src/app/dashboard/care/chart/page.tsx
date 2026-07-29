@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
-import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, type CarePhaseKey } from "@/lib/weekCalculator";
+import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, pregnancyWeekNumber, type CarePhaseKey } from "@/lib/weekCalculator";
 import LockedPreview from "@/components/LockedPreview";
 import CareStepItem from "@/components/CareStepItem";
+import CareWeekContent, { type CareWeekRow } from "@/components/CareWeekContent";
 
 // Renamed 2026-07-28 per Roop's review — user-facing section names now read
 // Move / Nourish / Reset / Care for yourself / Rediscover. The underlying
@@ -86,6 +87,35 @@ export default async function CareChartPage({
     : { data: null };
   const healthFlags: string[] = careProfile?.health_flags || [];
 
+  // New week-by-week content (currently Second trimester, weeks 14-26 only
+  // — see migration_33/34) takes priority over the old phase-based system
+  // whenever a row exists for her exact pregnancy week. Skipped entirely in
+  // Roop's own ?phase= preview mode, since that browses phases, not weeks.
+  // Falls through to the old system below for every week not yet converted
+  // (First trimester, Third trimester, all of postpartum).
+  const pregWeekNum = !previewPhase && week !== null ? pregnancyWeekNumber(week) : null;
+  const { data: weekRow } = isSubscribed && pregWeekNum
+    ? await supabase
+        .from("care_chart_week_content")
+        .select(
+          "week_number, theme_title, mantra, priority, journey, what_you_may_notice, move, nourish, hydration_goal, reset, care_for_yourself, your_corner, support_moment, celebrate_this_week, for_your_care_team"
+        )
+        .eq("week_number", pregWeekNum)
+        .maybeSingle()
+    : { data: null };
+  const newWeekContent = weekRow as CareWeekRow | null;
+
+  let doneCardKeys = new Set<string>();
+  if (isSubscribed && newWeekContent && todayCheckin) {
+    const { data: doneRows } = await supabase
+      .from("user_care_week_progress")
+      .select("card_key")
+      .eq("user_id", user!.id)
+      .eq("week_number", newWeekContent.week_number)
+      .eq("completed_date", today);
+    doneCardKeys = new Set((doneRows || []).map((r) => r.card_key));
+  }
+
   let chartContent: {
     id: string;
     section: string;
@@ -98,7 +128,7 @@ export default async function CareChartPage({
     detail: string | null;
   }[] | null = null;
 
-  if (isSubscribed && phaseKey && todayCheckin) {
+  if (isSubscribed && phaseKey && todayCheckin && !newWeekContent) {
     let query = supabase
       .from("weekly_care_chart_content")
       .select("id, section, title, body, time_option, how_long, why_today, what_to_avoid, detail")
@@ -191,7 +221,7 @@ export default async function CareChartPage({
         </div>
       )}
 
-      {isSubscribed && mantraRow?.mantra && (
+      {isSubscribed && !newWeekContent && mantraRow?.mantra && (
         <p className="font-display italic text-lg text-sage-deep mb-8 max-w-[540px]">
           &ldquo;{mantraRow.mantra}&rdquo;
         </p>
@@ -214,6 +244,13 @@ export default async function CareChartPage({
             Check in for today
           </Link>
         </div>
+      ) : newWeekContent ? (
+        <CareWeekContent
+          week={newWeekContent}
+          timeAvailable={todayCheckin.time_available}
+          moodScore={todayCheckin.mood_score}
+          doneCardKeys={doneCardKeys}
+        />
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {bySection.map((section) => (
