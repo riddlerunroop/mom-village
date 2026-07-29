@@ -73,6 +73,7 @@ export type CareWeekRow = {
   mental_health_note?: string | null;
   for_your_care_team: string;
   condition_notes?: ConditionNote[] | null;
+  closing_note?: string | null;
 };
 
 const MOVE_TIER_BY_TIME: Record<string, keyof MoveContent["tiers"]> = {
@@ -492,6 +493,30 @@ export default function CareWeekContent({
           Mental health &amp; support →
         </Link>
       </div>
+
+      {week.closing_note && (
+        <div className="mt-8 rounded-2xl border-2 border-gold-deep/40 bg-ivory px-6 py-8 sm:px-10 sm:py-10 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gold-deep mb-5">
+            The final page of this chart
+          </p>
+          <div className="max-w-md mx-auto space-y-4">
+            {week.closing_note.split("\n\n").map((para, i) => (
+              <p
+                key={i}
+                className={
+                  para.startsWith("With real warmth")
+                    ? "font-display italic text-indigo text-[15px] mt-2 whitespace-pre-line"
+                    : para === "A note from Mom's Village"
+                    ? "font-display text-xl text-indigo mb-2"
+                    : "font-display italic text-ink/75 text-[15px] leading-relaxed"
+                }
+              >
+                {para}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
