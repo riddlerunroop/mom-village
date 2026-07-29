@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, type CarePhaseKey } from "@/lib/weekCalculator";
+import { computePatternSignal } from "@/lib/checkinPattern";
 import LockedPreview from "@/components/LockedPreview";
 
 // Care landing page — rebuilt 2026-07-28 per Roop's review. Previously
@@ -72,6 +73,28 @@ export default async function CareLandingPage() {
     recentDaysCount = new Set((recentRows || []).map((r) => r.completed_date)).size;
   }
 
+  // Gentle, non-blocking pattern-escalation banner — added 2026-07-29,
+  // following up on the "Open strategic question" flagged when PPD/Mental
+  // Health Phase 1 was built. Confirmed scope via AskUserQuestion: a
+  // simple banner recomputed fresh on every visit (never scored, never
+  // stored beyond the check-ins that already exist, never a push
+  // notification), using the exact same tiering as the Pattern page so the
+  // two surfaces never disagree. Only shown at the "several_heavy" tier —
+  // the same threshold the Pattern page itself treats as worth a real,
+  // gentle nudge toward support.
+  let showPatternBanner = false;
+  if (isSubscribed) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
+    const { data: recentCheckins } = await supabase
+      .from("user_daily_checkin")
+      .select("checkin_date, mood_score")
+      .eq("user_id", user!.id)
+      .gte("checkin_date", thirtyDaysAgo.toISOString().slice(0, 10))
+      .order("checkin_date", { ascending: true });
+    showPatternBanner = computePatternSignal(recentCheckins || []) === "several_heavy";
+  }
+
   return (
     <main className="max-w-[900px] mx-auto px-6 py-10">
       <div className="mb-2 text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold">
@@ -137,6 +160,22 @@ export default async function CareLandingPage() {
               7 days — however many, that counts.
             </p>
           )}
+        </div>
+      )}
+
+      {isSubscribed && showPatternBanner && (
+        <div className="bg-terracotta/10 rounded-2xl border border-terracotta/30 p-5 mb-4">
+          <p className="text-[13px] text-ink/75 mb-3">
+            The last little while has looked heavier than usual in your daily
+            check-ins. That doesn&apos;t automatically mean anything specific
+            — but it&apos;s worth a gentle look, whenever you have a moment.
+          </p>
+          <Link
+            href="/dashboard/care/mental-health/pattern"
+            className="inline-block text-[13px] font-semibold px-5 py-2 rounded-full bg-terracotta text-ivory"
+          >
+            See my pattern →
+          </Link>
         </div>
       )}
 

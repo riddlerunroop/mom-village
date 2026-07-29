@@ -15,6 +15,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { PROTEIN_TIP, type DietPreference } from "@/lib/proteinTips";
 
 // Recovery route — postpartum-only, added with the Early healing batch
 // (migration_38). Delivery-type-branched guidance, kept as its own key
@@ -258,6 +259,7 @@ export default function CareWeekContent({
   doneCardKeys,
   deliveryType,
   healthFlags,
+  dietPreference,
 }: {
   week: CareWeekRow;
   timeAvailable: string;
@@ -265,6 +267,7 @@ export default function CareWeekContent({
   doneCardKeys: Set<string>;
   deliveryType?: string;
   healthFlags?: string[];
+  dietPreference?: DietPreference | null;
 }) {
   const tierKey = MOVE_TIER_BY_TIME[timeAvailable] ?? "steady";
   const resetKey = RESET_KEY_BY_MOOD[moodScore] ?? "okay";
@@ -363,7 +366,20 @@ export default function CareWeekContent({
           weekNumber={week.week_number}
           initiallyDone={doneCardKeys.has("nourish")}
         >
-          {week.nourish}
+          <p className="mb-2">{week.nourish}</p>
+          {dietPreference && (
+            <div className="mt-3 pt-3 border-t border-sage-deep/15">
+              <p className="text-[11px] font-semibold text-sage-deep uppercase tracking-wide mb-1">
+                A protein tip for you, {dietPreference === "vegetarian" ? "vegetarian" : "non-vegetarian"}
+              </p>
+              <p className="text-[12px] text-ink/65 mb-1.5">{PROTEIN_TIP[dietPreference].headline}</p>
+              <ul className="text-[12px] text-ink/70 list-disc list-inside space-y-0.5">
+                {PROTEIN_TIP[dietPreference].tips.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </WeekCard>
 
         <WeekCard

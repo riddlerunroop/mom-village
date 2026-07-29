@@ -39,10 +39,30 @@ const CHOICES = [
   },
 ] as const;
 
+// Mental-health-history flags — read here since 2026-07-29, following up
+// on the "Open strategic question" flagged when Phase 1 was built. Stored
+// on user_care_profile.health_flags (same array as thyroid/pcos/etc., see
+// migration_48) at the care-quiz. Deliberately shown once, softly, on the
+// hub itself rather than repeated on every week's Reset card or turned
+// into any kind of heightened monitoring — she already told us this once;
+// the only thing that changes is that this specific page acknowledges it.
+const MH_HISTORY_KEYS = ["mh_history_pregnancy", "mh_history_postpartum", "mh_history_other"];
+
 export default async function MentalHealthHubPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const isSubscribed = await hasActiveSubscription(supabase, user!.id);
+
+  const { data: careProfile } = isSubscribed
+    ? await supabase
+        .from("user_care_profile")
+        .select("health_flags")
+        .eq("user_id", user!.id)
+        .maybeSingle()
+    : { data: null };
+  const hasMhHistory = (careProfile?.health_flags || []).some((f: string) =>
+    MH_HISTORY_KEYS.includes(f)
+  );
 
   return (
     <main className="max-w-[720px] mx-auto px-6 py-10">
@@ -72,6 +92,18 @@ export default async function MentalHealthHubPage() {
           .
         </p>
       </div>
+
+      {isSubscribed && hasMhHistory && (
+        <div className="bg-sage-deep/10 border border-sage-deep/25 rounded-2xl p-5 mb-8">
+          <p className="text-sm text-ink/75">
+            You let us know you&apos;ve experienced depression or anxiety
+            around pregnancy or birth before. Perinatal depression and
+            anxiety can happen again, even if things were different this
+            time — that&apos;s not a failure, it&apos;s just something worth
+            knowing. Everything on this page is here for exactly this.
+          </p>
+        </div>
+      )}
 
       {!isSubscribed ? (
         <LockedPreview

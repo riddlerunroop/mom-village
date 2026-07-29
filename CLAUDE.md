@@ -4,6 +4,29 @@
 
 *This section is maintained by Claude at the end of every significant session. Read this first in any new chat — it replaces needing to re-explain context. Update it whenever something material changes (content locked, feature shipped, decision made).*
 
+## Diet preference + mental-health-history flag, PPD pattern escalation — LIVE, 2026-07-29
+
+Roop's instruction: build the two remaining open items flagged when the postpartum week-by-week rebuild finished (veg/non-veg protein preference, and the "Open strategic question" mental-health items), and integrate the mental-health piece with the PPD/Mental Health Phase 1 system already live. Four scope questions confirmed via AskUserQuestion before building:
+
+1. **Skip a validated screening instrument (EPDS/PHQ-9) this pass** — same call Phase 1 made, deferred pending a separate licensing conversation. This build is the flag + escalation only.
+2. **Pattern escalation is a gentle, non-blocking banner** — no push notification.
+3. **Diet preference gets a supplementary tip layer**, not a full per-week recipe rewrite across all 196 already-locked weeks.
+4. **Mental-health-history question uses multiple options** (during a previous pregnancy / after a previous birth / another time in life / prefer not to say), not a bare yes/no.
+
+**Schema — `supabase/migration_48_care_profile_diet_and_mh_history.sql`.** One new nullable column, `diet_preference` ('vegetarian' | 'non_vegetarian'), on `user_care_profile`. The mental-health-history flags needed **no schema change** — they're new string values (`mh_history_pregnancy` / `mh_history_postpartum` / `mh_history_other` / `mh_history_declined`) stored inside the existing `health_flags text[]` array, the same array thyroid/diabetes_gd/pcos/high_bp already live in (app-enforced values, not DB-constrained, per migration_2's own original comment). `CareWeekContent.tsx`'s `condition_notes` filtering only ever checks for the four physical flags plus `'none'`, so the new values simply pass through unused there — no risk of an mh_history flag accidentally triggering a physical-condition note.
+
+**Care-quiz — `src/app/care-quiz/page.tsx` rebuilt.** Added the diet-preference question (two buttons, skippable) and the mental-health-history question (three selectable reasons plus a mutually-exclusive "No, or I'd rather not say," matching Roop's multi-option call) below the existing health-flags section. Also fixed a real pre-existing gap while touching this file: the page previously always loaded blank regardless of what was already saved, meaning revisiting it to update an answer meant re-entering everything from scratch. Now fetches her existing `health_flags`/`diet_preference` on mount and pre-fills — reasonable before, more important now that one of the questions is this personal.
+
+**Nourish tip layer — `src/lib/proteinTips.ts` (new) + `CareWeekContent.tsx`.** A small, non-branching reference table of general veg/non-veg protein tips (dal/paneer/tofu/milk/peanut butter vs. eggs/chicken/fish, both alongside dal/milk), shown as a distinct sub-section inside the existing Nourish card whenever she has a stored `diet_preference` — every week's actual Nourish text is untouched. The one numeric claim (protein needs rising to roughly 55-70g/day through pregnancy and lactation, depending on stage) is the ICMR-NIN 2020 RDA for Indians, independently verified via WebSearch before writing: baseline 46g/day for women, +9.5g in the 2nd trimester (~55.5g), +22g in the 3rd trimester (~68g), +17g for the first 6 months of breastfeeding (~63g), +13g for months 7-12 (~59g). `src/app/dashboard/care/chart/page.tsx`'s `user_care_profile` select widened to include `diet_preference`, passed into `CareWeekContent`.
+
+**Pattern escalation — `src/lib/checkinPattern.ts` (new) + `src/app/dashboard/care/page.tsx`.** Extracted the exact tiering logic the Mental Health hub's Pattern page already used (not enough data / mostly steady / some heavy / several heavy, based on low-mood days in the last 14 check-ins) into a shared helper, so the Care landing page and the Pattern page can never silently disagree about what counts as "several heavy days." `pattern/page.tsx` refactored to use the shared helper (behavior unchanged, verified). The Care landing page now recomputes this fresh on every visit and shows a small, calm, non-blocking banner ("The last little while has looked heavier than usual...") linking to the Pattern page whenever the tier reaches `several_heavy` — never scored, never stored beyond the check-ins that already exist, never a push notification, matching the confirmed scope.
+
+**Integration with the PPD system — `src/app/dashboard/care/mental-health/page.tsx`.** The hub now reads her `health_flags` and, if any `mh_history_*` flag is present, shows one soft, non-alarming note near the top (below the crisis banner, above the choice cards): acknowledges she flagged prior history, and names — gently, without a specific percentage given how widely estimates vary across sources — that perinatal depression and anxiety can recur even when this pregnancy/postpartum period looks different. Independently verified via WebSearch before writing this: prior history of postpartum depression/psychiatric illness is one of the most consistently cited risk factors for recurrence in the literature (ACOG, StatPearls, and peer-reviewed recurrence studies all confirm this; specific recurrence-rate estimates vary too widely across sources — roughly 1-in-3-to-4 in some studies, up to 90% in others for prior PPD/psychosis specifically — to responsibly cite one number, so the copy deliberately states the *direction* of the risk without a false-precision figure). Shown once, softly, on this one page — not repeated on every week's Reset card, and not turned into any kind of heightened monitoring elsewhere.
+
+Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Status: LIVE, confirmed 2026-07-29** — `migration_48_care_profile_diet_and_mh_history.sql` needs to be run in Supabase (pending, same pattern as every migration in this project — paste into the SQL editor), code (`care-quiz/page.tsx`, `proteinTips.ts`, `checkinPattern.ts`, `CareWeekContent.tsx`, `chart/page.tsx`, `dashboard/care/page.tsx`, `mental-health/page.tsx`, `mental-health/pattern/page.tsx`) ready for a GitHub Desktop push.
+
+This closes both items flagged as open when the postpartum week-by-week rebuild finished. The only genuinely deferred piece from the original "Open strategic question" is the validated screening instrument (EPDS/PHQ-9) — still pending a separate licensing decision, unchanged from Phase 1's own call.
+
 ## Care Chart week-by-week rebuild — in progress, 2026-07-29
 
 Roop's instruction: rebuild the Care Chart from its 9 broad phases into true individual weeks (not deepened phases), spanning full pregnancy through postpartum, with condition-specific branching (thyroid/PCOS/diabetes-GD/high BP) and time/energy-matched content — same rigor as the Monthly Chart (Claude drafts → Roop runs it past other AI apps → Claude independently verifies medical claims → lock). Confirmed via AskUserQuestion: true week-by-week granularity, full condition branching across all phases, starting from pregnancy week 1 (not narrowed to match the Monthly Chart's -6-month start).
@@ -103,7 +126,7 @@ Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo) — pure co
 
 **This closes the "Rebuilding through Settling into strength" arc — postpartum weeks 0-52, the full first year, all drafted, reviewed and now live in Supabase.**
 
-## Your rhythm, year three — Part 2 (postpartum weeks 131-156) — content LOCKED, NOT YET DEPLOYED, 2026-07-29
+## Your rhythm, year three — Part 2 (postpartum weeks 131-156) — LOCKED and LIVE, 2026-07-29
 
 Tenth and final batch of the postpartum week-by-week build — closes "Your rhythm, year three" in full and completes the **entire** pregnancy-through-third-birthday Care Chart week-by-week rebuild (197 individually authored weeks total: pregnancy weeks 1-39, postpartum weeks 0-156). Covers postpartum weeks 131-156 (roughly 2 years 6 months through the third birthday, week_number 171-196). No schema changes needed — reuses every column/shape since Early healing, including `mental_health_note`.
 
@@ -128,7 +151,7 @@ Content parsed programmatically from Claude's own markdown draft ("Care Chart �
 1. **Week 131 trimmed.** Removed redundant framing ("Not every week in this final stretch needs to carry weight...") and a redundant notice-list item, per Roop's ask to make the "ordinary week" theme even crisper. Re-parsed and re-validated cleanly after the edit — no other week affected.
 2. **New closing note — `supabase/migration_47_care_chart_closing_note.sql`.** Roop's ask: "a short closing note from Mom Village after Week 156 as the final page of the Care Chart — not as another week's content, but as a farewell from the people who built it." Built as a new nullable `closing_note` text column on `care_chart_week_content` (additive, same pattern as `feeding_comfort`/`rest_support`/`mental_health_note` — every other week leaves it null). Runs after migration_46 since it only UPDATEs the already-inserted week_number 196 row. Content is deliberately in the app's own voice, not the mother's reflective voice Week 156 itself uses — thanks her, names the real scale of what she completed (197 individually authored weeks), is explicit that only the *weekly chart* is ending (not the app itself — Community, Library, and Mental health & support remain exactly as available), and is signed "The Mom's Village team." `src/components/CareWeekContent.tsx` renders it as a visually distinct closing block (gold-bordered, centered, serif/italic "letter" styling, labelled "The final page of this chart") after every other card and the persistent mental-health footer — genuinely separate from the WeekCard grid, not one more card in it. `src/app/dashboard/care/chart/page.tsx`'s select widened to include the new column. Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo).
 
-**Status: `migration_46_care_chart_week_content_your_rhythm_year_three_part2.sql` and `migration_47_care_chart_closing_note.sql` written and validated, confirmed by Roop — LOCKED, NOT YET RUN.** Migration 46 must run before migration 47 (47's UPDATE targets a row 46 inserts). Once both are run and the code is pushed via GitHub Desktop, this closes the entire postpartum Care Chart week-by-week rebuild — pregnancy weeks 1-39 plus postpartum weeks 0-156, in full, for the first time in this project's history.
+**Status: LOCKED and LIVE, confirmed 2026-07-29.** Both `migration_46` and `migration_47` run in Supabase — Roop verified directly with a SQL check (`select count(*), min(week_number), max(week_number) from care_chart_week_content` returned `196, 1, 196` — the full range, no gaps, no duplicates). Code (`CareWeekContent.tsx`, `chart/page.tsx`) committed and pushed via GitHub Desktop (`452010e Add Mom's Village closing note to Care Chart week 156`), confirmed via `git status` showing a clean tree, up to date with `origin/main`. **This closes the entire postpartum Care Chart week-by-week rebuild — pregnancy weeks 1-39 plus postpartum weeks 0-156, 196 weeks total, fully live for the first time in this project's history.**
 
 ## Your rhythm, year three — Part 1 (postpartum weeks 105-130) — content locked, NOT YET DEPLOYED, 2026-07-29
 
@@ -146,7 +169,7 @@ No code changes needed — `mental_health_note` rendering was already built for 
 
 Your rhythm, year three Part 2 (postpartum weeks 131-156, week_number 171-196) — closes the entire postpartum week-by-week rebuild at the third birthday — is now drafted too, see the section above.
 
-## Sustainable rhythms — Part 2 (postpartum weeks 79-104) — content locked, NOT YET DEPLOYED, 2026-07-29
+## Sustainable rhythms — Part 2 (postpartum weeks 79-104) — LOCKED and LIVE, 2026-07-29
 
 Seventh batch of the postpartum week-by-week build, closing Sustainable Rhythms in full (Parts 1 and 2 together = weeks 53-104) and reaching the second birthday. Week-number convention unchanged: postpartum week 79 = week_number 119, week 104 = week_number 144.
 
@@ -164,11 +187,11 @@ Roop ran the draft through another AI app and sent back "Care Chart — Postpart
 
 **Code.** `src/components/CareWeekContent.tsx` — new optional `mental_health_note` field on `CareWeekRow`; when present, renders as its own `WeekCard` ("Mental health & support," terracotta accent) right after "Celebrate this week," linking to the hub — additive, so weeks without this field (everything before week 79) render exactly as before. `src/app/dashboard/care/chart/page.tsx` — widened the `care_chart_week_content` select to include the new column.
 
-Content round-trip validated via the same state-machine SQL-literal parser as every prior migration: 53 jsonb blocks, zero errors. All 26 week_numbers (119-144) present, no gaps/duplicates. Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Status: `migration_43_care_chart_mental_health_note.sql` and `migration_44_care_chart_week_content_sustainable_rhythms_part2.sql` written and validated, NOT YET DEPLOYED** — need to be run in Supabase's SQL editor (43 before 44), then committed/pushed via GitHub Desktop.
+Content round-trip validated via the same state-machine SQL-literal parser as every prior migration: 53 jsonb blocks, zero errors. All 26 week_numbers (119-144) present, no gaps/duplicates. Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Status: LOCKED and LIVE, confirmed 2026-07-29** — `migration_43_care_chart_mental_health_note.sql` and `migration_44_care_chart_week_content_sustainable_rhythms_part2.sql` both run in Supabase (confirmed via the full-range week_number check above), code committed and pushed via GitHub Desktop (`a88650d Add Sustainable Rhythms Part 2 (postpartum weeks 79-104) + mental health note field`).
 
 This closes Sustainable Rhythms in full. Next batch: Your rhythm, year three (postpartum weeks 105-156, week_number 145-196) — the final phase of the postpartum week-by-week rebuild.
 
-## Sustainable rhythms — Part 1 (postpartum weeks 53-78) — content locked, NOT YET DEPLOYED, 2026-07-29
+## Sustainable rhythms — Part 1 (postpartum weeks 53-78) — LOCKED and LIVE, 2026-07-29
 
 Fifth batch of the postpartum week-by-week build. Sustainable rhythms spans the full second postpartum year (weeks 53-104) — Roop chose, via AskUserQuestion, to split it into two 26-week batches (matching Settling into strength's size) rather than draft all 52 weeks at once. Part 1 covers weeks 53-78 (roughly 12-18 months postpartum). **No schema changes needed** — reuses every column/shape from Early healing as-is. Week-number convention unchanged: postpartum week 53 = week_number 93, week 78 = week_number 118.
 
@@ -180,11 +203,11 @@ Same pattern as Settling into strength: the doc's "Clinical review basis" and ed
 
 No other condition_notes this batch beyond the one caught above — matches Claude's own draft note that nothing new/condition-specific arose in weeks 53-78 beyond the general Week 75 content.
 
-Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo) — pure content addition, no code changes needed. **Status: `migration_42_care_chart_week_content_sustainable_rhythms_part1.sql` written and validated, NOT YET DEPLOYED** — needs to be run in Supabase's SQL editor, then committed/pushed via GitHub Desktop.
+Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo) — pure content addition, no code changes needed. **Status: LOCKED and LIVE, confirmed 2026-07-29** — `migration_42_care_chart_week_content_sustainable_rhythms_part1.sql` run in Supabase (confirmed via the full-range week_number check logged under Year Three Part 2 above).
 
 Next batch: Sustainable rhythms Part 2 (postpartum weeks 79-104, week_number 119-144) — closes the full second postpartum year.
 
-## PPD / Mental Health — Phase 1 built, 2026-07-29
+## PPD / Mental Health — Phase 1 LIVE, 2026-07-29
 
 Direct follow-on to the "Open strategic question" below. Roop uploaded a detailed "Care Chart — Maternal Mental Health and Postpartum Depression Integration Specification.docx" and asked for a critical review ("lets deal with PPD like this.. what do you say ?"). Reviewed in full (14 sections, converted to `ppd_spec.md`). Both cited clinical sources independently verified via WebSearch: ACOG Committee Opinion #757/#736 (screen at least once during the perinatal period for depression/anxiety — first OB visit, 24-28wk, and the postpartum visit within 12 weeks) and USPSTF's B-recommendation for counseling interventions for those at increased risk. Both check out accurately.
 
@@ -204,7 +227,7 @@ Proposed and Roop approved ("go ahead and implement then") a phased build: **Pha
 - `src/components/CareWeekContent.tsx` — two additions to the new week-by-week rendering system (pregnancy weeks 1-39 + postpartum weeks 0-78 so far): (1) a persistent footer below every week's content, always shown regardless of mood, linking to the mental-health hub ("However Reset landed for you today, support isn't limited to this one card"); (2) a new `HeavyDaySafetyBridge` component, shown only when her check-in's mood maps to `resetKey === "heavy_day"` — one soft question ("is anything about how you're feeling worrying you right now?"), and every answer (including declining) still leads somewhere real: yes/maybe → direct `/safety` link, no → a warm acknowledgment that still surfaces the hub link. Deliberately not a screening tool — never scored, never stored.
 - `src/app/dashboard/care/chart/page.tsx` — the OLD phase-based system (still serving postpartum weeks 79+, not yet converted to `care_chart_week_content`) got the equivalent treatment: the same persistent footer link, plus a heavy-day banner shown when `todayCheckin.mood_score <= 1`, so mothers on unconverted weeks aren't missing this coverage while later batches get built out.
 
-Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Status: built 2026-07-29, not yet run/pushed** — no new Supabase migration needed (Phase 1 reuses `user_daily_checkin` as-is, `prepare/` stores nothing), so this is a pure GitHub Desktop push once Roop reviews it, no SQL editor step required.
+Verified clean on `npx tsc --noEmit` and `npx eslint .` (whole repo). **Status: LIVE, confirmed 2026-07-29** — no Supabase migration needed (Phase 1 reuses `user_daily_checkin` as-is, `prepare/` stores nothing), code committed and pushed via GitHub Desktop (`e7cbfbc Add Mental health & support hub (PPD/PPA Phase 1)`).
 
 ## Open strategic question — postpartum depression/anxiety coverage, raised by Roop 2026-07-29
 

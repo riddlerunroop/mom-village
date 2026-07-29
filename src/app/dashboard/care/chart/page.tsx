@@ -81,11 +81,15 @@ export default async function CareChartPage({
   const { data: careProfile } = isSubscribed
     ? await supabase
         .from("user_care_profile")
-        .select("health_flags")
+        .select("health_flags, diet_preference")
         .eq("user_id", user!.id)
         .maybeSingle()
     : { data: null };
   const healthFlags: string[] = careProfile?.health_flags || [];
+  const dietPreference = (careProfile?.diet_preference ?? null) as
+    | "vegetarian"
+    | "non_vegetarian"
+    | null;
 
   // New week-by-week content — currently pregnancy weeks 1-39 (First/Second/
   // Third trimester, migrations 33-36) plus postpartum weeks 0-6 (Early
@@ -253,6 +257,7 @@ export default async function CareChartPage({
           doneCardKeys={doneCardKeys}
           deliveryType={deliveryType}
           healthFlags={healthFlags}
+          dietPreference={dietPreference}
         />
       ) : (
         <>

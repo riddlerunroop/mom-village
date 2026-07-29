@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import LockedPreview from "@/components/LockedPreview";
+import { computePatternSignal } from "@/lib/checkinPattern";
 
 const MOOD_LABEL: Record<number, string> = {
   1: "Heavy day",
@@ -38,16 +39,7 @@ export default async function PatternPage() {
 
   const rows = checkins || [];
   const last14 = rows.slice(-14);
-  const lowMoodDays = last14.filter((r) => r.mood_score <= 2).length;
-  const daysCheckedInLast14 = last14.length;
-
-  let signal: "not_enough" | "mostly_steady" | "some_heavy" | "several_heavy" = "not_enough";
-  if (rows.length >= 3) {
-    if (daysCheckedInLast14 === 0) signal = "not_enough";
-    else if (lowMoodDays >= 5) signal = "several_heavy";
-    else if (lowMoodDays >= 2) signal = "some_heavy";
-    else signal = "mostly_steady";
-  }
+  const signal = computePatternSignal(rows);
 
   return (
     <main className="max-w-[680px] mx-auto px-6 py-10">
