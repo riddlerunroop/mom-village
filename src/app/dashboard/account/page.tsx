@@ -5,6 +5,7 @@ import AccountForm from "./AccountForm";
 import PushSubscribeButton from "@/components/PushSubscribeButton";
 import BlockedList from "@/components/BlockedList";
 import DeleteAccountRequest from "@/components/DeleteAccountRequest";
+import SubscribeButton from "@/components/SubscribeButton";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -114,6 +115,7 @@ export default async function AccountPage() {
           </Link>
           .
         </p>
+        {!subscription && <SubscribeButton label="Subscribe for ₹299/month" />}
       </div>
 
       <div className="bg-ivory-2 rounded-2xl border border-line p-6 mt-8">

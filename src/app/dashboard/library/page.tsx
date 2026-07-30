@@ -3,9 +3,10 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import LockedPreview from "@/components/LockedPreview";
+import BuyButton from "@/components/BuyButton";
 import { LIBRARY_BOOKS, getBookMeta, type LibraryBookMeta } from "@/lib/library";
 
-function BookCard({ book, isSubscribed }: { book: LibraryBookMeta; isSubscribed: boolean }) {
+function BookCard({ book, unlocked }: { book: LibraryBookMeta; unlocked: boolean }) {
   const card = (
     <div className="group">
       <div className="relative aspect-[0.773] rounded-lg overflow-hidden border border-line shadow-sm bg-ink">
@@ -31,8 +32,18 @@ function BookCard({ book, isSubscribed }: { book: LibraryBookMeta; isSubscribed:
     </div>
   );
 
-  if (!isSubscribed) {
-    return <div className="opacity-70">{card}</div>;
+  if (!unlocked) {
+    return (
+      <div>
+        <div className="opacity-70">{card}</div>
+        <BuyButton
+          type="book"
+          slug={book.slug}
+          label="Buy for ₹249"
+          className="mt-2 [&_button]:w-full [&_button]:text-[11px] [&_button]:px-3 [&_button]:py-1.5"
+        />
+      </div>
+    );
   }
 
   return (
@@ -48,6 +59,23 @@ export default async function LibraryPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const isSubscribed = await hasActiveSubscription(supabase, user!.id);
+
+  // Individual/bundle book purchases (Razorpay integration, 2026-07-30) —
+  // only matters for non-subscribers, membership already includes
+  // everything. One query for all her paid purchases, rather than a
+  // separate hasPurchasedBook() round-trip per book.
+  let hasBundle = false;
+  let purchasedSlugs = new Set<string>();
+  if (!isSubscribed) {
+    const { data: purchases } = await supabase
+      .from("user_book_purchases")
+      .select("book_slug, is_bundle")
+      .eq("user_id", user!.id)
+      .eq("status", "paid");
+    hasBundle = (purchases || []).some((p) => p.is_bundle);
+    purchasedSlugs = new Set((purchases || []).filter((p) => p.book_slug).map((p) => p.book_slug as string));
+  }
+  const isUnlocked = (slug: string) => isSubscribed || hasBundle || purchasedSlugs.has(slug);
 
   const wealthBooks = LIBRARY_BOOKS.filter((b) => b.series === "wealth");
   const parentingBooks = LIBRARY_BOOKS.filter((b) => b.series === "parenting");
@@ -84,12 +112,19 @@ export default async function LibraryPage() {
         membership, readable right here in the app.
       </p>
 
-      {!isSubscribed && (
+      {!isSubscribed && !hasBundle && (
         <div className="mb-10">
           <LockedPreview
             title="All six books, included"
-            teaser="Membership includes full access to every book — or buy any one individually without subscribing."
-          />
+            teaser="Membership includes full access to every book — or buy any one individually below, or all six as a bundle."
+          >
+            <p className="text-xs text-ivory/70 mb-3">Just want the books?</p>
+            <BuyButton
+              type="bundle"
+              label="Buy all six for ₹849"
+              className="inline-block [&_button]:bg-ivory/10 [&_button]:border-ivory/40 [&_button]:text-ivory"
+            />
+          </LockedPreview>
         </div>
       )}
 
@@ -128,7 +163,7 @@ export default async function LibraryPage() {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
           {wealthBooks.map((b) => (
-            <BookCard key={b.slug} book={b} isSubscribed={isSubscribed} />
+            <BookCard key={b.slug} book={b} unlocked={isUnlocked(b.slug)} />
           ))}
         </div>
       </section>
@@ -139,7 +174,7 @@ export default async function LibraryPage() {
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
           {parentingBooks.map((b) => (
-            <BookCard key={b.slug} book={b} isSubscribed={isSubscribed} />
+            <BookCard key={b.slug} book={b} unlocked={isUnlocked(b.slug)} />
           ))}
         </div>
       </section>

@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { hasPurchasedBook } from "@/lib/purchases";
 import { getBookMeta } from "@/lib/library";
 import LockedPreview from "@/components/LockedPreview";
+import BuyButton from "@/components/BuyButton";
 import BookReader from "@/components/BookReader";
 import type { LibraryBookContent } from "@/types/library-content";
 
@@ -68,14 +70,17 @@ export default async function LibraryBookPage({
     data: { user },
   } = await supabase.auth.getUser();
   const isSubscribed = await hasActiveSubscription(supabase, user!.id);
+  const isPurchased = isSubscribed ? true : await hasPurchasedBook(supabase, user!.id, slug);
 
-  if (!isSubscribed) {
+  if (!isPurchased) {
     return (
       <main className="max-w-[900px] mx-auto px-6 py-10">
         <LockedPreview
           title={meta.title}
           teaser="Membership includes full access to every book in the Library — or buy this one individually without subscribing."
-        />
+        >
+          <BuyButton type="book" slug={slug} label="Buy this book for ₹249" />
+        </LockedPreview>
       </main>
     );
   }
