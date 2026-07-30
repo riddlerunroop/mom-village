@@ -1,19 +1,16 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import HomeMobileNav from "@/components/HomeMobileNav";
+import ExploreDropdown from "@/components/ExploreDropdown";
 
 // Nav restructured 2026-07-28 — Roop's review: "nav reads a little
 // crowded" (6 top-level items). Now just 3: Monthly chart, an "Explore"
-// dropdown grouping the other four pillars, and Pricing (guests only).
+// dropdown grouping the other four pillars (see ExploreDropdown.tsx — made
+// tap-friendly 2026-07-30, audit finding #17), and Pricing (guests only).
 // Every link still routes through login/onboarding for guests and straight
 // to the real page for members, via the dest() helper below — clicking a
 // pillar should lead toward actually getting it, not just scroll to a
 // pitch about it.
-const EXPLORE_ITEMS = [
-  { label: "Wealth", href: "/dashboard/wealth" },
-  { label: "Care", href: "/dashboard/care" },
-  { label: "Library", href: "/dashboard/library" },
-  { label: "Community", href: "/dashboard/community" },
-];
 
 // Illustrative mini preview used in the hero — a crisper, concrete glimpse
 // of the real Monthly Chart instead of the abstract blurred glow this
@@ -137,25 +134,7 @@ export default async function Home() {
               Monthly chart
             </Link>
           </li>
-          <li className="group relative whitespace-nowrap">
-            <span className="flex items-center gap-1 cursor-default hover:text-gold-deep transition-colors py-2">
-              Explore
-              <span className="text-[10px] mt-px">▾</span>
-            </span>
-            <div className="absolute left-0 top-full opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 transition-all duration-150 z-20">
-              <div className="bg-ivory rounded-xl border border-line shadow-lg py-2 mt-1 min-w-[160px]">
-                {EXPLORE_ITEMS.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={dest(item.href)}
-                    className="block px-4 py-2 text-sm text-ink hover:bg-ivory-2 hover:text-gold-deep transition-colors whitespace-nowrap"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </li>
+          <ExploreDropdown isLoggedIn={!!user} />
           {!user && (
             <li className="whitespace-nowrap">
               <Link href="#pricing" className="hover:text-gold-deep transition-colors">
@@ -164,7 +143,7 @@ export default async function Home() {
             </li>
           )}
         </ul>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="hidden lg:flex items-center gap-4 shrink-0">
           {user ? (
             <>
               <Link
@@ -197,6 +176,7 @@ export default async function Home() {
             </>
           )}
         </div>
+        <HomeMobileNav isLoggedIn={!!user} />
       </nav>
 
       <Jaali light />
@@ -272,7 +252,7 @@ export default async function Home() {
                 </div>
               ))}
             </div>
-            <p className="text-[9px] text-ink/40 italic text-center mt-3">
+            <p className="text-[9px] text-ink/55 italic text-center mt-3">
               an example — yours is matched to her exact month
             </p>
           </div>
@@ -595,7 +575,7 @@ export default async function Home() {
               portals — before it&apos;s published, not just written from
               memory.
             </p>
-            <p className="text-xs text-ink/50 mt-4 italic">
+            <p className="text-xs text-ink/65 mt-4 italic">
               This app offers general guidance, not medical or financial
               advice. Always check with your own doctor before starting or
               changing any exercise, feeding, or recovery routine.

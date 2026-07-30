@@ -32,17 +32,24 @@ export default async function MemoriesPage() {
     : [{ data: null }, { data: null }];
 
   // Photo paths are private storage objects — turn each into a short-lived
-  // signed URL so the client can actually render them.
-  const photosWithUrls = photoLogs
-    ? await Promise.all(
-        photoLogs.map(async (p) => {
-          const { data } = await supabase.storage
-            .from("memory-photos")
-            .createSignedUrl(p.photo_path, 3600);
-          return { ...p, url: data?.signedUrl || null };
-        })
-      )
-    : [];
+  // signed URL so the client can actually render them. Batched into one
+  // request via createSignedUrls (2026-07-30, audit finding #18) rather
+  // than one createSignedUrl call per photo — same result, fewer round
+  // trips as her memory timeline grows.
+  type PhotoLogRow = NonNullable<typeof photoLogs>[number];
+  let photosWithUrls: (PhotoLogRow & { url: string | null })[] = [];
+  if (photoLogs && photoLogs.length > 0) {
+    const { data: signedUrls } = await supabase.storage
+      .from("memory-photos")
+      .createSignedUrls(
+        photoLogs.map((p) => p.photo_path),
+        3600
+      );
+    photosWithUrls = photoLogs.map((p, i) => ({
+      ...p,
+      url: signedUrls?.[i]?.signedUrl || null,
+    }));
+  }
 
   return (
     <main className="max-w-[700px] mx-auto px-6 py-10">

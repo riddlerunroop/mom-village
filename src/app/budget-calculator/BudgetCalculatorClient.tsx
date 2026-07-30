@@ -34,13 +34,17 @@ function ToggleGroup<T extends string>({
   value: T | null;
   onChange: (v: T) => void;
 }) {
+  const labelId = `toggle-group-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
   return (
     <div className="mb-7">
-      <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-1">
+      <div id={labelId} className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-1">
         {label}
-      </label>
+      </div>
       {helpText && <p className="text-[12px] text-ink/50 mb-3">{helpText}</p>}
       <div
+        role="group"
+        aria-labelledby={labelId}
         className={`grid gap-3 ${!helpText ? "mt-3" : ""}`}
         style={{ gridTemplateColumns: `repeat(${options.length}, 1fr)` }}
       >
@@ -347,14 +351,14 @@ export default function BudgetCalculatorPage() {
 
               {hasHandMeDowns === "yes" && (
                 <div className="mb-7">
-                  <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-1">
+                  <div id="budget-handmedowns-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-1">
                     What do you already have?
-                  </label>
+                  </div>
                   <p className="text-[12px] text-ink/50 mb-3">
                     Select what you already have — anything left unchecked is
                     assumed you still need to buy.
                   </p>
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2.5" role="group" aria-labelledby="budget-handmedowns-label">
                     {HAND_ME_DOWN_KEYS.map((cat) => {
                       const checked = handMeDownCategories.includes(cat);
                       return (

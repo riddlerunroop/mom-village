@@ -103,10 +103,10 @@ function CareCheckinForm() {
           onSubmit={handleSubmit}
           className="bg-ivory-2 rounded-2xl border border-line p-7"
         >
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
+          <div id="checkin-time-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
             How much time do you have today?
-          </label>
-          <div className="grid grid-cols-3 gap-3 mb-7">
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-7" role="group" aria-labelledby="checkin-time-label">
             {TIME_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -123,10 +123,10 @@ function CareCheckinForm() {
             ))}
           </div>
 
-          <label className="block text-xs font-semibold uppercase tracking-wide text-gold-deep mb-3">
+          <div id="checkin-energy-label" className="block text-xs font-semibold uppercase tracking-wide text-gold-deep mb-3">
             How&apos;s your energy today?
-          </label>
-          <div className="flex flex-col gap-2 mb-7">
+          </div>
+          <div className="flex flex-col gap-2 mb-7" role="group" aria-labelledby="checkin-energy-label">
             {ENERGY_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
@@ -143,10 +143,10 @@ function CareCheckinForm() {
             ))}
           </div>
 
-          <label className="block text-xs font-semibold uppercase tracking-wide text-terracotta mb-3">
+          <div id="checkin-mood-label" className="block text-xs font-semibold uppercase tracking-wide text-terracotta mb-3">
             How are you feeling today?
-          </label>
-          <div className="flex flex-col gap-2 mb-7">
+          </div>
+          <div className="flex flex-col gap-2 mb-7" role="group" aria-labelledby="checkin-mood-label">
             {MOOD_OPTIONS.map((opt) => (
               <button
                 key={opt.value}

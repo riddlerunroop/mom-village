@@ -86,11 +86,22 @@ export default async function WealthPage() {
             </p>
           </Link>
 
-          <div className="bg-ivory-2 rounded-2xl border border-line p-8 text-center">
-            <p className="font-display italic text-lg text-sage-deep">
-              Books are being written — worth the wait.
+          <Link
+            href="/dashboard/library"
+            className="block bg-ivory-2 rounded-2xl border border-line p-7 hover:border-gold-deep/40 transition-colors"
+          >
+            <div className="text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold mb-2">
+              go deeper
+            </div>
+            <h3 className="font-display text-xl text-indigo mb-2">
+              Three books on money, in the Library
+            </h3>
+            <p className="text-sm text-ink/65">
+              Money, Understood · Creating Your Own Opportunities · Building
+              Your Financial Security — all included with your membership,
+              ready to read now.
             </p>
-          </div>
+          </Link>
         </div>
       )}
     </main>

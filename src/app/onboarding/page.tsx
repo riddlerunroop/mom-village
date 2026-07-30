@@ -109,12 +109,15 @@ function OnboardingPageInner() {
 
           {stage === "not_born" ? (
             <div className="mb-5">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+              <label htmlFor="onboarding-due-date" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
                 Due date
               </label>
               <input
+                id="onboarding-due-date"
                 type="date"
                 required
+                min="2015-01-01"
+                max="2035-12-31"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-line bg-ivory text-ink text-base focus:outline-none focus:border-indigo"
@@ -123,22 +126,25 @@ function OnboardingPageInner() {
           ) : (
             <>
               <div className="mb-5">
-                <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+                <label htmlFor="onboarding-baby-dob" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
                   Baby&apos;s date of birth
                 </label>
                 <input
+                  id="onboarding-baby-dob"
                   type="date"
                   required
+                  min="2015-01-01"
+                  max="2035-12-31"
                   value={babyDob}
                   onChange={(e) => setBabyDob(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl border border-line bg-ivory text-ink text-base focus:outline-none focus:border-indigo"
                 />
               </div>
               <div className="mb-5">
-                <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+                <div id="onboarding-delivery-type-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
                   How did you deliver?
-                </label>
-                <div className="flex gap-3">
+                </div>
+                <div className="flex gap-3" role="group" aria-labelledby="onboarding-delivery-type-label">
                   <button
                     type="button"
                     onClick={() => setDeliveryType("normal")}
@@ -172,10 +178,11 @@ function OnboardingPageInner() {
 
           <div className="grid grid-cols-2 gap-3 mb-6">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+              <label htmlFor="onboarding-mom-name" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
                 Your name
               </label>
               <input
+                id="onboarding-mom-name"
                 type="text"
                 value={momName}
                 onChange={(e) => setMomName(e.target.value)}
@@ -184,10 +191,11 @@ function OnboardingPageInner() {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+              <label htmlFor="onboarding-baby-name" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
                 Baby&apos;s name
               </label>
               <input
+                id="onboarding-baby-name"
                 type="text"
                 value={babyName}
                 onChange={(e) => setBabyName(e.target.value)}

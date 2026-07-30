@@ -172,11 +172,11 @@ export default function CareQuizPage() {
           onSubmit={handleSubmit}
           className="bg-ivory-2 rounded-2xl border border-line p-7"
         >
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
+          <div id="care-quiz-flags-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
             Select all that apply
-          </label>
+          </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="grid grid-cols-2 gap-3 mb-3" role="group" aria-labelledby="care-quiz-flags-label">
             {HEALTH_FLAGS.map((flag) => (
               <button
                 key={flag.key}
@@ -205,14 +205,14 @@ export default function CareQuizPage() {
             None of these
           </button>
 
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
+          <div id="care-quiz-diet-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
             Vegetarian or non-vegetarian?
-          </label>
+          </div>
           <p className="text-[12px] text-ink/55 mb-3">
             Helps us give you real, useful protein tips instead of generic
             advice. Totally optional.
           </p>
-          <div className="grid grid-cols-2 gap-3 mb-8">
+          <div className="grid grid-cols-2 gap-3 mb-8" role="group" aria-labelledby="care-quiz-diet-label">
             {DIET_OPTIONS.map((opt) => (
               <button
                 key={opt.key}
@@ -231,15 +231,15 @@ export default function CareQuizPage() {
             ))}
           </div>
 
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+          <div id="care-quiz-mh-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
             Have you experienced depression or anxiety around pregnancy or
             birth before?
-          </label>
+          </div>
           <p className="text-[12px] text-ink/55 mb-3">
             Entirely optional, and only used to gently tailor the support we
             surface for you — never shared, never treated as a diagnosis.
           </p>
-          <div className="flex flex-col gap-2 mb-3">
+          <div className="flex flex-col gap-2 mb-3" role="group" aria-labelledby="care-quiz-mh-label">
             {MH_HISTORY_FLAGS.map((flag) => (
               <button
                 key={flag.key}

@@ -99,10 +99,11 @@ function NewThreadForm() {
         onSubmit={handleSubmit}
         className="bg-ivory-2 rounded-2xl border border-line p-7"
       >
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+        <label htmlFor="thread-title" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
           Title
         </label>
         <input
+          id="thread-title"
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -110,10 +111,11 @@ function NewThreadForm() {
           className="w-full rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink mb-5 focus:outline-none focus:border-gold-deep"
         />
 
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+        <label htmlFor="thread-body" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
           Tell us more
         </label>
         <textarea
+          id="thread-body"
           value={body}
           onChange={(e) => setBody(e.target.value)}
           rows={6}
@@ -121,10 +123,10 @@ function NewThreadForm() {
           className="w-full rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink mb-5 focus:outline-none focus:border-gold-deep resize-none"
         />
 
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+        <div id="thread-topic-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
           Topic <span className="normal-case font-normal text-ink/40">(optional, pick any that fit)</span>
-        </label>
-        <div className="flex flex-wrap gap-1.5 mb-6">
+        </div>
+        <div className="flex flex-wrap gap-1.5 mb-6" role="group" aria-labelledby="thread-topic-label">
           {TOPIC_TAGS.map((tag) => (
             <button
               key={tag}

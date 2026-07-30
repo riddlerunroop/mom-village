@@ -2,6 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = "checking" | "phone" | "otp";
@@ -66,6 +67,18 @@ function LoginPageInner() {
   async function handleSendOtp(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Friendly validation before calling Supabase — added 2026-07-30
+    // (audit finding #11, Important). A valid Indian mobile number is 10
+    // digits (optionally with a +91/91 prefix already typed).
+    const rawDigits = phone.replace(/\D/g, "");
+    const looksValid =
+      rawDigits.length === 10 || (rawDigits.startsWith("91") && rawDigits.length === 12);
+    if (!looksValid) {
+      setError("Enter a valid 10-digit phone number.");
+      return;
+    }
+
     setLoading(true);
 
     const formatted = formatPhone(phone);
@@ -85,6 +98,15 @@ function LoginPageInner() {
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    // Friendly validation before calling Supabase — added 2026-07-30
+    // (audit finding #11, Important).
+    const otpDigits = otp.replace(/\D/g, "");
+    if (otpDigits.length !== 6) {
+      setError("Enter the 6-digit code.");
+      return;
+    }
+
     setLoading(true);
 
     const { data, error } = await supabase.auth.verifyOtp({
@@ -124,9 +146,12 @@ function LoginPageInner() {
     <div className="min-h-screen bg-ivory flex items-center justify-center px-6">
       <div className="w-full max-w-[420px]">
         <div className="text-center mb-8">
-          <div className="font-display text-2xl font-semibold text-indigo mb-1">
+          <Link
+            href="/"
+            className="font-display text-2xl font-semibold text-indigo mb-1 inline-block hover:opacity-80 transition-opacity"
+          >
             mom<span className="text-gold-deep">village</span>
-          </div>
+          </Link>
           <p className="text-sm text-ink/65">
             {step === "checking"
               ? "Just a second…"
@@ -145,10 +170,11 @@ function LoginPageInner() {
 
           {step === "phone" && (
             <form onSubmit={handleSendOtp}>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+              <label htmlFor="login-phone" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
                 Phone number
               </label>
               <input
+                id="login-phone"
                 type="tel"
                 required
                 placeholder="98765 43210"
@@ -171,16 +197,18 @@ function LoginPageInner() {
 
           {step === "otp" && (
             <form onSubmit={handleVerifyOtp}>
-              <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+              <label htmlFor="login-otp" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
                 6-digit code
               </label>
               <input
+                id="login-otp"
                 type="text"
                 inputMode="numeric"
                 required
+                maxLength={6}
                 placeholder="123456"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value)}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 className="w-full px-4 py-3 rounded-xl border border-line bg-ivory text-ink text-base mb-4 tracking-[0.3em] text-center focus:outline-none focus:border-indigo"
               />
               {error && (

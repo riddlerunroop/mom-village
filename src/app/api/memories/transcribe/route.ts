@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkAndIncrementRateLimit } from "@/lib/rateLimit";
 
 // Transcribes a recorded voice memory via OpenAI's Whisper API — Claude
 // doesn't take raw audio, so this is a separate service, same pattern as
@@ -16,6 +17,16 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+
+  // Added 2026-07-30 — audit finding #8 (Important): cap real-money AI
+  // calls per user per day so this can't be hammered.
+  const { allowed } = await checkAndIncrementRateLimit(supabase, user.id, "memories_transcribe", 50);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "You've reached today's limit for voice transcription — try again tomorrow, or type it instead." },
+      { status: 429 }
+    );
   }
 
   if (!process.env.OPENAI_API_KEY) {

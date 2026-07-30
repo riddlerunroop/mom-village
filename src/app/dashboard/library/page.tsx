@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import LockedPreview from "@/components/LockedPreview";
@@ -8,11 +9,12 @@ function BookCard({ book, isSubscribed }: { book: LibraryBookMeta; isSubscribed:
   const card = (
     <div className="group">
       <div className="relative aspect-[0.773] rounded-lg overflow-hidden border border-line shadow-sm bg-ink">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={book.cover}
           alt={book.title}
-          className="w-full h-full object-cover transition-transform group-hover:scale-[1.02]"
+          fill
+          sizes="(max-width: 640px) 33vw, 200px"
+          className="object-cover transition-transform group-hover:scale-[1.02]"
         />
         {!book.hasReader && (
           <div className="absolute bottom-0 inset-x-0 bg-ink/70 text-ivory text-[9px] uppercase tracking-[0.1em] font-semibold text-center py-1">
@@ -103,9 +105,8 @@ export default async function LibraryPage() {
                 href={`/dashboard/library/${b.slug}`}
                 className="flex items-center gap-3 bg-ivory-2 rounded-xl border border-line pr-4 hover:border-terracotta/40 transition-colors"
               >
-                <div className="w-11 h-14 rounded-l-xl overflow-hidden bg-ink shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.cover} alt={b.title} className="w-full h-full object-cover" />
+                <div className="relative w-11 h-14 rounded-l-xl overflow-hidden bg-ink shrink-0">
+                  <Image src={b.cover} alt={b.title} fill sizes="44px" className="object-cover" />
                 </div>
                 <div className="py-2">
                   <p className="text-[12.5px] font-semibold text-indigo leading-snug max-w-[160px]">

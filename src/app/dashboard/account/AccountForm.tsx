@@ -94,10 +94,11 @@ export default function AccountForm({
     >
       <div className="grid sm:grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+          <label htmlFor="account-name" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
             Your name
           </label>
           <input
+            id="account-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -106,10 +107,11 @@ export default function AccountForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+          <label htmlFor="account-baby-name" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
             Baby&apos;s name
           </label>
           <input
+            id="account-baby-name"
             type="text"
             value={baby}
             onChange={(e) => setBaby(e.target.value)}
@@ -121,12 +123,15 @@ export default function AccountForm({
 
       <div className="grid sm:grid-cols-2 gap-4 mb-2">
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+          <label htmlFor="account-date" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
             {isBorn ? "Baby's date of birth" : "Due date"}
           </label>
           <input
+            id="account-date"
             type="date"
             value={date}
+            min="2015-01-01"
+            max="2035-12-31"
             onChange={(e) => {
               setDate(e.target.value);
               setConfirmingDateChange(false);
@@ -135,10 +140,11 @@ export default function AccountForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+          <label htmlFor="account-city" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
             City
           </label>
           <input
+            id="account-city"
             type="text"
             value={cityValue}
             onChange={(e) => setCityValue(e.target.value)}

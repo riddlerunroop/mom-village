@@ -50,10 +50,11 @@ export default function ReplyForm({ threadId }: { threadId: string }) {
       onSubmit={handleSubmit}
       className="bg-ivory-2 rounded-2xl border border-line p-6"
     >
-      <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
+      <label htmlFor="reply-body" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
         Reply
       </label>
       <textarea
+        id="reply-body"
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={4}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { checkAndIncrementRateLimit } from "@/lib/rateLimit";
 
 // Reads a photographed vaccination card and suggests which vaccine/dose and
 // date it shows — a suggestion only. The mother always sees and can edit
@@ -16,6 +17,16 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+
+  // Added 2026-07-30 — audit finding #8 (Important): cap real-money AI
+  // calls per user per day so this can't be hammered.
+  const { allowed } = await checkAndIncrementRateLimit(supabase, user.id, "vaccination_extract", 20);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "You've reached today's limit for card reading — try again tomorrow, or enter the details manually." },
+      { status: 429 }
+    );
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {

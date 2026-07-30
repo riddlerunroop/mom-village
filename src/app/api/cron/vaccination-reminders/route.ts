@@ -16,8 +16,17 @@ import { expandScheduleOccurrences, ageInDays, doseLabel } from "@/lib/vaccinati
 // This does not yet re-notify for doses that go on to become overdue
 // without being logged — a reasonable next refinement, not built here.
 export async function GET(req: NextRequest) {
+  // Fail closed, not open — fixed 2026-07-30 (audit finding #7, Important).
+  // The previous check only rejected requests if CRON_SECRET was *set and
+  // didn't match*; if the env var were ever missing (e.g. accidentally
+  // removed from Vercel), the route accepted requests from anyone instead
+  // of rejecting them. Now a missing secret is treated as misconfiguration,
+  // not an open door.
+  if (!process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
   const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

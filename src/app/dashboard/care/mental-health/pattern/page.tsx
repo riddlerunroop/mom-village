@@ -80,11 +80,13 @@ export default async function PatternPage() {
             <div className="text-xs uppercase tracking-wide font-bold text-ink/50 mb-3">
               last {last14.length} check-ins
             </div>
-            <div className="flex gap-1.5 flex-wrap mb-4">
+            <div className="flex gap-1.5 flex-wrap mb-4" role="list">
               {last14.map((r, i) => (
                 <div
                   key={i}
+                  role="listitem"
                   title={`${r.checkin_date}: ${MOOD_LABEL[r.mood_score]}`}
+                  aria-label={`${new Date(r.checkin_date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}: ${MOOD_LABEL[r.mood_score]}`}
                   className="w-6 h-6 rounded-full"
                   style={{ backgroundColor: MOOD_COLOR[r.mood_score] }}
                 />

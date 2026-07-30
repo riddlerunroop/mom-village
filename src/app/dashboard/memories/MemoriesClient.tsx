@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 type VoiceLog = { id: string; transcript: string; logged_at: string };
@@ -210,11 +211,12 @@ export default function MemoriesClient({
     <div>
       {/* Recall */}
       <form onSubmit={handleAsk} className="bg-indigo rounded-2xl p-6 mb-10">
-        <label className="block text-xs font-semibold uppercase tracking-wide text-gold mb-2">
+        <label htmlFor="memories-recall-question" className="block text-xs font-semibold uppercase tracking-wide text-gold mb-2">
           Ask to recall something
         </label>
         <div className="flex gap-2">
           <input
+            id="memories-recall-question"
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -308,8 +310,15 @@ export default function MemoriesClient({
             className="w-full text-xs text-ink mb-3"
           />
           {photoPreview && (
+            // Plain <img>, intentionally — this is a local blob: URL preview
+            // of the file she just picked, before it's uploaded anywhere.
+            // next/image's optimizer can't fetch blob: URLs.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoPreview} alt="" className="w-full rounded-xl border border-line mb-3 max-h-[160px] object-cover" />
+            <img
+              src={photoPreview}
+              alt="Preview of the photo you're about to save"
+              className="w-full rounded-xl border border-line mb-3 max-h-[160px] object-cover"
+            />
           )}
           <input
             type="text"
@@ -339,8 +348,15 @@ export default function MemoriesClient({
           {timeline.map((entry) => (
             <li key={`${entry.kind}-${entry.id}`} className="bg-ivory-2 rounded-xl border border-line p-4 flex gap-3">
               {entry.kind === "photo" && entry.url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={entry.url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0" />
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                  <Image
+                    src={entry.url}
+                    alt={entry.text || "A photo you logged"}
+                    fill
+                    sizes="64px"
+                    className="object-cover"
+                  />
+                </div>
               )}
               <div>
                 <p className="text-[11px] text-sage-deep font-semibold mb-0.5">

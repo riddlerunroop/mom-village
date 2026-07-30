@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import HTMLFlipBook from "react-pageflip";
 import { createClient } from "@/lib/supabase/client";
 import type { LibraryBlock, LibraryPage } from "@/types/library-content";
@@ -114,9 +115,8 @@ const CoverPage = forwardRef<HTMLDivElement, { cover: string }>(function CoverPa
   ref
 ) {
   return (
-    <div ref={ref} className="w-full h-full bg-ink">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={cover} alt="Book cover" className="w-full h-full object-cover" />
+    <div ref={ref} className="relative w-full h-full bg-ink">
+      <Image src={cover} alt="Book cover" fill sizes="400px" className="object-cover" priority />
     </div>
   );
 });

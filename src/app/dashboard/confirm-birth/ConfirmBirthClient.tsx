@@ -66,12 +66,15 @@ export default function ConfirmBirthClient() {
       className="bg-ivory-2 rounded-2xl border border-line p-7"
     >
       <div className="mb-5">
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+        <label htmlFor="confirm-birth-dob" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
           Baby&apos;s date of birth
         </label>
         <input
+          id="confirm-birth-dob"
           type="date"
           required
+          min="2015-01-01"
+          max="2035-12-31"
           value={babyDob}
           onChange={(e) => setBabyDob(e.target.value)}
           className="w-full px-4 py-3 rounded-xl border border-line bg-ivory text-ink text-base focus:outline-none focus:border-indigo"
@@ -79,10 +82,10 @@ export default function ConfirmBirthClient() {
       </div>
 
       <div className="mb-6">
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+        <div id="confirm-birth-delivery-label" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
           How did you deliver?
-        </label>
-        <div className="flex gap-3">
+        </div>
+        <div className="flex gap-3" role="group" aria-labelledby="confirm-birth-delivery-label">
           <button
             type="button"
             onClick={() => setDeliveryType("normal")}

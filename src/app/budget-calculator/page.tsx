@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import LockedPreview from "@/components/LockedPreview";
 import BudgetCalculatorClient from "./BudgetCalculatorClient";
+
+// Page-specific metadata added 2026-07-30 — audit finding #6 (Important).
+export const metadata: Metadata = {
+  title: "Minimum Budget Planner — Mom Village",
+  description:
+    "A realistic, judgment-free budget for pregnancy through your child's third birthday — built around what you actually need, not an inflated shopping list.",
+};
 
 // This route lives outside /dashboard on purpose — it's designed to
 // eventually work as a stand-alone ₹49 front-door product, reachable

@@ -174,10 +174,11 @@ export default function LogDoseClient() {
       </p>
 
       <div className="bg-ivory-2 rounded-2xl border border-line p-7">
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
+        <label htmlFor="dose-card-photo" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-3">
           Card photo
         </label>
         <input
+          id="dose-card-photo"
           type="file"
           accept="image/*"
           capture="environment"
@@ -213,10 +214,11 @@ export default function LogDoseClient() {
           </div>
         )}
 
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+        <label htmlFor="dose-occurrence" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
           Which dose is this?
         </label>
         <select
+          id="dose-occurrence"
           value={occurrenceKey}
           onChange={(e) => setOccurrenceKey(e.target.value)}
           className="w-full rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink mb-5 focus:outline-none focus:border-gold-deep"
@@ -229,12 +231,15 @@ export default function LogDoseClient() {
           ))}
         </select>
 
-        <label className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
+        <label htmlFor="dose-date-given" className="block text-xs font-semibold uppercase tracking-wide text-sage-deep mb-2">
           Date given
         </label>
         <input
+          id="dose-date-given"
           type="date"
           value={dateGiven}
+          min="2015-01-01"
+          max="2035-12-31"
           onChange={(e) => setDateGiven(e.target.value)}
           className="w-full rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink mb-6 focus:outline-none focus:border-gold-deep"
         />
