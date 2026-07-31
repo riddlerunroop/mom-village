@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedSupabase } from "@/lib/supabase/apiAuth";
 import { checkAndIncrementRateLimit } from "@/lib/rateLimit";
 
 // Transcribes a recorded voice memory via OpenAI's Whisper API — Claude
 // doesn't take raw audio, so this is a separate service, same pattern as
 // the ANTHROPIC_API_KEY dependency added for vaccination card reading.
 // Returns a transcript only; she always reviews/edits it before anything
-// is saved (see MemoriesClient.tsx) — speech-to-text can mishear a
-// medicine name or a date, and this is exactly the kind of detail that
-// matters later when she's trying to recall it.
+// is saved (see MemoriesClient.tsx, and the native app's memories screen)
+// — speech-to-text can mishear a medicine name or a date, and this is
+// exactly the kind of detail that matters later when she's trying to
+// recall it.
+//
+// 2026-07-31: now also callable from the native mobile app via a Bearer
+// token (getAuthedSupabase falls back to the original cookie-based auth
+// for every existing web request — see that file's own comment).
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedSupabase(req);
 
   if (!user) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });

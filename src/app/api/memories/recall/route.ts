@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedSupabase } from "@/lib/supabase/apiAuth";
 import { checkAndIncrementRateLimit } from "@/lib/rateLimit";
 
 // Answers a mother's recall question ("what did I give her for the fever
@@ -9,11 +9,12 @@ import { checkAndIncrementRateLimit } from "@/lib/rateLimit";
 // outside her own data. This is the one narrowly-scoped conversational
 // surface in the app; it does not answer anything that isn't grounded in
 // what she herself has logged.
+//
+// 2026-07-31: now also callable from the native mobile app via a Bearer
+// token (getAuthedSupabase falls back to the original cookie-based auth
+// for every existing web request — see that file's own comment).
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedSupabase(req);
 
   if (!user) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });

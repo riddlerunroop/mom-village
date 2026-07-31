@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { createClient } from "@/lib/supabase/server";
+import { getAuthedSupabase } from "@/lib/supabase/apiAuth";
 import { checkAndIncrementRateLimit } from "@/lib/rateLimit";
 
 // Reads a photographed vaccination card and suggests which vaccine/dose and
 // date it shows — a suggestion only. The mother always sees and can edit
-// this before anything is saved (see LogDoseClient.tsx); we never write a
-// record straight from this response. Handwritten cards are genuinely
-// failure-prone to read, so the model is explicitly told to say so rather
-// than guess confidently.
+// this before anything is saved (see LogDoseClient.tsx, and the native
+// app's log-dose screen); we never write a record straight from this
+// response. Handwritten cards are genuinely failure-prone to read, so the
+// model is explicitly told to say so rather than guess confidently.
+//
+// 2026-07-31: now also callable from the native mobile app via a Bearer
+// token (getAuthedSupabase falls back to the original cookie-based auth
+// for every existing web request — see that file's own comment).
 export async function POST(req: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthedSupabase(req);
 
   if (!user) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
