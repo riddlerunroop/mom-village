@@ -38,6 +38,19 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Mom's Village needs access to your photos to log a vaccination card or a memory photo.",
+          "cameraPermission": "Mom's Village needs access to your camera to photograph a vaccination card or log a memory."
+        }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Mom's Village needs access to your microphone to record voice memories."
+        }
       ]
     ],
     "experiments": {

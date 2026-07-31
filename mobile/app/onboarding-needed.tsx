@@ -1,10 +1,11 @@
-// Placeholder for a genuinely new mobile-only signup who hasn't completed
-// onboarding (due_date/baby_dob not set) yet. Full native onboarding is a
-// v1.5/v2 item, not built this pass — same account works either way, so
-// finishing on the website unblocks her here too, next time she opens the
-// app (RootLayout/each screen's load() re-checks profile completeness).
+// Fallback screen — only reached now if a mother lands in the app without
+// a complete profile AND somehow bypasses the native onboarding flow (e.g.
+// she backed out of onboarding.tsx before finishing, or an old session
+// redirected here directly). Native onboarding (Phase 2, 2026-07-31) is
+// the real path now — this used to always punt to the website, but a
+// mobile-only signup can finish entirely in the app today.
 
-import { View, Text, Pressable, StyleSheet, Linking } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "../lib/supabase";
 import { Colors } from "../constants/theme";
@@ -19,16 +20,11 @@ export default function OnboardingNeededScreen() {
     <View style={styles.screen}>
       <Text style={styles.title}>Almost there</Text>
       <Text style={styles.body}>
-        Your account isn&apos;t fully set up yet. For now, finish onboarding
-        on the website with this same phone number — your profile will then
-        show up here automatically, since it&apos;s the same account either
-        way.
+        Your account isn&apos;t fully set up yet. Let&apos;s finish the last couple of questions —
+        it only takes a minute.
       </Text>
-      <Pressable
-        style={styles.button}
-        onPress={() => Linking.openURL("https://www.momvillage.in/onboarding")}
-      >
-        <Text style={styles.buttonText}>Open momvillage.in</Text>
+      <Pressable style={styles.button} onPress={() => router.replace("/onboarding")}>
+        <Text style={styles.buttonText}>Continue setting up</Text>
       </Pressable>
       <Pressable onPress={handleSignOut}>
         <Text style={styles.link}>Sign out</Text>

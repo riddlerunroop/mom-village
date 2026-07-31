@@ -89,11 +89,11 @@ export default function LoginScreen() {
       if (profile && (profile.due_date || profile.baby_dob)) {
         router.replace("/");
       } else {
-        router.replace("/onboarding-needed");
+        router.replace("/onboarding");
       }
     } else {
       setLoading(false);
-      router.replace("/onboarding-needed");
+      router.replace("/onboarding");
     }
   }
 

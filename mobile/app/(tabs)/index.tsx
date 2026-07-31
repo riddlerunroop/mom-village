@@ -72,7 +72,7 @@ export default function TodayScreen() {
       .maybeSingle();
 
     if (!profile || (!profile.baby_dob && !profile.due_date)) {
-      router.replace("/onboarding-needed");
+      router.replace("/onboarding");
       return;
     }
 
@@ -229,11 +229,11 @@ export default function TodayScreen() {
             <View style={styles.quickActionsRow}>
               <QuickAction
                 label="Track vaccinations"
-                onPress={() => Linking.openURL("https://www.momvillage.in/dashboard/vaccinations")}
+                onPress={() => router.push("/vaccinations")}
               />
               <QuickAction
                 label="Log a memory"
-                onPress={() => Linking.openURL("https://www.momvillage.in/dashboard/memories")}
+                onPress={() => router.push("/memories")}
               />
               <QuickAction
                 label="Past months"
