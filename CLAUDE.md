@@ -17,7 +17,7 @@ Eighth and final phase off the agreed plan. Unlike Phases 2-7, this phase is gen
 
 **What this means practically:** all 8 phases of the agreed plan are now either fully built (Phases 1-7) or have reached the point where the only remaining work requires Roop's own accounts and real money (Phase 8's remainder). This is a natural, deliberate stopping point for the phased build — not an oversight. Nothing above blocks her from continuing to use/test the app via Expo Go exactly as she has been.
 
-**Status: Phase 8's buildable piece (product-rules audit) done, 2026-07-31. The rest of Phase 8 needs Roop's own developer-account setup before any further native-app code can be written against it.** This closes out the 8-phase native build plan agreed 2026-07-31 — full review is Roop's own next step, per her original framing ("I will analyze it in the end").
+**Status: Phase 8's buildable piece (product-rules audit) done, 2026-07-31. The rest of Phase 8 needs Roop's own developer-account setup before any further native-app code can be written against it.** This closes out the 8-phase native build plan agreed 2026-07-31 — full review is Roop's own next step, per her original framing ("I will analyze it in the end"). **Pushed via GitHub Desktop 2026-07-31** as part of the Phase 6-8 commit (`91b574d`).
 
 ## Native app — Phase 7 (Account + trust/legal) built and synced, 2026-07-31
 
@@ -33,7 +33,7 @@ Seventh phase off the agreed 8-phase plan. Rebuilt Phase 1's placeholder account
 
 Verified clean on `npx tsc --noEmit`. Built and checked in the sandbox's native filesystem, then synced into the mounted `mobile/` folder — `diff -rq` confirmed byte-identical across `app/`, `lib/`, `components/`, `constants/` after the sync. Not yet pushed via GitHub Desktop.
 
-**Status: Phase 7 built and synced, 2026-07-31. Not yet pushed via GitHub Desktop — same "she pushes when ready" pattern as every other change.** Next: Phase 8 (Polish + store prep — real native push notifications via APNs/FCM, app icon/branding, a pass against the brief's product rules, then Apple/Google store accounts and submission).
+**Status: Phase 7 built and synced, 2026-07-31. Pushed via GitHub Desktop 2026-07-31** as part of the Phase 6-8 commit (`91b574d`). Next: Phase 8 (Polish + store prep — real native push notifications via APNs/FCM, app icon/branding, a pass against the brief's product rules, then Apple/Google store accounts and submission).
 
 ## Native app — Phase 6 (Vaccinations + Memories) built and synced, 2026-07-31
 
@@ -57,7 +57,7 @@ Verified clean on `npx tsc --noEmit`. Built and checked in the sandbox's native 
 
 **Known gaps, flagged rather than silently skipped:** no native due-date push reminder for vaccinations yet (native push is Phase 8). No native "past months" vaccination history view — only the current schedule. Voice recording uses `expo-av`, which Expo has begun deprecating in favor of `expo-audio`/`expo-video` in newer SDKs — fine on SDK 54 (still the actively-supported store-installable version per the SDK-mismatch note above), worth revisiting on a future SDK bump.
 
-**Status: Phase 6 built and synced, 2026-07-31. Not yet pushed via GitHub Desktop — same "she pushes when ready" pattern as every other change.** Next: Phase 7 (Account + trust/legal — full account screen rebuild, child profile editing, blocked-members unblock UI, privacy/deletion request, help, plus About/Contact/Privacy/Terms/Guidelines/Refund/Safety links).
+**Status: Phase 6 built and synced, 2026-07-31. Pushed via GitHub Desktop 2026-07-31** — both the web routes (`fdef40d`, "Add Bearer-token auth support for native app API calls") and the native side (`91b574d`, "Native app Phases 6-8...") are live in `main`. Next: Phase 7 (Account + trust/legal — full account screen rebuild, child profile editing, blocked-members unblock UI, privacy/deletion request, help, plus About/Contact/Privacy/Terms/Guidelines/Refund/Safety links).
 
 ## Native app — Phase 5 (Community tab) built and synced, 2026-07-31
 
