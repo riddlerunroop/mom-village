@@ -20,7 +20,7 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { hasActiveSubscription } from "../../lib/subscription";
-import { Colors } from "../../constants/theme";
+import { Colors, Fonts } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 
 const CHECKLIST_ITEMS = [
@@ -110,7 +110,10 @@ export default function WealthScreen() {
         ) : (
           <>
             <View style={styles.checklistCard}>
-              <Text style={styles.checklistTitle}>Before you dive in</Text>
+              <View style={styles.checklistTitleRow}>
+                <Ionicons name="checkbox-outline" size={14} color={Colors.goldDeep} />
+                <Text style={styles.checklistTitle}>Before you dive in</Text>
+              </View>
               {CHECKLIST_ITEMS.map((item) => {
                 const done = doneKeys.has(item.key);
                 return (
@@ -133,42 +136,62 @@ export default function WealthScreen() {
             </View>
 
             <Pressable style={styles.featureCard} onPress={() => router.push("/wealth-budget")}>
-              <Text style={styles.featureEyebrow}>the real minimum, not the inflated version</Text>
-              <Text style={styles.featureTitle}>Minimum Budget Planner</Text>
-              <Text style={styles.featureBody}>
-                A few honest questions, and a realistic number — pregnancy through your
-                child&apos;s third birthday, built around what you actually need.
-              </Text>
+              <View style={styles.featureIconBadge}>
+                <Ionicons name="calculator-outline" size={20} color={Colors.gold} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.featureEyebrow}>the real minimum, not the inflated version</Text>
+                <Text style={styles.featureTitle}>Minimum Budget Planner</Text>
+                <Text style={styles.featureBody}>
+                  A few honest questions, and a realistic number — pregnancy through your
+                  child&apos;s third birthday, built around what you actually need.
+                </Text>
+              </View>
             </Pressable>
 
             <Pressable style={styles.card} onPress={() => router.push("/wealth-schemes")}>
-              <Text style={styles.cardEyebrow}>what you're entitled to</Text>
-              <Text style={styles.cardTitle}>Government Benefits & Savings Directory</Text>
-              <Text style={styles.body}>
-                PMSMA, JSSK, PMMVY, Ayushman Bharat, Sukanya Samriddhi, and more — what each one
-                gives you, and how to actually access it.
-              </Text>
+              <View style={styles.cardIconBadge}>
+                <Ionicons name="business-outline" size={20} color={Colors.goldDeep} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardEyebrow}>what you&apos;re entitled to</Text>
+                <Text style={styles.cardTitle}>Government Benefits & Savings Directory</Text>
+                <Text style={styles.body}>
+                  PMSMA, JSSK, PMMVY, Ayushman Bharat, Sukanya Samriddhi, and more — what each one
+                  gives you, and how to actually access it.
+                </Text>
+              </View>
             </Pressable>
 
             <Pressable style={styles.card} onPress={() => router.push("/wealth-savings")}>
-              <Text style={styles.cardEyebrow}>general education, not advice</Text>
-              <Text style={styles.cardTitle}>Savings & Financial Planning Guidance</Text>
-              <Text style={styles.body}>
-                Emergency funds, insurance, debt, PPF and Sukanya Samriddhi, and a maternity
-                cash-flow planner — the order that tends to serve you best.
-              </Text>
+              <View style={styles.cardIconBadge}>
+                <Ionicons name="cash-outline" size={20} color={Colors.goldDeep} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardEyebrow}>general education, not advice</Text>
+                <Text style={styles.cardTitle}>Savings & Financial Planning Guidance</Text>
+                <Text style={styles.body}>
+                  Emergency funds, insurance, debt, PPF and Sukanya Samriddhi, and a maternity
+                  cash-flow planner — the order that tends to serve you best.
+                </Text>
+              </View>
             </Pressable>
 
             <Pressable
               style={styles.card}
               onPress={() => Linking.openURL("https://www.momvillage.in/dashboard/library")}
             >
-              <Text style={styles.cardEyebrow}>go deeper</Text>
-              <Text style={styles.cardTitle}>Three books on money, in the Library</Text>
-              <Text style={styles.body}>
-                Money, Understood · Creating Your Own Opportunities · Building Your Financial
-                Security — all included with your membership.
-              </Text>
+              <View style={styles.cardIconBadge}>
+                <Ionicons name="library-outline" size={20} color={Colors.goldDeep} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardEyebrow}>go deeper</Text>
+                <Text style={styles.cardTitle}>Three books on money, in the Library</Text>
+                <Text style={styles.body}>
+                  Money, Understood · Creating Your Own Opportunities · Building Your Financial
+                  Security — all included with your membership.
+                </Text>
+              </View>
             </Pressable>
           </>
         )}
@@ -177,33 +200,53 @@ export default function WealthScreen() {
   );
 }
 
+const cardShadow = {
+  borderWidth: 1,
+  borderColor: Colors.line,
+};
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.ivory },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.ivory },
   eyebrow: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: Fonts.bodyBold,
     textTransform: "uppercase",
     letterSpacing: 0.6,
     color: Colors.sageDeep,
     marginBottom: 6,
   },
-  title: { fontSize: 24, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  intro: { fontSize: 13, color: Colors.ink + "a6", lineHeight: 19, marginBottom: 18 },
-  lockedCard: { backgroundColor: Colors.ivory2, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, padding: 20 },
+  title: { fontSize: 24, fontFamily: Fonts.display, color: Colors.indigo, marginBottom: 8 },
+  intro: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "a6", lineHeight: 19, marginBottom: 18 },
+  lockedCard: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 20, ...cardShadow },
   button: { backgroundColor: Colors.goldDeep, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 6 },
-  buttonText: { color: Colors.ivory, fontWeight: "700", fontSize: 14 },
-  body: { fontSize: 13, color: Colors.ink + "a6", lineHeight: 19 },
-  checklistCard: { backgroundColor: Colors.ivory2, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, padding: 16, marginBottom: 14 },
-  checklistTitle: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4, color: Colors.sageDeep, marginBottom: 10 },
+  buttonText: { color: Colors.ivory, fontFamily: Fonts.bodyBold, fontSize: 14 },
+  body: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "a6", lineHeight: 19 },
+  checklistCard: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 16, marginBottom: 14, ...cardShadow },
+  checklistTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 12 },
+  checklistTitle: { fontSize: 11, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 0.4, color: Colors.sageDeep },
   checklistRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
-  checklistLabel: { fontSize: 13, color: Colors.ink + "d9", flex: 1 },
+  checklistLabel: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "d9", flex: 1 },
   checklistLabelDone: { color: Colors.ink + "55", textDecorationLine: "line-through" },
-  featureCard: { backgroundColor: Colors.indigo, borderRadius: 18, padding: 18, marginBottom: 14 },
-  featureEyebrow: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, color: Colors.gold, marginBottom: 6 },
-  featureTitle: { fontSize: 17, fontWeight: "700", color: Colors.ivory, marginBottom: 6 },
-  featureBody: { fontSize: 13, color: Colors.ivory + "cc", lineHeight: 18 },
-  card: { backgroundColor: Colors.ivory2, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, padding: 18, marginBottom: 14 },
-  cardEyebrow: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5, color: Colors.sageDeep, marginBottom: 6 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: Colors.indigo, marginBottom: 6 },
+  featureCard: {
+    flexDirection: "row",
+    gap: 14,
+    backgroundColor: Colors.indigo,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 14,
+    shadowColor: Colors.indigo,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  featureIconBadge: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.ivory, borderWidth: 1.5, borderColor: Colors.gold + "70", alignItems: "center", justifyContent: "center" },
+  featureEyebrow: { fontSize: 10, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 0.5, color: Colors.gold, marginBottom: 6 },
+  featureTitle: { fontSize: 17, fontFamily: Fonts.display, color: Colors.ivory, marginBottom: 6 },
+  featureBody: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ivory + "cc", lineHeight: 18 },
+  card: { flexDirection: "row", gap: 14, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 18, marginBottom: 14, ...cardShadow },
+  cardIconBadge: { width: 44, height: 44, borderRadius: 14, backgroundColor: Colors.ivory, borderWidth: 1.5, borderColor: Colors.gold + "70", alignItems: "center", justifyContent: "center" },
+  cardEyebrow: { fontSize: 10, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 0.5, color: Colors.goldDeep, marginBottom: 6 },
+  cardTitle: { fontSize: 16, fontFamily: Fonts.bodySemiBold, color: Colors.indigo, marginBottom: 6 },
 });

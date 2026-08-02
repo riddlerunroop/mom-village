@@ -20,7 +20,8 @@ import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { hasActiveSubscription } from "../lib/subscription";
-import { Colors } from "../constants/theme";
+import { Colors, Fonts } from "../constants/theme";
+import DrillHeader from "../components/DrillHeader";
 
 type Sign = 1 | -1;
 
@@ -104,7 +105,10 @@ function MaternityPlanner() {
   return (
     <View style={styles.plannerCard}>
       <View style={styles.plannerHeaderRow}>
-        <Text style={styles.plannerHint}>Fill in what you know — leave the rest for later</Text>
+        <View style={styles.plannerHintRow}>
+          <Ionicons name="calculator-outline" size={14} color={Colors.goldDeep} />
+          <Text style={styles.plannerHint}>Fill in what you know — leave the rest for later</Text>
+        </View>
         <Text style={styles.plannerSaveState}>
           {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : ""}
         </Text>
@@ -113,7 +117,7 @@ function MaternityPlanner() {
         <View key={item.key} style={styles.plannerRow}>
           <Text style={styles.plannerRowLabel}>
             {item.label}{" "}
-            <Text style={{ color: item.sign === 1 ? Colors.terracotta : Colors.sageDeep, fontSize: 10, fontWeight: "700" }}>
+            <Text style={{ color: item.sign === 1 ? Colors.terracotta : Colors.sageDeep, fontSize: 10, fontFamily: Fonts.bodyBold }}>
               {item.sign === 1 ? "(add)" : "(subtract)"}
             </Text>
           </Text>
@@ -146,10 +150,23 @@ function MaternityPlanner() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  icon,
+  children,
+}: {
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  children: React.ReactNode;
+}) {
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionTitleRow}>
+        <View style={styles.sectionIconBadge}>
+          <Ionicons name={icon} size={16} color={Colors.goldDeep} />
+        </View>
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
       {children}
     </View>
   );
@@ -157,7 +174,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function P({ children, italic, bold }: { children: React.ReactNode; italic?: boolean; bold?: boolean }) {
   return (
-    <Text style={[styles.body, italic && { fontStyle: "italic" }, bold && { fontWeight: "700", color: Colors.ink }]}>
+    <Text style={[styles.body, italic && { fontStyle: "italic" }, bold && { fontFamily: Fonts.bodyBold, color: Colors.ink }]}>
       {children}
     </Text>
   );
@@ -218,13 +235,7 @@ export default function WealthSavingsScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="arrow-back" size={22} color={Colors.indigo} />
-        </Pressable>
-        <Text style={styles.topBarTitle}>Savings & Planning</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <DrillHeader title="Savings & Planning" />
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         <Text style={styles.eyebrow}>savings & planning</Text>
@@ -251,6 +262,7 @@ export default function WealthSavingsScreen() {
         ) : (
           <>
             <View style={styles.disclaimerBox}>
+              <Ionicons name="information-circle-outline" size={15} color={Colors.ink + "80"} style={{ marginTop: 1 }} />
               <Text style={styles.disclaimerText}>
                 This is general education. It doesn&apos;t know your income, expenses, debts,
                 employment benefits, family situation, tax position, or goals — so nothing here
@@ -260,8 +272,13 @@ export default function WealthSavingsScreen() {
             </View>
 
             <NoteCard>
+              <View style={styles.noteHeaderRow}>
+                <View style={styles.sectionIconBadge}>
+                  <Ionicons name="book-outline" size={16} color={Colors.goldDeep} />
+                </View>
+                <Text style={styles.noteHeaderText}>Want to go deeper?</Text>
+              </View>
               <Text style={styles.body}>
-                <Text style={{ fontWeight: "700", color: Colors.ink }}>Want to go deeper? </Text>
                 This page is the quick-reference version. Our Library book{" "}
                 <Text
                   style={styles.inlineLink}
@@ -274,7 +291,7 @@ export default function WealthSavingsScreen() {
               </Text>
             </NoteCard>
 
-            <Section title="Start with stability, not an investment product">
+            <Section title="Start with stability, not an investment product" icon="compass-outline">
               <P>
                 Pregnancy and early motherhood bring planned expenses, unexpected ones, and often
                 a temporary dip in income. Money locked away for a distant goal won&apos;t help
@@ -305,7 +322,7 @@ export default function WealthSavingsScreen() {
               </P>
             </Section>
 
-            <Section title="Make a maternity cash-flow plan">
+            <Section title="Make a maternity cash-flow plan" icon="calculator-outline">
               <P>
                 Your emergency fund is for the unexpected. A maternity fund is for the costs and
                 income changes you can reasonably see coming.
@@ -313,7 +330,7 @@ export default function WealthSavingsScreen() {
               <MaternityPlanner />
             </Section>
 
-            <Section title="Build an accessible emergency fund">
+            <Section title="Build an accessible emergency fund" icon="umbrella-outline">
               <P bold>What it's for</P>
               <P>
                 Genuinely unexpected events — urgent travel, an uninsured medical cost, a sudden
@@ -346,7 +363,7 @@ export default function WealthSavingsScreen() {
               </P>
             </Section>
 
-            <Section title="Review your health cover before you rely on it">
+            <Section title="Review your health cover before you rely on it" icon="medkit-outline">
               <P>Start with what you already have:</P>
               <Bullets
                 items={[
@@ -378,7 +395,7 @@ export default function WealthSavingsScreen() {
               />
             </Section>
 
-            <Section title="Think about life cover if someone depends on you">
+            <Section title="Think about life cover if someone depends on you" icon="shield-checkmark-outline">
               <P>
                 Life insurance protects the people who&apos;d face a financial loss if you
                 weren&apos;t there — including your earnings, and the cost of replacing the
@@ -402,7 +419,7 @@ export default function WealthSavingsScreen() {
               />
             </Section>
 
-            <Section title="Deal with debt thoughtfully">
+            <Section title="Deal with debt thoughtfully" icon="trending-down-outline">
               <P>
                 Credit card debt and some personal loans carry interest rates well above what
                 low-risk savings can earn you, so paying them down usually gives you a strong,
@@ -416,13 +433,13 @@ export default function WealthSavingsScreen() {
               </P>
             </Section>
 
-            <Section title="Government-backed savings, in more depth">
+            <Section title="Government-backed savings, in more depth" icon="business-outline">
               <P>
                 PPF and Sukanya Samriddhi are long-term, government-backed savings products.
                 Knowing how something works is different from deciding it&apos;s right for you.
               </P>
               <NoteCard>
-                <Text style={[styles.body, { fontWeight: "700", color: Colors.ink, marginBottom: 4 }]}>
+                <Text style={[styles.body, { fontFamily: Fonts.bodyBold, color: Colors.ink, marginBottom: 4 }]}>
                   Public Provident Fund (PPF)
                 </Text>
                 <Text style={styles.body}>
@@ -434,7 +451,7 @@ export default function WealthSavingsScreen() {
                 </Text>
               </NoteCard>
               <NoteCard>
-                <Text style={[styles.body, { fontWeight: "700", color: Colors.ink, marginBottom: 4 }]}>
+                <Text style={[styles.body, { fontFamily: Fonts.bodyBold, color: Colors.ink, marginBottom: 4 }]}>
                   Sukanya Samriddhi Account (SSY)
                 </Text>
                 <Text style={styles.body}>
@@ -454,7 +471,7 @@ export default function WealthSavingsScreen() {
               </P>
             </Section>
 
-            <Section title="Thinking about education costs, honestly">
+            <Section title="Thinking about education costs, honestly" icon="school-outline">
               <P>
                 Education 15–18 years from now will likely cost more than it does today — how
                 much more depends on the institution, course, city or country, scholarships, how
@@ -471,7 +488,7 @@ export default function WealthSavingsScreen() {
               />
             </Section>
 
-            <Section title="Get your basic financial paperwork in order">
+            <Section title="Get your basic financial paperwork in order" icon="document-text-outline">
               <P>Around the birth is a good time to check:</P>
               <Bullets
                 items={[
@@ -492,7 +509,7 @@ export default function WealthSavingsScreen() {
               </P>
             </Section>
 
-            <Section title="Watch for pressure and scams">
+            <Section title="Watch for pressure and scams" icon="warning-outline">
               <P>
                 Be cautious of anything sold to you using fear, guilt about your child&apos;s
                 future, urgency, or promises of guaranteed high returns. Before you pay for or
@@ -515,10 +532,13 @@ export default function WealthSavingsScreen() {
             </Section>
 
             <NoteCard>
+              <View style={styles.noteHeaderRow}>
+                <View style={styles.sectionIconBadge}>
+                  <Ionicons name="person-outline" size={16} color={Colors.goldDeep} />
+                </View>
+                <Text style={styles.noteHeaderText}>When general education isn&apos;t enough</Text>
+              </View>
               <Text style={styles.body}>
-                <Text style={{ fontWeight: "700", color: Colors.ink }}>
-                  When general education isn&apos;t enough anymore:{" "}
-                </Text>
                 this guide can&apos;t tell you exactly how much to hold in cash, how much
                 insurance you need, which debt to pay off first, or which investments fit your
                 goals — because it doesn&apos;t know your numbers. That&apos;s the point to
@@ -538,53 +558,52 @@ export default function WealthSavingsScreen() {
   );
 }
 
+const cardShadow = {
+  borderWidth: 1,
+  borderColor: Colors.line,
+};
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.ivory },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.ivory },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
-  },
-  topBarTitle: { fontSize: 15, fontWeight: "700", color: Colors.indigo },
   eyebrow: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: Fonts.bodyBold,
     textTransform: "uppercase",
     letterSpacing: 0.6,
     color: Colors.sageDeep,
     marginBottom: 6,
   },
-  title: { fontSize: 22, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  intro: { fontSize: 13, color: Colors.ink + "a6", lineHeight: 19, marginBottom: 18 },
-  lockedCard: { backgroundColor: Colors.ivory2, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, padding: 20 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  body: { fontSize: 13, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 10 },
+  title: { fontSize: 22, fontFamily: Fonts.display, color: Colors.indigo, marginBottom: 8 },
+  intro: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "a6", lineHeight: 19, marginBottom: 18 },
+  lockedCard: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 20, ...cardShadow },
+  cardTitle: { fontSize: 16, fontFamily: Fonts.bodySemiBold, color: Colors.indigo, marginBottom: 8 },
+  body: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 10 },
   button: { backgroundColor: Colors.goldDeep, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
-  buttonText: { color: Colors.ivory, fontWeight: "700", fontSize: 14 },
-  disclaimerBox: { backgroundColor: Colors.gold + "1a", borderRadius: 14, padding: 14, marginBottom: 16 },
-  disclaimerText: { fontSize: 12, color: Colors.ink + "99", lineHeight: 18, fontStyle: "italic" },
-  inlineLink: { color: Colors.goldDeep, fontWeight: "700", textDecorationLine: "underline" },
-  noteCard: { backgroundColor: Colors.sageDeep + "14", borderRadius: 16, padding: 16, marginBottom: 16 },
+  buttonText: { color: Colors.ivory, fontFamily: Fonts.bodyBold, fontSize: 14 },
+  disclaimerBox: { flexDirection: "row", gap: 10, backgroundColor: Colors.gold + "1a", borderRadius: 14, padding: 14, marginBottom: 16 },
+  disclaimerText: { flex: 1, fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "99", lineHeight: 18, fontStyle: "italic" },
+  inlineLink: { color: Colors.goldDeep, fontFamily: Fonts.bodyBold, textDecorationLine: "underline" },
+  noteCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, marginBottom: 16, ...cardShadow },
+  noteHeaderRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
+  noteHeaderText: { fontSize: 14, fontFamily: Fonts.bodySemiBold, color: Colors.indigo },
   section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: Colors.indigo, marginBottom: 8, fontFamily: undefined },
-  bulletText: { fontSize: 13, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 5 },
-  sourceFooter: { fontSize: 11, color: Colors.ink + "70", lineHeight: 16, marginBottom: 30, fontStyle: "italic" },
-  plannerCard: { backgroundColor: Colors.ivory2, borderRadius: 16, borderWidth: 1, borderColor: Colors.line, padding: 14, marginTop: 6 },
-  plannerHeaderRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 10 },
-  plannerHint: { fontSize: 10, textTransform: "uppercase", fontWeight: "700", color: Colors.ink + "80", flex: 1 },
-  plannerSaveState: { fontSize: 10, color: Colors.sageDeep, fontWeight: "700" },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  sectionIconBadge: { width: 32, height: 32, borderRadius: 10, backgroundColor: Colors.ivory, borderWidth: 1.5, borderColor: Colors.gold + "70", alignItems: "center", justifyContent: "center" },
+  sectionTitle: { fontSize: 16, fontFamily: Fonts.display, color: Colors.indigo, flex: 1 },
+  bulletText: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 5 },
+  sourceFooter: { fontSize: 11, fontFamily: Fonts.body, color: Colors.ink + "70", lineHeight: 16, marginBottom: 30, fontStyle: "italic" },
+  plannerCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginTop: 6, ...cardShadow },
+  plannerHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  plannerHintRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
+  plannerHint: { fontSize: 10, textTransform: "uppercase", fontFamily: Fonts.bodyBold, color: Colors.ink + "80", flex: 1 },
+  plannerSaveState: { fontSize: 10, fontFamily: Fonts.bodyBold, color: Colors.sageDeep },
   plannerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8, gap: 8 },
-  plannerRowLabel: { fontSize: 12, color: Colors.ink + "cc", flex: 1 },
+  plannerRowLabel: { fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "cc", flex: 1 },
   plannerInputWrap: { flexDirection: "row", alignItems: "center", backgroundColor: Colors.ivory, borderWidth: 1, borderColor: Colors.line, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4 },
-  plannerInput: { width: 70, textAlign: "right", fontSize: 13, color: Colors.ink },
+  plannerInput: { width: 70, textAlign: "right", fontSize: 13, fontFamily: Fonts.body, color: Colors.ink },
   plannerGapRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.line },
-  plannerGapLabel: { fontSize: 13, fontWeight: "700", color: Colors.ink },
-  plannerGapValue: { fontSize: 17, fontWeight: "700" },
-  plannerFootnote: { fontSize: 11, color: Colors.ink + "80", lineHeight: 16, marginTop: 10 },
+  plannerGapLabel: { fontSize: 13, fontFamily: Fonts.bodyBold, color: Colors.ink },
+  plannerGapValue: { fontSize: 17, fontFamily: Fonts.bodyBold },
+  plannerFootnote: { fontSize: 11, fontFamily: Fonts.body, color: Colors.ink + "80", lineHeight: 16, marginTop: 10 },
 });

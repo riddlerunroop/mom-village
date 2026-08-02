@@ -13,10 +13,10 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
-import { Colors } from "../constants/theme";
+import { Colors, Fonts } from "../constants/theme";
+import DrillHeader from "../components/DrillHeader";
 import {
   calculateMinimumBudget,
   formatINR,
@@ -40,6 +40,19 @@ const NECESSITY_COLOR: Record<Necessity, string> = {
   skip_for_now: Colors.ink + "70",
 };
 
+const NECESSITY_ICON: Record<Necessity, keyof typeof Ionicons.glyphMap> = {
+  essential: "alert-circle-outline",
+  optional: "ellipse-outline",
+  skip_for_now: "time-outline",
+};
+
+const STAGE_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  pregnancy: "flower-outline",
+  newborn: "happy-outline",
+  first_year: "walk-outline",
+  toddler: "school-outline",
+};
+
 const HAND_ME_DOWN_KEYS = Object.keys(HAND_ME_DOWN_CATEGORY_LABELS) as HandMeDownCategory[];
 
 function formatSavedDate(iso: string) {
@@ -56,16 +69,25 @@ function ToggleGroup<T extends string>({
   options,
   value,
   onChange,
+  icon,
 }: {
   label: string;
   helpText?: string;
   options: { value: T; label: string }[];
   value: T | null;
   onChange: (v: T) => void;
+  icon?: keyof typeof Ionicons.glyphMap;
 }) {
   return (
     <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
+      <View style={styles.labelRow}>
+        {!!icon && (
+          <View style={styles.labelIconBadge}>
+            <Ionicons name={icon} size={13} color={Colors.goldDeep} />
+          </View>
+        )}
+        <Text style={styles.label}>{label}</Text>
+      </View>
       {!!helpText && <Text style={styles.helpText}>{helpText}</Text>}
       <View style={styles.toggleRow}>
         {options.map((opt) => (
@@ -202,13 +224,7 @@ export default function WealthBudgetScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="arrow-back" size={22} color={Colors.indigo} />
-        </Pressable>
-        <Text style={styles.topBarTitle}>Budget Planner</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <DrillHeader title="Budget Planner" />
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         {editing ? (
@@ -232,6 +248,7 @@ export default function WealthBudgetScreen() {
                 helpText="Decides whether pregnancy & delivery costs are included, or we start from newborn essentials."
                 value={currentlyPregnant}
                 onChange={setCurrentlyPregnant}
+                icon="flower-outline"
                 options={[
                   { value: "yes", label: "Still pregnant" },
                   { value: "no", label: "Baby's here" },
@@ -243,6 +260,7 @@ export default function WealthBudgetScreen() {
                 helpText="Costs scale per baby — twins/triplets show a higher total, though one-time items like furniture may not fully double in real life."
                 value={babyCount}
                 onChange={setBabyCount}
+                icon="people-outline"
                 options={[
                   { value: "1", label: "1" },
                   { value: "2", label: "2" },
@@ -257,6 +275,7 @@ export default function WealthBudgetScreen() {
                     helpText="Government facilities are free or near-free under JSSK; private hospitals cost more but may offer more choice."
                     value={deliveryFacility}
                     onChange={setDeliveryFacility}
+                    icon="business-outline"
                     options={[
                       { value: "public", label: "Government" },
                       { value: "private", label: "Private" },
@@ -270,6 +289,7 @@ export default function WealthBudgetScreen() {
                         helpText="A C-section typically costs more at a private hospital — this only affects the estimate, not what actually happens during delivery."
                         value={deliveryType}
                         onChange={setDeliveryType}
+                        icon="medkit-outline"
                         options={[
                           { value: "normal", label: "Normal" },
                           { value: "c_section", label: "C-section" },
@@ -281,6 +301,7 @@ export default function WealthBudgetScreen() {
                         helpText="Adjusts the private delivery estimate directionally, not as a precise citywide average."
                         value={cityTier}
                         onChange={setCityTier}
+                        icon="location-outline"
                         options={[
                           { value: "metro", label: "Metro" },
                           { value: "tier2", label: "Tier-2" },
@@ -292,6 +313,7 @@ export default function WealthBudgetScreen() {
                         helpText="Doesn't change the number shown — real coverage varies too much by policy — but we'll add a note in your results."
                         value={insuranceCoverage}
                         onChange={setInsuranceCoverage}
+                        icon="shield-checkmark-outline"
                         options={[
                           { value: "private_insurance", label: "Private" },
                           { value: "government_scheme", label: "Govt." },
@@ -309,6 +331,7 @@ export default function WealthBudgetScreen() {
                 helpText="Breastfeeding costs close to nothing directly; formula adds a real, ongoing monthly cost."
                 value={feedingPlan}
                 onChange={setFeedingPlan}
+                icon="nutrition-outline"
                 options={[
                   { value: "breastfeeding", label: "Breastfeeding" },
                   { value: "formula", label: "Formula" },
@@ -321,6 +344,7 @@ export default function WealthBudgetScreen() {
                 helpText="Cloth costs more upfront but less over time; disposable is the reverse. Mixed lands in between."
                 value={diaperingPlan}
                 onChange={setDiaperingPlan}
+                icon="water-outline"
                 options={[
                   { value: "cloth", label: "Cloth" },
                   { value: "disposable", label: "Disposable" },
@@ -333,6 +357,7 @@ export default function WealthBudgetScreen() {
                 helpText="Even a few hand-me-downs meaningfully lower your newborn essentials cost."
                 value={hasHandMeDowns}
                 onChange={setHasHandMeDowns}
+                icon="gift-outline"
                 options={[
                   { value: "no", label: "From scratch" },
                   { value: "yes", label: "Have some" },
@@ -341,7 +366,12 @@ export default function WealthBudgetScreen() {
 
               {hasHandMeDowns === "yes" && (
                 <View style={styles.field}>
-                  <Text style={styles.label}>What do you already have?</Text>
+                  <View style={styles.labelRow}>
+                    <View style={styles.labelIconBadge}>
+                      <Ionicons name="pricetags-outline" size={13} color={Colors.goldDeep} />
+                    </View>
+                    <Text style={styles.label}>What do you already have?</Text>
+                  </View>
                   <Text style={styles.helpText}>
                     Select what you already have — anything left unchecked is assumed you still
                     need to buy.
@@ -397,6 +427,9 @@ export default function WealthBudgetScreen() {
               )}
 
               <View style={styles.totalBox}>
+                <View style={styles.totalIconBadge}>
+                  <Ionicons name="cash-outline" size={20} color={Colors.gold} />
+                </View>
                 <Text style={styles.totalLabel}>total minimum, pregnancy through age 3</Text>
                 <Text style={styles.totalValue}>
                   {formatINR(result.total.low)} – {formatINR(result.total.high)}
@@ -406,6 +439,7 @@ export default function WealthBudgetScreen() {
               <View style={styles.necessityRow}>
                 {(["essential", "optional", "skip_for_now"] as Necessity[]).map((n) => (
                   <View key={n} style={[styles.necessityBox, { borderColor: NECESSITY_COLOR[n] }]}>
+                    <Ionicons name={NECESSITY_ICON[n]} size={15} color={NECESSITY_COLOR[n]} />
                     <Text style={[styles.necessityLabel, { color: NECESSITY_COLOR[n] }]}>
                       {NECESSITY_LABELS[n]}
                     </Text>
@@ -418,7 +452,12 @@ export default function WealthBudgetScreen() {
 
               {result.schemeCallouts.length > 0 && (
                 <View style={styles.card}>
-                  <Text style={styles.cardTitle}>Government support & coverage notes</Text>
+                  <View style={styles.cardTitleRow}>
+                    <View style={styles.cardIconBadgeSmall}>
+                      <Ionicons name="ribbon-outline" size={16} color={Colors.goldDeep} />
+                    </View>
+                    <Text style={styles.cardTitle}>Government support & coverage notes</Text>
+                  </View>
                   {result.schemeCallouts.map((c, i) => (
                     <Text key={i} style={styles.bulletText}>
                       •  {c}
@@ -430,7 +469,12 @@ export default function WealthBudgetScreen() {
               {result.stages.map((stage) => (
                 <View key={stage.key} style={styles.card}>
                   <View style={styles.stageHeaderRow}>
-                    <Text style={styles.cardTitle}>{stage.label}</Text>
+                    <View style={styles.cardTitleRow}>
+                      <View style={styles.cardIconBadgeSmall}>
+                        <Ionicons name={STAGE_ICON[stage.key] || "layers-outline"} size={16} color={Colors.goldDeep} />
+                      </View>
+                      <Text style={styles.cardTitle}>{stage.label}</Text>
+                    </View>
                     <Text style={styles.stageTotal}>
                       {formatINR(stage.subtotal.low)}–{formatINR(stage.subtotal.high)}
                     </Text>
@@ -463,51 +507,41 @@ export default function WealthBudgetScreen() {
   );
 }
 
+const cardShadow = {
+  borderWidth: 1,
+  borderColor: Colors.line,
+};
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.ivory },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.ivory },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
-  },
-  topBarTitle: { fontSize: 15, fontWeight: "700", color: Colors.indigo },
   eyebrow: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: Fonts.bodyBold,
     textTransform: "uppercase",
     letterSpacing: 0.6,
     color: Colors.sageDeep,
     textAlign: "center",
     marginBottom: 6,
   },
-  title: { fontSize: 24, fontWeight: "700", color: Colors.indigo, textAlign: "center", marginBottom: 8 },
-  intro: { fontSize: 13, color: Colors.ink + "a6", textAlign: "center", lineHeight: 19, marginBottom: 6 },
-  savedNote: { fontSize: 12, color: Colors.sageDeep, fontWeight: "700", textAlign: "center", marginBottom: 14, marginTop: 6 },
-  card: {
-    backgroundColor: Colors.ivory2,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: Colors.line,
-    padding: 18,
-    marginBottom: 14,
-  },
-  cardTitle: { fontSize: 15, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
+  title: { fontSize: 24, fontFamily: Fonts.display, color: Colors.indigo, textAlign: "center", marginBottom: 8 },
+  intro: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "a6", textAlign: "center", lineHeight: 19, marginBottom: 6 },
+  savedNote: { fontSize: 12, fontFamily: Fonts.bodyBold, color: Colors.sageDeep, textAlign: "center", marginBottom: 14, marginTop: 6 },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 18, marginBottom: 14, ...cardShadow },
+  cardTitle: { fontSize: 15, fontFamily: Fonts.bodySemiBold, color: Colors.indigo },
+  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8, flex: 1 },
+  cardIconBadgeSmall: { width: 28, height: 28, borderRadius: 9, backgroundColor: Colors.ivory, borderWidth: 1.5, borderColor: Colors.gold + "70", alignItems: "center", justifyContent: "center" },
   field: { marginBottom: 18 },
+  labelRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 },
+  labelIconBadge: { width: 22, height: 22, borderRadius: 7, backgroundColor: Colors.ivory, borderWidth: 1.5, borderColor: Colors.gold + "70", alignItems: "center", justifyContent: "center" },
   label: {
     fontSize: 12,
-    fontWeight: "700",
+    fontFamily: Fonts.bodyBold,
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    color: Colors.sageDeep,
-    marginBottom: 4,
+    color: Colors.goldDeep,
   },
-  helpText: { fontSize: 11, color: Colors.ink + "80", marginBottom: 8 },
+  helpText: { fontSize: 11, fontFamily: Fonts.body, color: Colors.ink + "80", marginBottom: 8 },
   toggleRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   wrapRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   toggleChip: {
@@ -518,10 +552,10 @@ const styles = StyleSheet.create({
     borderColor: Colors.sageDeep + "66",
   },
   toggleChipSelected: { backgroundColor: Colors.sageDeep, borderColor: Colors.sageDeep },
-  toggleChipText: { fontSize: 13, fontWeight: "600", color: Colors.sageDeep },
+  toggleChipText: { fontSize: 13, fontFamily: Fonts.bodySemiBold, color: Colors.sageDeep },
   toggleChipTextSelected: { color: Colors.ivory },
   button: { backgroundColor: Colors.goldDeep, borderRadius: 999, paddingVertical: 14, alignItems: "center" },
-  buttonText: { color: Colors.ivory, fontWeight: "700", fontSize: 14 },
+  buttonText: { color: Colors.ivory, fontFamily: Fonts.bodyBold, fontSize: 14 },
   buttonOutline: {
     borderWidth: 1.5,
     borderColor: Colors.sageDeep,
@@ -530,21 +564,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 30,
   },
-  buttonOutlineText: { color: Colors.sageDeep, fontWeight: "700", fontSize: 14 },
-  totalBox: { backgroundColor: Colors.indigo, borderRadius: 18, padding: 20, alignItems: "center", marginBottom: 14 },
-  totalLabel: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: Colors.gold, fontWeight: "700", marginBottom: 6 },
-  totalValue: { fontSize: 24, fontWeight: "700", color: Colors.ivory },
+  buttonOutlineText: { color: Colors.sageDeep, fontFamily: Fonts.bodyBold, fontSize: 14 },
+  totalBox: {
+    backgroundColor: Colors.indigo,
+    borderRadius: 18,
+    padding: 20,
+    alignItems: "center",
+    marginBottom: 14,
+    shadowColor: Colors.indigo,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  totalIconBadge: { width: 40, height: 40, borderRadius: 12, backgroundColor: Colors.gold + "26", alignItems: "center", justifyContent: "center", marginBottom: 10 },
+  totalLabel: { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: Colors.gold, fontFamily: Fonts.bodyBold, marginBottom: 6 },
+  totalValue: { fontSize: 24, fontFamily: Fonts.display, color: Colors.ivory },
   necessityRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  necessityBox: { flex: 1, borderWidth: 1.5, borderRadius: 12, padding: 10, alignItems: "center" },
-  necessityLabel: { fontSize: 9, fontWeight: "700", textTransform: "uppercase", marginBottom: 4, textAlign: "center" },
-  necessityValue: { fontSize: 11, fontWeight: "700", color: Colors.ink, textAlign: "center" },
-  bulletText: { fontSize: 13, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 6 },
-  stageHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 },
-  stageTotal: { fontSize: 13, fontWeight: "700", color: Colors.goldDeep },
+  necessityBox: { flex: 1, borderWidth: 1.5, borderRadius: 12, padding: 10, alignItems: "center", backgroundColor: "#FFFFFF" },
+  necessityLabel: { fontSize: 9, fontFamily: Fonts.bodyBold, textTransform: "uppercase", marginTop: 4, marginBottom: 4, textAlign: "center" },
+  necessityValue: { fontSize: 11, fontFamily: Fonts.bodyBold, color: Colors.ink, textAlign: "center" },
+  bulletText: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 6 },
+  stageHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  stageTotal: { fontSize: 13, fontFamily: Fonts.bodyBold, color: Colors.goldDeep },
   lineItem: { marginBottom: 12 },
   lineHeaderRow: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  lineLabel: { fontSize: 13, fontWeight: "700", color: Colors.ink, flex: 1 },
-  lineRange: { fontSize: 12, color: Colors.ink + "a6" },
-  necessityPill: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", marginTop: 2 },
-  lineNote: { fontSize: 12, color: Colors.ink + "8c", marginTop: 3, lineHeight: 17 },
+  lineLabel: { fontSize: 13, fontFamily: Fonts.bodyBold, color: Colors.ink, flex: 1 },
+  lineRange: { fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "a6" },
+  necessityPill: { fontSize: 10, fontFamily: Fonts.bodyBold, textTransform: "uppercase", marginTop: 2 },
+  lineNote: { fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "8c", marginTop: 3, lineHeight: 17 },
 });

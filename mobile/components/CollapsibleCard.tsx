@@ -5,29 +5,37 @@
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../constants/theme";
+import { Colors, Fonts, iconBadge } from "../constants/theme";
+
+const BADGE_SIZE = 40;
 
 export default function CollapsibleCard({
   title,
-  accent,
+  icon = "ellipse-outline",
+  iconColor = Colors.indigo,
   defaultOpen = false,
   children,
 }: {
   title: string;
-  accent: string;
+  accent?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
+  iconColor?: string;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <View style={[styles.card, { borderTopColor: accent }]}>
+    <View style={styles.card}>
       <Pressable style={styles.header} onPress={() => setOpen((o) => !o)}>
+        <View style={iconBadge(iconColor, BADGE_SIZE)}>
+          <Ionicons name={icon} size={18} color={iconColor} />
+        </View>
         <Text style={styles.title}>{title}</Text>
         <Ionicons
           name={open ? "chevron-up" : "chevron-down"}
           size={18}
-          color={Colors.ink + "80"}
+          color={Colors.ink + "60"}
         />
       </Pressable>
       {open && <View style={styles.body}>{children}</View>}
@@ -37,20 +45,19 @@ export default function CollapsibleCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: Colors.ivory2,
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.line,
-    borderTopWidth: 3,
-    marginBottom: 10,
+    marginBottom: 12,
     overflow: "hidden",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 12,
     padding: 14,
   },
-  title: { fontSize: 15, fontWeight: "700", color: Colors.indigo },
-  body: { paddingHorizontal: 14, paddingBottom: 14 },
+  title: { flex: 1, fontSize: 15, fontFamily: Fonts.bodySemiBold, color: Colors.indigo },
+  body: { paddingHorizontal: 14, paddingBottom: 16, paddingLeft: 14 + BADGE_SIZE + 12 },
 });

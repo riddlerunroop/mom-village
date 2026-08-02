@@ -14,10 +14,11 @@ import {
   Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
 import { hasActiveSubscription } from "../../lib/subscription";
 import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } from "../../lib/weekCalculator";
-import { Colors } from "../../constants/theme";
+import { Colors, Fonts, iconBadge } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 
 type MoveContent = {
@@ -70,30 +71,30 @@ const RESET_KEY_BY_MOOD: Record<number, keyof ResetContent> = {
 };
 
 const TIME_OPTIONS = [
-  { value: "5", label: "5 min" },
-  { value: "15", label: "15 min" },
-  { value: "30", label: "30 min" },
+  { value: "5", label: "5", unit: "min" },
+  { value: "15", label: "15", unit: "min" },
+  { value: "30", label: "30", unit: "min" },
 ];
-const ENERGY_OPTIONS = [
-  { value: 1, label: "Running on empty" },
-  { value: 2, label: "Low, but here" },
-  { value: 3, label: "Steady" },
-  { value: 4, label: "Good energy" },
-  { value: 5, label: "Feeling strong" },
+const ENERGY_OPTIONS: { value: number; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 1, label: "Running on empty", icon: "battery-dead-outline" },
+  { value: 2, label: "Low, but here", icon: "battery-half-outline" },
+  { value: 3, label: "Steady", icon: "leaf-outline" },
+  { value: 4, label: "Good energy", icon: "sunny-outline" },
+  { value: 5, label: "Feeling strong", icon: "flash-outline" },
 ];
-const MOOD_OPTIONS = [
-  { value: 1, label: "Heavy day" },
-  { value: 2, label: "A little low" },
-  { value: 3, label: "Okay" },
-  { value: 4, label: "Good" },
-  { value: 5, label: "Really good" },
+const MOOD_OPTIONS: { value: number; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 1, label: "Heavy day", icon: "rainy-outline" },
+  { value: 2, label: "A little low", icon: "cloud-outline" },
+  { value: 3, label: "Okay", icon: "partly-sunny-outline" },
+  { value: 4, label: "Good", icon: "sunny-outline" },
+  { value: 5, label: "Really good", icon: "sparkles-outline" },
 ];
-const PILLARS = [
-  { key: "move", label: "Move" },
-  { key: "nourish", label: "Nourish" },
-  { key: "reset", label: "Reset" },
-  { key: "care_for_yourself", label: "Care for yourself" },
-  { key: "rediscover", label: "Rediscover" },
+const PILLARS: { key: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: "move", label: "Move", icon: "body-outline" },
+  { key: "nourish", label: "Nourish", icon: "nutrition-outline" },
+  { key: "reset", label: "Reset", icon: "flower-outline" },
+  { key: "care_for_yourself", label: "Care for yourself", icon: "hand-left-outline" },
+  { key: "rediscover", label: "Rediscover", icon: "sparkles-outline" },
 ];
 
 type Stage = "landing" | "checkin" | "chart";
@@ -111,6 +112,7 @@ export default function CareScreen() {
   const [energyChoice, setEnergyChoice] = useState<number | null>(null);
   const [moodChoice, setMoodChoice] = useState<number | null>(null);
   const [savingCheckin, setSavingCheckin] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const load = useCallback(async () => {
     const {
@@ -213,7 +215,7 @@ export default function CareScreen() {
       {stage === "landing" ? (
         <ScreenHeader />
       ) : (
-        <View style={styles.drillHeader}>
+        <View style={[styles.drillHeader, { paddingTop: insets.top + 10 }]}>
           <Pressable onPress={() => setStage("landing")} hitSlop={10}>
             <Ionicons name="arrow-back" size={22} color={Colors.indigo} />
           </Pressable>
@@ -325,6 +327,9 @@ function LandingView({
       <Text style={styles.sectionKicker}>Your five pillars</Text>
       {PILLARS.map((p) => (
         <View key={p.key} style={styles.pillarRow}>
+          <View style={iconBadge(Colors.indigo, 32)}>
+            <Ionicons name={p.icon} size={15} color={Colors.indigo} />
+          </View>
           <Text style={styles.pillarLabel}>{p.label}</Text>
         </View>
       ))}
@@ -365,45 +370,54 @@ function CheckinView({
             style={[styles.chip, timeChoice === opt.value && styles.chipSelected]}
             onPress={() => setTimeChoice(opt.value)}
           >
-            <Text style={[styles.chipText, timeChoice === opt.value && styles.chipTextSelected]}>
+            <Text style={[styles.chipNumber, timeChoice === opt.value && styles.chipTextSelected]}>
               {opt.label}
+            </Text>
+            <Text style={[styles.chipUnit, timeChoice === opt.value && styles.chipTextSelected]}>
+              {opt.unit}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={[styles.cardTitle, { marginTop: 16 }]}>How is your energy?</Text>
+      <Text style={[styles.cardTitle, { marginTop: 18 }]}>How is your energy?</Text>
       <View style={styles.optionList}>
-        {ENERGY_OPTIONS.map((opt) => (
-          <Pressable
-            key={opt.value}
-            style={[styles.optionRow, energyChoice === opt.value && styles.optionRowSelected]}
-            onPress={() => setEnergyChoice(opt.value)}
-          >
-            <Text
-              style={[styles.optionText, energyChoice === opt.value && styles.optionTextSelected]}
+        {ENERGY_OPTIONS.map((opt) => {
+          const selected = energyChoice === opt.value;
+          return (
+            <Pressable
+              key={opt.value}
+              style={[styles.optionRow, selected && styles.optionRowSelected]}
+              onPress={() => setEnergyChoice(opt.value)}
             >
-              {opt.label}
-            </Text>
-          </Pressable>
-        ))}
+              <Ionicons name={opt.icon} size={18} color={selected ? Colors.goldDeep : Colors.ink + "70"} />
+              <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
+                {opt.label}
+              </Text>
+              <View style={[styles.radio, selected && styles.radioSelected]} />
+            </Pressable>
+          );
+        })}
       </View>
 
-      <Text style={[styles.cardTitle, { marginTop: 16 }]}>How are you feeling?</Text>
+      <Text style={[styles.cardTitle, { marginTop: 18 }]}>How are you feeling?</Text>
       <View style={styles.optionList}>
-        {MOOD_OPTIONS.map((opt) => (
-          <Pressable
-            key={opt.value}
-            style={[styles.optionRow, moodChoice === opt.value && styles.optionRowSelected]}
-            onPress={() => setMoodChoice(opt.value)}
-          >
-            <Text
-              style={[styles.optionText, moodChoice === opt.value && styles.optionTextSelected]}
+        {MOOD_OPTIONS.map((opt) => {
+          const selected = moodChoice === opt.value;
+          return (
+            <Pressable
+              key={opt.value}
+              style={[styles.optionRow, selected && styles.optionRowSelected]}
+              onPress={() => setMoodChoice(opt.value)}
             >
-              {opt.label}
-            </Text>
-          </Pressable>
-        ))}
+              <Ionicons name={opt.icon} size={18} color={selected ? Colors.goldDeep : Colors.ink + "70"} />
+              <Text style={[styles.optionText, selected && styles.optionTextSelected]}>
+                {opt.label}
+              </Text>
+              <View style={[styles.radio, selected && styles.radioSelected]} />
+            </Pressable>
+          );
+        })}
       </View>
 
       <Pressable
@@ -498,14 +512,20 @@ function CareWeekView({
       )}
 
       {week.mental_health_note && (
-        <View style={[styles.card, { borderTopWidth: 3, borderTopColor: Colors.terracotta }]}>
-          <Text style={styles.cardTitle}>Mental health & support</Text>
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="heart-circle" size={18} color={Colors.terracotta} />
+            <Text style={styles.cardTitle}>Mental health & support</Text>
+          </View>
           <Text style={styles.body}>{week.mental_health_note}</Text>
         </View>
       )}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Celebrate this week</Text>
+        <View style={styles.cardTitleRow}>
+          <Ionicons name="trophy-outline" size={18} color={Colors.goldDeep} />
+          <Text style={styles.cardTitle}>Celebrate this week</Text>
+        </View>
         <Text style={styles.body}>{week.celebrate_this_week}</Text>
       </View>
 
@@ -542,8 +562,8 @@ function ExpandableCard({
   return (
     <Pressable style={styles.expandCard} onPress={() => setOpen((o) => !o)}>
       <View style={styles.expandHeaderRow}>
-        <View style={styles.expandIconWrap}>
-          <Ionicons name={icon} size={20} color={Colors.goldDeep} />
+        <View style={iconBadge(Colors.indigo, 40)}>
+          <Ionicons name={icon} size={19} color={Colors.indigo} />
         </View>
         <View style={{ flex: 1 }}>
           <View style={styles.expandTitleRow}>
@@ -572,47 +592,81 @@ function ExpandableCard({
   );
 }
 
+const cardShadow = {
+  borderWidth: 1,
+  borderColor: Colors.line,
+};
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.ivory },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.ivory },
   content: { padding: 20, paddingBottom: 60 },
-  drillHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
-  wordmark: { fontSize: 16, fontWeight: "700", color: Colors.indigo },
-  title: { fontSize: 24, fontWeight: "700", color: Colors.indigo, marginBottom: 4 },
-  weekLabel: { fontSize: 14, fontWeight: "700", color: Colors.goldDeep, marginBottom: 12 },
-  mantra: { fontSize: 16, fontStyle: "italic", color: Colors.sageDeep, marginBottom: 8, marginTop: 8 },
-  weekTheme: { fontSize: 18, fontWeight: "700", color: Colors.indigo, marginBottom: 14 },
-  lockedCard: { backgroundColor: Colors.ivory2, borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 20 },
-  lockedTitle: { fontSize: 17, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  lockedBody: { fontSize: 14, color: Colors.ink, lineHeight: 20, marginBottom: 16 },
+  drillHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    backgroundColor: Colors.ivory,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
+  },
+  wordmark: { fontSize: 16, fontFamily: Fonts.displayBold, color: Colors.indigo },
+  title: { fontSize: 24, fontFamily: Fonts.display, color: Colors.indigo, marginBottom: 4 },
+  weekLabel: { fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.goldDeep, marginBottom: 12 },
+  mantra: { fontSize: 16, fontFamily: Fonts.displayItalic, color: Colors.sageDeep, marginBottom: 8, marginTop: 8 },
+  weekTheme: { fontSize: 18, fontFamily: Fonts.display, color: Colors.indigo, marginBottom: 14 },
+  lockedCard: { backgroundColor: "#FFFFFF", borderRadius: 20, padding: 20, ...cardShadow },
+  lockedTitle: { fontSize: 17, fontFamily: Fonts.bodyBold, color: Colors.indigo, marginBottom: 8 },
+  lockedBody: { fontSize: 14, fontFamily: Fonts.body, color: Colors.ink, lineHeight: 20, marginBottom: 16 },
   button: { backgroundColor: Colors.goldDeep, borderRadius: 999, paddingVertical: 13, alignItems: "center", marginTop: 8, marginBottom: 14 },
-  buttonText: { color: Colors.ivory, fontWeight: "700", fontSize: 14 },
-  body: { fontSize: 14, color: Colors.ink, lineHeight: 20, marginBottom: 6 },
-  card: { backgroundColor: Colors.ivory2, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, padding: 18, marginBottom: 14 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: Colors.indigo, marginBottom: 4 },
-  mentalHealthCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: Colors.terracotta + "18", borderRadius: 16, borderWidth: 1, borderColor: Colors.terracotta + "40", padding: 14, marginBottom: 10 },
-  mentalHealthText: { flex: 1, fontSize: 14, fontWeight: "700", color: Colors.indigo },
-  safetyLink: { fontSize: 12, color: Colors.terracotta, fontWeight: "600", marginBottom: 20, textDecorationLine: "underline" },
-  sectionKicker: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, color: Colors.sageDeep, marginBottom: 10, marginTop: 4 },
-  pillarRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.line },
-  pillarLabel: { fontSize: 14, fontWeight: "600", color: Colors.indigo },
-  choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.indigo },
-  chipSelected: { backgroundColor: Colors.indigo },
-  chipText: { fontSize: 14, fontWeight: "700", color: Colors.indigo },
+  buttonText: { color: Colors.ivory, fontFamily: Fonts.bodyBold, fontSize: 14 },
+  body: { fontSize: 14, fontFamily: Fonts.body, color: Colors.ink, lineHeight: 20, marginBottom: 6 },
+  card: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 18, marginBottom: 14, ...cardShadow },
+  cardTitle: { fontSize: 16, fontFamily: Fonts.bodySemiBold, color: Colors.indigo, marginBottom: 4 },
+  cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  mentalHealthCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
+  mentalHealthText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.indigo },
+  safetyLink: { fontSize: 12, fontFamily: Fonts.bodySemiBold, color: Colors.terracotta, marginBottom: 20, textDecorationLine: "underline" },
+  sectionKicker: { fontSize: 11, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 1, color: Colors.sageDeep, marginBottom: 10, marginTop: 4 },
+  pillarRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.line },
+  pillarLabel: { fontSize: 14, fontFamily: Fonts.bodySemiBold, color: Colors.indigo },
+  choiceRow: { flexDirection: "row", gap: 10 },
+  chip: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.line,
+    backgroundColor: "#FFFFFF",
+  },
+  chipSelected: { backgroundColor: Colors.indigo, borderColor: Colors.indigo },
+  chipNumber: { fontSize: 20, fontFamily: Fonts.bodyBold, color: Colors.indigo },
+  chipUnit: { fontSize: 11, fontFamily: Fonts.bodySemiBold, color: Colors.indigo + "99", marginTop: 1 },
   chipTextSelected: { color: Colors.ivory },
   optionList: { gap: 8 },
-  optionRow: { flexDirection: "row", alignItems: "center", padding: 14, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.line, backgroundColor: Colors.ivory },
-  optionRowSelected: { borderColor: Colors.goldDeep, backgroundColor: Colors.gold + "22" },
-  optionText: { fontSize: 14, color: Colors.ink, fontWeight: "600" },
+  optionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.line,
+    backgroundColor: "#FFFFFF",
+  },
+  optionRowSelected: { borderColor: Colors.goldDeep, backgroundColor: Colors.gold + "16" },
+  optionText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodySemiBold, color: Colors.ink },
   optionTextSelected: { color: Colors.indigo },
-  smallNote: { fontSize: 12, color: Colors.ink + "8c", marginTop: 4 },
-  expandCard: { backgroundColor: Colors.ivory2, borderRadius: 16, borderWidth: 1, borderColor: Colors.line, padding: 14, marginBottom: 10 },
+  radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: Colors.line },
+  radioSelected: { borderColor: Colors.goldDeep, backgroundColor: Colors.goldDeep },
+  smallNote: { fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "8c", marginTop: 4 },
+  expandCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
   expandHeaderRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  expandIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: Colors.gold + "33", alignItems: "center", justifyContent: "center" },
   expandTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
   timeBadge: { backgroundColor: Colors.indigo, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
-  timeBadgeText: { color: Colors.ivory, fontSize: 10, fontWeight: "700" },
+  timeBadgeText: { color: Colors.ivory, fontSize: 10, fontFamily: Fonts.bodyBold },
   expandBody: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.line },
-  whyThisText: { fontSize: 12, color: Colors.sageDeep, fontStyle: "italic", marginBottom: 6 },
+  whyThisText: { fontSize: 12, fontFamily: Fonts.displayItalic, color: Colors.sageDeep, marginBottom: 6 },
 });

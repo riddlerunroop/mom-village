@@ -18,14 +18,31 @@ import {
   StyleSheet,
   Linking,
 } from "react-native";
-import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../lib/supabase";
 import { hasActiveSubscription } from "../lib/subscription";
 import { calculateMonthNumber } from "../lib/monthCalculator";
-import { Colors } from "../constants/theme";
+import { Colors, Fonts } from "../constants/theme";
+import DrillHeader from "../components/DrillHeader";
 
 type Stage = "pregnancy" | "postpartum" | "early_childhood";
+
+const SECTION_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  "Health support through pregnancy and early motherhood": "medkit-outline",
+  "Cash and employment support": "cash-outline",
+  "Long-term savings for a daughter": "trending-up-outline",
+};
+
+const SCHEME_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  "Pradhan Mantri Surakshit Matritva Abhiyan (PMSMA)": "calendar-outline",
+  "Janani Shishu Suraksha Karyakram (JSSK)": "heart-outline",
+  "Universal Immunization Programme (UIP)": "shield-checkmark-outline",
+  "Mission Saksham Anganwadi and Poshan 2.0 (ICDS/Anganwadi)": "nutrition-outline",
+  "Ayushman Bharat — PM-JAY": "medkit-outline",
+  "Pradhan Mantri Matru Vandana Yojana (PMMVY 2.0)": "cash-outline",
+  "Maternity Benefit Act, 1961 (as amended 2017)": "briefcase-outline",
+  "Sukanya Samriddhi Account (SSY)": "trending-up-outline",
+};
 
 const STAGE_LABELS: Record<Stage, string> = {
   pregnancy: "Pregnancy",
@@ -185,13 +202,7 @@ export default function WealthSchemesScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.topBar}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <Ionicons name="arrow-back" size={22} color={Colors.indigo} />
-        </Pressable>
-        <Text style={styles.topBarTitle}>Government Benefits</Text>
-        <View style={{ width: 22 }} />
-      </View>
+      <DrillHeader title="Government Benefits" />
 
       <ScrollView contentContainerStyle={{ padding: 20 }}>
         <Text style={styles.eyebrow}>government benefits & savings</Text>
@@ -218,6 +229,9 @@ export default function WealthSchemesScreen() {
         ) : (
           <>
             <View style={styles.disclaimerBox}>
+              <View style={styles.disclaimerIconRow}>
+                <Ionicons name="information-circle-outline" size={15} color={Colors.ink + "80"} />
+              </View>
               <Text style={styles.disclaimerText}>
                 This is general information about central government programmes, not a guarantee
                 you&apos;ll receive a benefit, and not personalised legal, medical, tax, or
@@ -246,10 +260,26 @@ export default function WealthSchemesScreen() {
 
             {visibleSections.map((section) => (
               <View key={section.title} style={{ marginBottom: 8 }}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <View style={styles.sectionTitleRow}>
+                  <Ionicons
+                    name={SECTION_ICONS[section.title] || "ribbon-outline"}
+                    size={15}
+                    color={Colors.goldDeep}
+                  />
+                  <Text style={styles.sectionTitle}>{section.title}</Text>
+                </View>
                 {section.schemes.map((scheme) => (
                   <View key={scheme.title} style={styles.schemeCard}>
-                    <Text style={styles.schemeTitle}>{scheme.title}</Text>
+                    <View style={styles.schemeTitleRow}>
+                      <View style={styles.cardIconBadgeSmall}>
+                        <Ionicons
+                          name={SCHEME_ICONS[scheme.title] || "ribbon-outline"}
+                          size={16}
+                          color={Colors.goldDeep}
+                        />
+                      </View>
+                      <Text style={styles.schemeTitle}>{scheme.title}</Text>
+                    </View>
                     <Text style={styles.schemeLabel}>Who it's for</Text>
                     <Text style={styles.schemeBody}>{scheme.who}</Text>
                     <Text style={styles.schemeLabel}>What you get</Text>
@@ -265,10 +295,16 @@ export default function WealthSchemesScreen() {
             ))}
 
             <View style={styles.noteCard}>
+              <View style={styles.schemeTitleRow}>
+                <View style={styles.cardIconBadgeSmall}>
+                  <Ionicons name="compass-outline" size={16} color={Colors.goldDeep} />
+                </View>
+                <Text style={styles.cardTitle}>Worth asking about locally</Text>
+              </View>
               <Text style={styles.body}>
-                A few more worth asking about locally — rules and availability for these vary
-                more by state, so treat them as a starting point for a conversation with your
-                Anganwadi worker, ASHA/ANM, or hospital, rather than a full entry yet:
+                Rules and availability for these vary more by state, so treat them as a starting
+                point for a conversation with your Anganwadi worker, ASHA/ANM, or hospital, rather
+                than a full entry yet:
               </Text>
               <Text style={styles.bulletText}>
                 • <Text style={styles.bulletBold}>Janani Suraksha Yojana (JSY):</Text> cash
@@ -299,47 +335,45 @@ export default function WealthSchemesScreen() {
   );
 }
 
+const cardShadow = {
+  borderWidth: 1,
+  borderColor: Colors.line,
+};
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.ivory },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.ivory },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.line,
-  },
-  topBarTitle: { fontSize: 15, fontWeight: "700", color: Colors.indigo },
   eyebrow: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: Fonts.bodyBold,
     textTransform: "uppercase",
     letterSpacing: 0.6,
     color: Colors.sageDeep,
     marginBottom: 6,
   },
-  title: { fontSize: 22, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  intro: { fontSize: 13, color: Colors.ink + "a6", lineHeight: 19, marginBottom: 18 },
-  lockedCard: { backgroundColor: Colors.ivory2, borderRadius: 18, borderWidth: 1, borderColor: Colors.line, padding: 20 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  body: { fontSize: 13, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 12 },
+  title: { fontSize: 22, fontFamily: Fonts.display, color: Colors.indigo, marginBottom: 8 },
+  intro: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "a6", lineHeight: 19, marginBottom: 18 },
+  lockedCard: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 20, ...cardShadow },
+  cardTitle: { fontSize: 16, fontFamily: Fonts.bodySemiBold, color: Colors.indigo, marginBottom: 8 },
+  body: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 12 },
   button: { backgroundColor: Colors.goldDeep, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
-  buttonText: { color: Colors.ivory, fontWeight: "700", fontSize: 14 },
-  disclaimerBox: { backgroundColor: Colors.gold + "1a", borderRadius: 14, padding: 14, marginBottom: 16 },
-  disclaimerText: { fontSize: 12, color: Colors.ink + "99", lineHeight: 18, fontStyle: "italic" },
+  buttonText: { color: Colors.ivory, fontFamily: Fonts.bodyBold, fontSize: 14 },
+  disclaimerBox: { flexDirection: "row", gap: 10, backgroundColor: Colors.gold + "1a", borderRadius: 14, padding: 14, marginBottom: 16 },
+  disclaimerIconRow: { paddingTop: 1 },
+  disclaimerText: { flex: 1, fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "99", lineHeight: 18, fontStyle: "italic" },
   filterToggle: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 18 },
-  filterToggleText: { fontSize: 12, color: Colors.sageDeep, fontWeight: "700", flex: 1 },
-  sectionTitle: { fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4, color: Colors.terracotta, marginBottom: 10, marginTop: 8 },
-  schemeCard: { backgroundColor: Colors.ivory2, borderRadius: 16, borderWidth: 1, borderColor: Colors.line, padding: 16, marginBottom: 12 },
-  schemeTitle: { fontSize: 15, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  schemeLabel: { fontSize: 10, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.4, color: Colors.sageDeep, marginTop: 8, marginBottom: 2 },
-  schemeBody: { fontSize: 13, color: Colors.ink + "cc", lineHeight: 18 },
-  schemeLink: { fontSize: 12, color: Colors.goldDeep, fontWeight: "700", marginTop: 10 },
-  noteCard: { backgroundColor: Colors.sageDeep + "14", borderRadius: 16, padding: 16, marginTop: 6, marginBottom: 16 },
-  bulletText: { fontSize: 13, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 6 },
-  bulletBold: { fontWeight: "700", color: Colors.ink },
-  sourceFooter: { fontSize: 11, color: Colors.ink + "70", lineHeight: 16, marginBottom: 30, fontStyle: "italic" },
+  filterToggleText: { fontSize: 12, fontFamily: Fonts.bodyBold, color: Colors.sageDeep, flex: 1 },
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8, marginBottom: 10 },
+  sectionTitle: { fontSize: 13, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 0.4, color: Colors.goldDeep },
+  schemeCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, marginBottom: 12, ...cardShadow },
+  schemeTitleRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 },
+  cardIconBadgeSmall: { width: 28, height: 28, borderRadius: 9, backgroundColor: Colors.ivory, borderWidth: 1.5, borderColor: Colors.gold + "70", alignItems: "center", justifyContent: "center" },
+  schemeTitle: { fontSize: 15, fontFamily: Fonts.bodySemiBold, color: Colors.indigo, flex: 1 },
+  schemeLabel: { fontSize: 10, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 0.4, color: Colors.goldDeep, marginTop: 8, marginBottom: 2 },
+  schemeBody: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "cc", lineHeight: 18 },
+  schemeLink: { fontSize: 12, fontFamily: Fonts.bodyBold, color: Colors.goldDeep, marginTop: 10 },
+  noteCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, marginTop: 6, marginBottom: 16, ...cardShadow },
+  bulletText: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "bf", lineHeight: 19, marginBottom: 6 },
+  bulletBold: { fontFamily: Fonts.bodyBold, color: Colors.ink },
+  sourceFooter: { fontSize: 11, fontFamily: Fonts.body, color: Colors.ink + "70", lineHeight: 16, marginBottom: 30, fontStyle: "italic" },
 });

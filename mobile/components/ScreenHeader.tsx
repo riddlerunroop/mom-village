@@ -7,11 +7,17 @@
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { Colors } from "../constants/theme";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Colors, Fonts } from "../constants/theme";
 
 export default function ScreenHeader() {
+  // Real safe-area top inset, not a guessed fixed value — without this the
+  // wordmark collided with the phone's own status bar (clock/signal icons)
+  // on several Android devices, caught live 2026-08-01.
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { paddingTop: insets.top + 10 }]}>
       <Text style={styles.wordmark}>
         mom<Text style={{ color: Colors.goldDeep }}>village</Text>
       </Text>
@@ -32,9 +38,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingBottom: 10,
+    backgroundColor: Colors.ivory,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.line,
   },
-  wordmark: { fontSize: 18, fontWeight: "700", color: Colors.indigo },
+  wordmark: { fontSize: 19, fontFamily: Fonts.displayBold, color: Colors.indigo },
   profileButton: { padding: 2 },
 });

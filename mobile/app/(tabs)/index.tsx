@@ -17,21 +17,25 @@ import {
   Linking,
 } from "react-native";
 import { router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 import { hasActiveSubscription } from "../../lib/subscription";
 import { calculateMonthNumber, monthLabel, journeyProgress } from "../../lib/monthCalculator";
 import { getCurrentSeason } from "../../lib/season";
-import { Colors } from "../../constants/theme";
+import { Colors, Fonts, iconBadge } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 import CollapsibleCard from "../../components/CollapsibleCard";
 
+// One icon color for the whole screen (navy), matching Roop's mockups —
+// every icon badge on Today/Care uses the same plain cream circle + navy
+// icon, never a different tint per item.
 const CHART_SECTIONS = [
-  { key: "baby_development", label: "Baby's Development", accent: Colors.gold },
-  { key: "mum_wellbeing", label: "Parenting & Your Wellbeing", accent: Colors.terracotta },
-  { key: "buy_now", label: "Buy / Arrange Now", accent: Colors.sageDeep },
-  { key: "hold_off", label: "Hold Off On", accent: Colors.gold },
-  { key: "movement_rest", label: "Movement & Rest", accent: Colors.sageDeep },
-  { key: "appointments_safety", label: "Appointments & Safety", accent: Colors.terracotta },
+  { key: "baby_development", label: "Baby's Development", icon: "leaf-outline" as const },
+  { key: "mum_wellbeing", label: "Parenting & Your Wellbeing", icon: "heart-outline" as const },
+  { key: "buy_now", label: "Buy / Arrange Now", icon: "bag-handle-outline" as const },
+  { key: "hold_off", label: "Hold Off On", icon: "pause-circle-outline" as const },
+  { key: "movement_rest", label: "Movement & Rest", icon: "moon-outline" as const },
+  { key: "appointments_safety", label: "Appointments & Safety", icon: "shield-checkmark-outline" as const },
 ];
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -39,7 +43,21 @@ const PRIORITY_LABELS: Record<string, string> = {
   buy_now: "Worth buying",
   baby_development: "What's changing",
 };
+const PRIORITY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  appointments_safety: "shield-checkmark-outline",
+  buy_now: "bag-handle-outline",
+  baby_development: "sparkles-outline",
+};
 const PRIORITY_SECTIONS = ["appointments_safety", "buy_now", "baby_development"];
+
+// Short bold takeaway + the rest tucked behind "Read more" — same pattern
+// already used for the website's Monthly Chart cards, applied here so the
+// priorities card reads as scannable highlights instead of a wall of text.
+function splitFirstSentence(text: string): [string, string] {
+  const match = text.match(/^(.*?[.!?])(\s+|$)([\s\S]*)$/);
+  if (!match) return [text, ""];
+  return [match[1], match[3] || ""];
+}
 
 type ChartItem = {
   id: string;
@@ -58,6 +76,7 @@ export default function TodayScreen() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [items, setItems] = useState<ChartItem[]>([]);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [expandedPriorities, setExpandedPriorities] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     const {
@@ -180,12 +199,17 @@ export default function TodayScreen() {
           />
         }
       >
-        <Text style={styles.kicker}>
-          welcome back{momName ? `, ${momName}` : ""}
-        </Text>
-        <Text style={styles.title}>
-          {babyName} — {label}
-        </Text>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.kicker}>
+              welcome back{momName ? `, ${momName}` : ""}
+            </Text>
+            <Text style={styles.title}>
+              {babyName} — {label}
+            </Text>
+          </View>
+          <Ionicons name="heart-outline" size={22} color={Colors.goldDeep} />
+        </View>
 
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -212,30 +236,66 @@ export default function TodayScreen() {
           <>
             {priorities.length > 0 && (
               <View style={styles.prioritiesCard}>
-                <Text style={styles.prioritiesTitle}>This month's three priorities</Text>
-                {priorities.map((item, i) => (
-                  <View key={item.id} style={styles.priorityRow}>
-                    <Text style={styles.priorityLabel}>
-                      {PRIORITY_LABELS[item.sectionKey] || "Worth knowing"}
-                    </Text>
-                    <Text style={styles.priorityBody}>
-                      {i + 1}. {item.body}
-                    </Text>
-                  </View>
-                ))}
+                <View style={styles.prioritiesHeaderRow}>
+                  <Ionicons name="star" size={14} color={Colors.gold} />
+                  <Text style={styles.prioritiesTitle}>This month's three priorities</Text>
+                </View>
+                {priorities.map((item) => {
+                  const [lead, rest] = splitFirstSentence(item.body);
+                  const isOpen = expandedPriorities.has(item.id);
+                  return (
+                    <View key={item.id} style={styles.priorityRow}>
+                      <View style={iconBadge(Colors.indigo, 32)}>
+                        <Ionicons
+                          name={PRIORITY_ICONS[item.sectionKey] || "sparkles-outline"}
+                          size={15}
+                          color={Colors.indigo}
+                        />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.priorityLabel}>
+                          {PRIORITY_LABELS[item.sectionKey] || "Worth knowing"}
+                        </Text>
+                        <Text style={styles.priorityBody}>{lead}</Text>
+                        {rest.trim().length > 0 && (
+                          <>
+                            {isOpen && <Text style={styles.priorityBodyRest}>{rest}</Text>}
+                            <Pressable
+                              onPress={() =>
+                                setExpandedPriorities((prev) => {
+                                  const next = new Set(prev);
+                                  if (isOpen) next.delete(item.id);
+                                  else next.add(item.id);
+                                  return next;
+                                })
+                              }
+                            >
+                              <Text style={styles.priorityReadMore}>
+                                {isOpen ? "Show less" : "Read more"}
+                              </Text>
+                            </Pressable>
+                          </>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
             )}
 
             <View style={styles.quickActionsRow}>
               <QuickAction
+                icon="medkit-outline"
                 label="Track vaccinations"
                 onPress={() => router.push("/vaccinations")}
               />
               <QuickAction
+                icon="mic-outline"
                 label="Log a memory"
                 onPress={() => router.push("/memories")}
               />
               <QuickAction
+                icon="time-outline"
                 label="Past months"
                 onPress={() => Linking.openURL("https://www.momvillage.in/dashboard/archive")}
               />
@@ -246,7 +306,11 @@ export default function TodayScreen() {
                 .filter((i) => i.section === section.key)
                 .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
               return (
-                <CollapsibleCard key={section.key} title={section.label} accent={section.accent}>
+                <CollapsibleCard
+                  key={section.key}
+                  title={section.label}
+                  icon={section.icon}
+                >
                   {sectionItems.length === 0 ? (
                     <Text style={styles.emptyText}>
                       Nothing for this section this month — check back soon.
@@ -280,9 +344,18 @@ export default function TodayScreen() {
   );
 }
 
-function QuickAction({ label, onPress }: { label: string; onPress: () => void }) {
+function QuickAction({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable style={styles.quickAction} onPress={onPress}>
+      <Ionicons name={icon} size={16} color={Colors.indigo} />
       <Text style={styles.quickActionText}>{label}</Text>
     </Pressable>
   );
@@ -292,29 +365,53 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: Colors.ivory },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: Colors.ivory },
   content: { padding: 20, paddingBottom: 60 },
-  kicker: { fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1, color: Colors.sageDeep, marginBottom: 4 },
-  title: { fontSize: 24, fontWeight: "700", color: Colors.indigo, marginBottom: 4 },
-  progressTrack: { height: 8, borderRadius: 999, backgroundColor: Colors.ivory2, overflow: "hidden", marginBottom: 6, marginTop: 12 },
+  titleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
+  kicker: { fontSize: 11, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 1, color: Colors.sageDeep, marginBottom: 4 },
+  title: { fontSize: 25, fontFamily: Fonts.display, color: Colors.indigo, marginBottom: 4 },
+  progressTrack: { height: 8, borderRadius: 999, backgroundColor: Colors.ivory2, overflow: "hidden", marginBottom: 6, marginTop: 14 },
   progressFill: { height: "100%", backgroundColor: Colors.goldDeep, borderRadius: 999 },
-  progressLabel: { fontSize: 11, fontWeight: "700", color: Colors.sageDeep, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 20 },
+  progressLabel: { fontSize: 11, fontFamily: Fonts.bodyBold, color: Colors.sageDeep, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 20 },
   lockedCard: { backgroundColor: Colors.ivory2, borderRadius: 20, borderWidth: 1, borderColor: Colors.line, padding: 20 },
-  lockedTitle: { fontSize: 17, fontWeight: "700", color: Colors.indigo, marginBottom: 8 },
-  lockedBody: { fontSize: 14, color: Colors.ink, lineHeight: 20, marginBottom: 16 },
+  lockedTitle: { fontSize: 17, fontFamily: Fonts.bodyBold, color: Colors.indigo, marginBottom: 8 },
+  lockedBody: { fontSize: 14, fontFamily: Fonts.body, color: Colors.ink, lineHeight: 20, marginBottom: 16 },
   button: { backgroundColor: Colors.goldDeep, borderRadius: 999, paddingVertical: 13, alignItems: "center" },
-  buttonText: { color: Colors.ivory, fontWeight: "700", fontSize: 14 },
-  prioritiesCard: { backgroundColor: Colors.indigo, borderRadius: 18, padding: 16, marginBottom: 14 },
-  prioritiesTitle: { fontSize: 12, fontWeight: "700", color: Colors.gold, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 },
-  priorityRow: { marginBottom: 10 },
-  priorityLabel: { fontSize: 10, fontWeight: "800", color: Colors.gold, textTransform: "uppercase", marginBottom: 2 },
-  priorityBody: { fontSize: 13, color: Colors.ivory, lineHeight: 18 },
-  quickActionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 18 },
-  quickAction: { borderWidth: 1.5, borderColor: Colors.sageDeep, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14 },
-  quickActionText: { fontSize: 12, fontWeight: "700", color: Colors.sageDeep },
-  emptyText: { fontSize: 13, color: Colors.ink + "8c", fontStyle: "italic" },
+  buttonText: { color: Colors.ivory, fontFamily: Fonts.bodyBold, fontSize: 14 },
+  prioritiesCard: {
+    backgroundColor: Colors.indigo,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 16,
+    shadowColor: Colors.indigo,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  prioritiesHeaderRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 },
+  prioritiesTitle: { fontSize: 12, fontFamily: Fonts.bodyBold, color: Colors.gold, textTransform: "uppercase", letterSpacing: 0.5 },
+  priorityRow: { flexDirection: "row", gap: 12, marginBottom: 14 },
+  priorityLabel: { fontSize: 10, fontFamily: Fonts.bodyBold, color: Colors.gold, textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.3 },
+  priorityBody: { fontSize: 13.5, fontFamily: Fonts.bodySemiBold, color: Colors.ivory, lineHeight: 19 },
+  priorityBodyRest: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ivory + "d0", lineHeight: 18, marginTop: 4 },
+  priorityReadMore: { fontSize: 12, fontFamily: Fonts.bodyBold, color: Colors.gold, marginTop: 4 },
+  quickActionsRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
+  quickAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: Colors.line,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
+  quickActionText: { fontSize: 12.5, fontFamily: Fonts.bodyBold, color: Colors.indigo },
+  emptyText: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink + "8c", fontStyle: "italic" },
   itemRow: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10, gap: 10 },
   checkbox: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: Colors.sageDeep, alignItems: "center", justifyContent: "center", marginTop: 1 },
   checkboxDone: { backgroundColor: Colors.sageDeep },
-  checkmark: { color: Colors.ivory, fontSize: 13, fontWeight: "700" },
-  itemText: { flex: 1, fontSize: 14, color: Colors.ink, lineHeight: 20 },
+  checkmark: { color: Colors.ivory, fontSize: 13, fontFamily: Fonts.bodyBold },
+  itemText: { flex: 1, fontSize: 14, fontFamily: Fonts.body, color: Colors.ink, lineHeight: 20 },
   itemTextDone: { textDecorationLine: "line-through", color: Colors.ink + "70" },
 });
