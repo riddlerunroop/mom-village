@@ -1,40 +1,81 @@
 "use client";
 
-// Renders the new week-by-week Care Chart content (care_chart_week_content)
-// once a week has been converted into this fuller format — currently the
-// full pregnancy span (weeks 1-39, migrations 33-36) plus postpartum weeks
-// 0-6 / Early healing (migrations 37-38), see CLAUDE.md. Falls back to the
-// older phase-based rendering in chart/page.tsx for any week that isn't in
-// this table yet (postpartum weeks 7+, Finding rhythm onward).
+// Renders the week-by-week Care Chart content (care_chart_week_content) —
+// the full pregnancy-through-third-birthday span (weeks 1-196) is loaded,
+// see CLAUDE.md.
 //
-// Picks Move's tier by her check-in's time_available (5/15/30 -> heavy/
-// steady/feeling_good) and Reset's message by her check-in's mood_score
-// (1-5 -> heavy_day/a_little_low/okay/good/really_good), matching the same
-// two check-in answers every other part of Care already uses.
+// Move (migration_53, 2026-08-03) is self-contained: each week's own content
+// carries whichever format it was actually drafted in (the tiers3 Restore/
+// Rebuild/Thrive choice for First trimester weeks 1-9, or the Reset/Move/
+// Build/Release "sections" format for every other week) and she picks her
+// own tier/door directly within that content rather than the app auto-
+// selecting one from her check-in answer. Reset's message is still picked
+// by her check-in's mood_score (1-5 -> heavy_day/a_little_low/okay/good/
+// really_good), matching every other part of Care.
 
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { PROTEIN_TIP, type DietPreference } from "@/lib/proteinTips";
 
-// Recovery route — postpartum-only, added with the Early healing batch
-// (migration_38). Delivery-type-branched guidance, kept as its own key
-// inside `move` rather than a new column, since jsonb doesn't need a
-// migration to carry a new key. Optional because pregnancy weeks' `move`
-// blobs don't have it.
-export type RecoveryRoute = {
-  vaginal: string;
-  assisted_tear: string;
-  caesarean: string;
-  complications: string;
-};
+// Move content — fully replaced 2026-08-03 with the real "Move" series
+// (11 separately drafted, reviewed and locked documents spanning pregnancy
+// weeks 1-39 through postpartum weeks 0-156 — see
+// move-series-clinical-verification-2026-08-03.md and CLAUDE.md). The old
+// tiered focus/mood_adjustment shape is gone; every week now carries its own
+// small Move-specific theme/mantra plus a real Reset/Move/Build/Release (or,
+// for First trimester weeks 1-9 only, the original Restore/Rebuild/Thrive
+// three-tier shape) session, a featured exercise, and a genuine "why" and
+// safety note. Nothing else on this row (theme_title, mantra, nourish,
+// reset, care_for_yourself, etc.) changed — this migration (migration_53)
+// only ever writes to this one column.
+export type MoveExercise = { name: string; focus: string; benefit: string; mistake: string; tip: string };
+export type MoveDoor = { pattern: string; comfort: string; steady: string; challenge: string };
+export type MoveTiers3 = { restore: string[]; rebuild: string[]; thrive: string[] };
 
 export type MoveContent = {
-  focus: string;
-  recovery_route?: RecoveryRoute;
-  tiers: { heavy: string; steady: string; feeling_good: string };
-  mood_adjustment: string;
+  format: "tiers3" | "sections";
+  theme: string;
+  mantra: string;
+  // tiers3 (First trimester weeks 1-9 only)
+  tiers?: MoveTiers3 | null;
+  // sections (everything else)
+  reset?: string | null;
+  today?: string | null;
+  build?: string[] | null;
+  release?: string | null;
+  recoveryRoute?: Record<string, string> | null;
+  door?: MoveDoor | null;
+  // shared
+  exercise: MoveExercise;
+  inRealLife?: string | null;
+  why: string;
+  quote?: string | null;
+  note?: string | null;
+  // clinicalFlag is an internal editorial flag ("worth having an OB/GYN and
+  // a women's health physiotherapist scrutinise before this is locked") —
+  // deliberately never rendered to a mother, kept in the data purely so
+  // it isn't lost before that real review happens. See Second trimester
+  // week 19 (Standing Wood Chop) for the one place this is currently set.
+  clinicalFlag?: string | null;
+  progressionNote?: string | null;
   safety: string;
+  recovery?: string[] | null;
+  reflectionPrompt?: string | null;
+  closingLabel: string;
+  closingText: string;
+  lookingAhead?: string | null;
+  // phase-closing callbacks — present only on each phase's final week
+  milestone?: string | null;
+  breathLegacy?: string | null;
+  philosophy?: string | null;
+  // "What Your Child Learned Watching You" — present only on each
+  // postpartum phase's final week (46, 52, 66, 92, 118, 144, 170, 196)
+  childLearned?: string[] | null;
+  // week 196 only — the true close of the whole three-year journey
+  whatYouGaveYourself?: string[] | null;
+  finalNote?: string | null;
+  signatureLine?: string[] | null;
 };
 
 export type ResetContent = {
@@ -77,18 +118,6 @@ export type CareWeekRow = {
   closing_note?: string | null;
 };
 
-const MOVE_TIER_BY_TIME: Record<string, keyof MoveContent["tiers"]> = {
-  "5": "heavy",
-  "15": "steady",
-  "30": "feeling_good",
-};
-
-const MOVE_TIER_LABEL: Record<keyof MoveContent["tiers"], string> = {
-  heavy: "Heavy day · 5 min",
-  steady: "Steady day · 15 min",
-  feeling_good: "Feeling good · 30 min",
-};
-
 const RESET_KEY_BY_MOOD: Record<number, keyof ResetContent> = {
   1: "heavy_day",
   2: "a_little_low",
@@ -96,6 +125,36 @@ const RESET_KEY_BY_MOOD: Record<number, keyof ResetContent> = {
   4: "good",
   5: "really_good",
 };
+
+// Real content gap found 2026-08-03: several later batches (Sustainable
+// rhythms Part 2 through Your rhythm year three Part 2 — postpartum weeks
+// 79-156, migrations 44-46) were drafted with a literal generic filler
+// sentence standing in for real, week-specific content on fields that
+// weren't given a distinct answer for that week's theme — confirmed by
+// grepping the migrations directly (338 exact occurrences of "No specific
+// note this week." / "No specific ask this week." across those three files
+// alone). Rather than show that filler to a mother as if it were real
+// guidance, treat it as "nothing to show" and hide the card entirely — a
+// real content rewrite for the affected weeks is tracked separately (see
+// CLAUDE.md), this is the immediate display-side fix. Only an exact match
+// (after stripping a stray trailing dash-rule artifact some rows also
+// carry, e.g. "...this week. — — — — — --") counts as empty; text that
+// happens to start the same way but adds real guidance (e.g. "No specific
+// note this week — the Wealth pillar's planner ... covers this in depth")
+// is left alone since it does carry real information.
+const EMPTY_FIELD_VALUES = new Set([
+  "No specific note this week.",
+  "No specific ask this week.",
+  "No specific caution this week.",
+  "No specific movement theme this week.",
+  "No specific change this week.",
+]);
+
+function hasContent(value?: string | null): value is string {
+  if (!value) return false;
+  const cleaned = value.replace(/\s*(—\s*)+-*\s*$/, "").trim();
+  return cleaned.length > 0 && !EMPTY_FIELD_VALUES.has(cleaned);
+}
 
 function WeekCard({
   title,
@@ -178,24 +237,366 @@ function WeekCard({
   );
 }
 
-// Which named recovery route matches her profile's delivery_type. Onboarding/
-// confirm-birth only capture "normal" or "c_section" — there's no stored
-// value for "assisted birth or significant tear" or "complications", so
-// those two are always offered as a secondary self-select rather than
-// pretended to be known from her profile (same honesty-over-fake-
-// personalization call made for the Wealth schemes filter and the Budget
-// Planner's insurance note).
-const PRIMARY_ROUTE_BY_DELIVERY_TYPE: Record<string, keyof RecoveryRoute> = {
-  normal: "vaginal",
-  c_section: "caesarean",
-};
+// Which recoveryRoute key matches her profile's delivery_type. Onboarding/
+// confirm-birth only capture "normal" or "c_section", and the real Move
+// series content (Early Healing, Finding Rhythm) only ever splits into two
+// routes — "vaginal or assisted" and "caesarean" — so this is a direct,
+// honest match rather than the four-category guess the old schema assumed.
+function primaryRouteKeyFor(deliveryType: string | undefined, keys: string[]): string | null {
+  if (deliveryType === "c_section") return keys.find((k) => k.toLowerCase().includes("caesarean")) ?? null;
+  if (deliveryType === "normal") return keys.find((k) => k.toLowerCase().includes("vaginal")) ?? null;
+  return null;
+}
 
-const ROUTE_LABEL: Record<keyof RecoveryRoute, string> = {
-  vaginal: "Vaginal birth",
-  assisted_tear: "Assisted birth / significant tear",
-  caesarean: "Caesarean birth",
-  complications: "Complications / restrictions",
-};
+function titleCaseRoute(key: string): string {
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
+// The Move series' own recovery-check items ("just notice, don't diagnose")
+// — display-only, not wired to per-item tracking, matching how "Celebrate
+// this week" is informational rather than actionable.
+function MoveRecoveryCheck({ items }: { items: string[] }) {
+  return (
+    <div className="mt-3 bg-sage/10 rounded-xl border border-sage-deep/20 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-sage-deep mb-1.5">
+        Check-in — just notice, don&apos;t diagnose
+      </p>
+      <ul className="text-[12px] text-ink/70 space-y-1 list-disc list-inside">
+        {items.map((it, i) => (
+          <li key={i}>{it}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// The Move card itself — fully rebuilt 2026-08-03 for the real, locked Move
+// series. Deliberately its own full-width section above the smaller pillar
+// grid rather than squeezed into a 2-column card, since a real week's worth
+// of Reset/Move/Build/Release plus a featured exercise is far more content
+// than the other pillar cards carry. Branches on `move.format`: "tiers3" for
+// First trimester weeks 1-9 (the original Restore/Rebuild/Thrive shape),
+// "sections" for everything else.
+function MoveSection({
+  week,
+  deliveryType,
+  doneMove,
+  weekNumber,
+}: {
+  week: MoveContent;
+  deliveryType?: string;
+  doneMove: boolean;
+  weekNumber: number;
+}) {
+  const supabase = createClient();
+  const [done, setDone] = useState(doneMove);
+  const [busy, setBusy] = useState(false);
+
+  async function toggleDone() {
+    setBusy(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setBusy(false);
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (done) {
+      await supabase
+        .from("user_care_week_progress")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("week_number", weekNumber)
+        .eq("card_key", "move")
+        .eq("completed_date", today);
+      setDone(false);
+    } else {
+      await supabase.from("user_care_week_progress").upsert(
+        { user_id: user.id, week_number: weekNumber, card_key: "move", completed_date: today },
+        { onConflict: "user_id,week_number,card_key,completed_date" }
+      );
+      setDone(true);
+    }
+    setBusy(false);
+  }
+
+  const routeKeys = week.recoveryRoute ? Object.keys(week.recoveryRoute) : [];
+  const primaryRouteKey = week.recoveryRoute ? primaryRouteKeyFor(deliveryType, routeKeys) : null;
+  const otherRouteKeys = routeKeys.filter((k) => k !== primaryRouteKey);
+
+  return (
+    <div
+      className={`rounded-2xl border-2 p-6 mb-4 transition-colors ${
+        done ? "bg-sage/10 border-sage-deep/30" : "bg-ivory-2 border-gold/40"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gold-deep mb-1">Move</p>
+          <h3 className={`font-display text-lg ${done ? "text-ink/50 line-through decoration-1" : "text-indigo"}`}>
+            {week.theme}
+          </h3>
+          <p className="font-display italic text-[15px] text-sage-deep mt-0.5">&ldquo;{week.mantra}&rdquo;</p>
+        </div>
+        <button
+          type="button"
+          onClick={toggleDone}
+          disabled={busy}
+          aria-label={done ? "Mark not done" : "Mark done"}
+          className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center text-[13px] font-bold transition-colors ${
+            done ? "bg-sage-deep border-sage-deep text-ivory" : "border-ink/25 text-transparent hover:border-sage-deep/60"
+          }`}
+        >
+          ✓
+        </button>
+      </div>
+
+      <div className={`text-[13px] leading-relaxed space-y-3 ${done ? "text-ink/40" : "text-ink/75"}`}>
+        {week.format === "tiers3" && week.tiers ? (
+          <div className="grid sm:grid-cols-3 gap-3">
+            {(["restore", "rebuild", "thrive"] as const).map((tier) => (
+              <div key={tier} className="bg-ivory rounded-xl border border-line p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1.5">
+                  {tier === "restore" ? "Restore · 5 min" : tier === "rebuild" ? "Rebuild · 15 min" : "Thrive · 30 min"}
+                </p>
+                <ul className="text-[12px] space-y-1 list-disc list-inside">
+                  {(week.tiers?.[tier] ?? []).map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {hasContent(week.reset) && (
+              <p>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-sage-deep mr-1.5">Reset</span>
+                {week.reset}
+              </p>
+            )}
+            {hasContent(week.today) && (
+              <p>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mr-1.5">Move</span>
+                {week.today}
+              </p>
+            )}
+            {week.recoveryRoute && routeKeys.length > 0 && (
+              <div className="bg-indigo/5 rounded-xl border border-indigo/20 p-3">
+                {primaryRouteKey ? (
+                  <>
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo mb-1">
+                      {titleCaseRoute(primaryRouteKey)}
+                    </p>
+                    <p>{week.recoveryRoute[primaryRouteKey]}</p>
+                  </>
+                ) : (
+                  <p className="text-ink/55 italic">Choose whichever route below is closest to your birth.</p>
+                )}
+                {otherRouteKeys.length > 0 && (
+                  <details className="text-[12px] text-ink/55 mt-1.5">
+                    <summary className="cursor-pointer font-semibold text-indigo">
+                      A different route instead?
+                    </summary>
+                    {otherRouteKeys.map((k) => (
+                      <p key={k} className="mt-1.5">
+                        <span className="font-semibold">{titleCaseRoute(k)}: </span>
+                        {week.recoveryRoute?.[k]}
+                      </p>
+                    ))}
+                  </details>
+                )}
+              </div>
+            )}
+            {week.build && week.build.length > 0 && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1">Build</p>
+                <ul className="space-y-1 list-disc list-inside">
+                  {week.build.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {week.door && (
+              <div className="bg-indigo/5 rounded-xl border border-indigo/20 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo mb-1">
+                  Choose your door — {week.door.pattern}
+                </p>
+                <p className="text-[12px]">
+                  <span className="font-semibold">Comfort: </span>
+                  {week.door.comfort}
+                </p>
+                <p className="text-[12px]">
+                  <span className="font-semibold">Steady: </span>
+                  {week.door.steady}
+                </p>
+                <p className="text-[12px]">
+                  <span className="font-semibold">Challenge: </span>
+                  {week.door.challenge}
+                </p>
+                <p className="text-[11px] italic text-ink/50 mt-1">
+                  Same practice, three doors in. No door is the &ldquo;real&rdquo; one.
+                </p>
+              </div>
+            )}
+            {hasContent(week.release) && (
+              <p>
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-sage-deep mr-1.5">Release</span>
+                {week.release}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="bg-ivory rounded-xl border border-line p-3">
+          <p className="font-semibold text-ink/85">⭐ {week.exercise.name}</p>
+          <p className="text-[12.5px] mt-0.5">
+            <span className="font-semibold">Focus: </span>
+            {week.exercise.focus}
+            {week.exercise.benefit ? ` — ${week.exercise.benefit}` : ""}
+          </p>
+          <p className="text-[12.5px] mt-1">
+            <span className="font-semibold">Common mistake: </span>
+            {week.exercise.mistake}
+          </p>
+          <p className="text-[12.5px] mt-1">
+            <span className="font-semibold">Tiny tip: </span>
+            {week.exercise.tip}
+          </p>
+        </div>
+
+        {hasContent(week.inRealLife) && (
+          <p className="text-[12.5px]">
+            <span className="font-semibold text-sage-deep">In real life: </span>
+            <span className="italic">{week.inRealLife}</span>
+          </p>
+        )}
+
+        <p>
+          <span className="font-semibold text-sage-deep">Why: </span>
+          <span className="italic">{week.why}</span>
+        </p>
+
+        {hasContent(week.quote) && (
+          <p className="bg-gold/10 border border-gold/30 rounded-xl px-4 py-3 text-center font-display italic text-indigo text-[14px]">
+            {week.quote}
+          </p>
+        )}
+
+        {hasContent(week.note) && (
+          <p className="text-[12.5px]">
+            <span className="font-semibold">Note: </span>
+            {week.note}
+          </p>
+        )}
+
+        {hasContent(week.progressionNote) && (
+          <p className="text-[12.5px]">
+            <span className="font-semibold text-sage-deep">If you&apos;re ready for more: </span>
+            <span className="italic">{week.progressionNote}</span>
+          </p>
+        )}
+
+        <p className="text-[12px] text-terracotta">
+          <span className="font-semibold">Safety: </span>
+          {week.safety}
+        </p>
+
+        {week.recovery && week.recovery.length > 0 && <MoveRecoveryCheck items={week.recovery} />}
+
+        {hasContent(week.reflectionPrompt) && (
+          <div className="bg-gold/10 rounded-xl border border-gold/40 p-3 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1">
+              Pause for a moment
+            </p>
+            <p className="italic">{week.reflectionPrompt}</p>
+            <p className="text-[11px] italic text-ink/45 mt-1">No answer required. Just pause.</p>
+          </div>
+        )}
+
+        <p className="text-[12.5px] italic">
+          <span className="font-semibold not-italic">{week.closingLabel}: </span>
+          {week.closingText}
+        </p>
+
+        {hasContent(week.lookingAhead) && (
+          <p className="text-[12.5px] italic text-gold-deep">
+            <span className="font-semibold not-italic text-gold-deep">Looking ahead: </span>
+            {week.lookingAhead}
+          </p>
+        )}
+
+        {hasContent(week.milestone) && (
+          <p className="font-display italic text-indigo text-[16px] text-center font-semibold pt-1">
+            {week.milestone}
+          </p>
+        )}
+        {hasContent(week.breathLegacy) && (
+          <p className="font-display italic text-gold-deep text-[15px] text-center font-semibold">
+            {week.breathLegacy}
+          </p>
+        )}
+        {hasContent(week.philosophy) && (
+          <p className="font-display italic text-sage-deep text-[14px] text-center">{week.philosophy}</p>
+        )}
+      </div>
+
+      {week.whatYouGaveYourself && week.whatYouGaveYourself.length > 0 && (
+        <div className="mt-5 pt-5 border-t border-gold/30">
+          <p className="font-display text-lg text-indigo mb-1">What You Gave Yourself</p>
+          <p className="text-[12px] text-ink/55 italic mb-2">
+            Not what this built for them. What it gave back to you, whether or not anyone else ever knew.
+          </p>
+          <ul className="space-y-1.5">
+            {week.whatYouGaveYourself.map((item, i) => (
+              <li key={i} className="text-[13px] text-ink/75">
+                <span className="text-indigo font-bold mr-1.5">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {week.childLearned && week.childLearned.length > 0 && (
+        <div className="mt-5 pt-5 border-t border-gold/30">
+          <p className="font-display text-lg text-indigo mb-1">What Your Child Learned Watching You</p>
+          <p className="text-[12px] text-ink/55 italic mb-2">
+            Not what you learned this stretch. What they did, just from watching.
+          </p>
+          <ul className="space-y-1.5">
+            {week.childLearned.map((item, i) => (
+              <li key={i} className="text-[13px] text-ink/75">
+                <span className="text-gold-deep font-bold mr-1.5">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {hasContent(week.finalNote) && (
+        <div className="mt-5 pt-5 border-t border-gold/30">
+          <p className="text-[13px] italic text-ink/70">{week.finalNote}</p>
+          {week.signatureLine && week.signatureLine.length > 0 && (
+            <div className="mt-4 text-center">
+              {week.signatureLine.map((line, i) => (
+                <p
+                  key={i}
+                  className={`font-display italic font-bold text-[17px] ${i === 0 ? "text-indigo" : "text-gold-deep"}`}
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Heavy-day safety bridge — new 2026-07-29, Phase 1 of the Maternal Mental
 // Health / PPD integration (see CLAUDE.md). Shown only when her check-in's
@@ -254,7 +655,6 @@ function HeavyDaySafetyBridge() {
 
 export default function CareWeekContent({
   week,
-  timeAvailable,
   moodScore,
   doneCardKeys,
   deliveryType,
@@ -262,16 +662,18 @@ export default function CareWeekContent({
   dietPreference,
 }: {
   week: CareWeekRow;
-  timeAvailable: string;
+  // timeAvailable is no longer used here -- the new Move series lets her
+  // choose her own tier/door directly rather than the app auto-picking one
+  // from her check-in's time answer. Kept optional on the caller's props so
+  // chart/page.tsx doesn't need to stop passing it.
+  timeAvailable?: string;
   moodScore: number;
   doneCardKeys: Set<string>;
   deliveryType?: string;
   healthFlags?: string[];
   dietPreference?: DietPreference | null;
 }) {
-  const tierKey = MOVE_TIER_BY_TIME[timeAvailable] ?? "steady";
   const resetKey = RESET_KEY_BY_MOOD[moodScore] ?? "okay";
-  const primaryRouteKey = PRIMARY_ROUTE_BY_DELIVERY_TYPE[deliveryType ?? ""] ?? null;
   const flags = healthFlags ?? [];
   const visibleConditionNotes = (week.condition_notes ?? []).filter(
     (n) => n.flag === "none" || flags.includes(n.flag)
@@ -306,59 +708,15 @@ export default function CareWeekContent({
         )}
       </div>
 
+      <MoveSection
+        week={week.move}
+        deliveryType={deliveryType}
+        doneMove={doneCardKeys.has("move")}
+        weekNumber={week.week_number}
+      />
+
       <div className="grid md:grid-cols-2 gap-4">
-        {week.move.recovery_route && (
-          <WeekCard title="Your recovery route" accent="indigo">
-            {primaryRouteKey ? (
-              <>
-                <p className="text-[11px] font-semibold text-sage-deep uppercase tracking-wide mb-1">
-                  {ROUTE_LABEL[primaryRouteKey]}
-                </p>
-                <p className="mb-2">{week.move.recovery_route[primaryRouteKey]}</p>
-              </>
-            ) : (
-              <p className="mb-2 text-ink/55 italic">
-                Choose whichever route below is closest to your birth.
-              </p>
-            )}
-            <details className="text-[12px] text-ink/55">
-              <summary className="cursor-pointer font-semibold text-sage-deep">
-                Assisted birth, significant tear, or a complication instead?
-              </summary>
-              <p className="mt-1.5">
-                <span className="font-semibold">{ROUTE_LABEL.assisted_tear}: </span>
-                {week.move.recovery_route.assisted_tear}
-              </p>
-              <p className="mt-1.5">
-                <span className="font-semibold">{ROUTE_LABEL.complications}: </span>
-                {week.move.recovery_route.complications}
-              </p>
-            </details>
-          </WeekCard>
-        )}
-
-        <WeekCard
-          title="Move"
-          accent="gold"
-          cardKey="move"
-          weekNumber={week.week_number}
-          initiallyDone={doneCardKeys.has("move")}
-        >
-          <p className="font-semibold text-ink/80 mb-1">{week.move.focus}</p>
-          <p className="text-[11px] font-semibold text-sage-deep uppercase tracking-wide mb-1">
-            {MOVE_TIER_LABEL[tierKey]}
-          </p>
-          <p className="mb-2">{week.move.tiers[tierKey]}</p>
-          <p className="text-[12px] text-ink/55 mb-1">
-            <span className="font-semibold">If today feels different: </span>
-            {week.move.mood_adjustment}
-          </p>
-          <p className="text-[12px] text-terracotta">
-            <span className="font-semibold">Stop and check with your clinician for: </span>
-            {week.move.safety}
-          </p>
-        </WeekCard>
-
+        {(hasContent(week.nourish) || dietPreference) && (
         <WeekCard
           title="Nourish"
           accent="sage"
@@ -366,7 +724,7 @@ export default function CareWeekContent({
           weekNumber={week.week_number}
           initiallyDone={doneCardKeys.has("nourish")}
         >
-          <p className="mb-2">{week.nourish}</p>
+          {hasContent(week.nourish) && <p className="mb-2">{week.nourish}</p>}
           {dietPreference && (
             <div className="mt-3 pt-3 border-t border-sage-deep/15">
               <p className="text-[11px] font-semibold text-sage-deep uppercase tracking-wide mb-1">
@@ -381,18 +739,21 @@ export default function CareWeekContent({
             </div>
           )}
         </WeekCard>
+        )}
 
-        <WeekCard
-          title="Hydration goal"
-          accent="indigo"
-          cardKey="hydration"
-          weekNumber={week.week_number}
-          initiallyDone={doneCardKeys.has("hydration")}
-        >
-          {week.hydration_goal}
-        </WeekCard>
+        {hasContent(week.hydration_goal) && (
+          <WeekCard
+            title="Hydration goal"
+            accent="indigo"
+            cardKey="hydration"
+            weekNumber={week.week_number}
+            initiallyDone={doneCardKeys.has("hydration")}
+          >
+            {week.hydration_goal}
+          </WeekCard>
+        )}
 
-        {week.feeding_comfort && (
+        {hasContent(week.feeding_comfort) && (
           <WeekCard
             title="Feeding comfort"
             accent="sage"
@@ -404,7 +765,7 @@ export default function CareWeekContent({
           </WeekCard>
         )}
 
-        {week.rest_support && (
+        {hasContent(week.rest_support) && (
           <WeekCard
             title="Rest support"
             accent="gold-deep"
@@ -426,41 +787,49 @@ export default function CareWeekContent({
           {week.reset[resetKey]}
         </WeekCard>
 
-        <WeekCard
-          title="Care for yourself"
-          accent="gold-deep"
-          cardKey="care_for_yourself"
-          weekNumber={week.week_number}
-          initiallyDone={doneCardKeys.has("care_for_yourself")}
-        >
-          {week.care_for_yourself}
-        </WeekCard>
+        {hasContent(week.care_for_yourself) && (
+          <WeekCard
+            title="Care for yourself"
+            accent="gold-deep"
+            cardKey="care_for_yourself"
+            weekNumber={week.week_number}
+            initiallyDone={doneCardKeys.has("care_for_yourself")}
+          >
+            {week.care_for_yourself}
+          </WeekCard>
+        )}
 
-        <WeekCard
-          title="Your corner"
-          accent="gold"
-          cardKey="your_corner"
-          weekNumber={week.week_number}
-          initiallyDone={doneCardKeys.has("your_corner")}
-        >
-          {week.your_corner}
-        </WeekCard>
+        {hasContent(week.your_corner) && (
+          <WeekCard
+            title="Your corner"
+            accent="gold"
+            cardKey="your_corner"
+            weekNumber={week.week_number}
+            initiallyDone={doneCardKeys.has("your_corner")}
+          >
+            {week.your_corner}
+          </WeekCard>
+        )}
 
-        <WeekCard
-          title="Support moment"
-          accent="sage"
-          cardKey="support_moment"
-          weekNumber={week.week_number}
-          initiallyDone={doneCardKeys.has("support_moment")}
-        >
-          {week.support_moment}
-        </WeekCard>
+        {hasContent(week.support_moment) && (
+          <WeekCard
+            title="Support moment"
+            accent="sage"
+            cardKey="support_moment"
+            weekNumber={week.week_number}
+            initiallyDone={doneCardKeys.has("support_moment")}
+          >
+            {week.support_moment}
+          </WeekCard>
+        )}
 
-        <WeekCard title="Celebrate this week" accent="gold-deep">
-          {week.celebrate_this_week}
-        </WeekCard>
+        {hasContent(week.celebrate_this_week) && (
+          <WeekCard title="Celebrate this week" accent="gold-deep">
+            {week.celebrate_this_week}
+          </WeekCard>
+        )}
 
-        {week.mental_health_note && (
+        {hasContent(week.mental_health_note) && (
           <WeekCard title="Mental health & support" accent="terracotta">
             <p className="mb-2">{week.mental_health_note}</p>
             <Link
@@ -475,13 +844,13 @@ export default function CareWeekContent({
 
       {resetKey === "heavy_day" && <HeavyDaySafetyBridge />}
 
-      {visibleConditionNotes.length > 0 && (
+      {visibleConditionNotes.filter((n) => hasContent(n.note)).length > 0 && (
         <div className="mt-5 bg-terracotta/5 rounded-2xl border border-terracotta/20 p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-terracotta mb-2">
             If this applies to you
           </p>
           <div className="space-y-2">
-            {visibleConditionNotes.map((n, i) => (
+            {visibleConditionNotes.filter((n) => hasContent(n.note)).map((n, i) => (
               <p key={i} className="text-[13px] text-ink/70">
                 {n.note}
               </p>
@@ -490,12 +859,14 @@ export default function CareWeekContent({
         </div>
       )}
 
-      <div className="mt-5 bg-indigo/5 rounded-2xl border border-indigo/20 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-indigo mb-1.5">
-          For your care team
-        </p>
-        <p className="text-[13px] text-ink/70">{week.for_your_care_team}</p>
-      </div>
+      {hasContent(week.for_your_care_team) && (
+        <div className="mt-5 bg-indigo/5 rounded-2xl border border-indigo/20 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-indigo mb-1.5">
+            For your care team
+          </p>
+          <p className="text-[13px] text-ink/70">{week.for_your_care_team}</p>
+        </div>
+      )}
 
       <div className="mt-5 flex items-center justify-between gap-3 bg-ivory-2 rounded-2xl border border-line px-5 py-4">
         <p className="text-[13px] text-ink/65">

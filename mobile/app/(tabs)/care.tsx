@@ -3,7 +3,7 @@
 // Queries care_chart_week_content (all 197 weeks live, pregnancy 1-39 +
 // postpartum 0-156) the same way the website's care/chart page does.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import {
   StyleSheet,
   Linking,
 } from "react-native";
+import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
@@ -21,11 +22,48 @@ import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } f
 import { Colors, Fonts, iconBadge } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 
+// Move — fully replaced 2026-08-03 with the real "Move" series (11
+// separately drafted, reviewed and locked documents spanning pregnancy
+// weeks 1-39 through postpartum weeks 0-156 — see
+// move-series-clinical-verification-2026-08-03.md and CLAUDE.md). Same
+// shape as the website's CareWeekContent.tsx: each week carries its own
+// format (the tiers3 Restore/Rebuild/Thrive choice for First trimester
+// weeks 1-9, or the Reset/Move/Build/Release "sections" format for every
+// other week) rather than the app auto-picking a tier from her check-in.
+type MoveExercise = { name: string; focus: string; benefit: string; mistake: string; tip: string };
+type MoveDoor = { pattern: string; comfort: string; steady: string; challenge: string };
+type MoveTiers3 = { restore: string[]; rebuild: string[]; thrive: string[] };
 type MoveContent = {
-  focus: string;
-  tiers: { heavy: string; steady: string; feeling_good: string };
-  mood_adjustment: string;
+  format: "tiers3" | "sections";
+  theme: string;
+  mantra: string;
+  tiers?: MoveTiers3 | null;
+  reset?: string | null;
+  today?: string | null;
+  build?: string[] | null;
+  release?: string | null;
+  recoveryRoute?: Record<string, string> | null;
+  door?: MoveDoor | null;
+  exercise: MoveExercise;
+  inRealLife?: string | null;
+  why: string;
+  quote?: string | null;
+  note?: string | null;
+  clinicalFlag?: string | null;
+  progressionNote?: string | null;
   safety: string;
+  recovery?: string[] | null;
+  reflectionPrompt?: string | null;
+  closingLabel: string;
+  closingText: string;
+  lookingAhead?: string | null;
+  milestone?: string | null;
+  breathLegacy?: string | null;
+  philosophy?: string | null;
+  childLearned?: string[] | null;
+  whatYouGaveYourself?: string[] | null;
+  finalNote?: string | null;
+  signatureLine?: string[] | null;
 };
 type ResetContent = {
   heavy_day: string;
@@ -57,11 +95,15 @@ type WeekRow = {
   condition_notes: ConditionNote[] | null;
 };
 
-const MOVE_TIER_BY_TIME: Record<string, keyof MoveContent["tiers"]> = {
-  "5": "heavy",
-  "15": "steady",
-  "30": "feeling_good",
-};
+function primaryRouteKeyFor(deliveryType: string | undefined | null, keys: string[]): string | null {
+  if (deliveryType === "c_section") return keys.find((k) => k.toLowerCase().includes("caesarean")) ?? null;
+  if (deliveryType === "normal") return keys.find((k) => k.toLowerCase().includes("vaginal")) ?? null;
+  return null;
+}
+function titleCaseRoute(key: string): string {
+  return key.charAt(0).toUpperCase() + key.slice(1);
+}
+
 const RESET_KEY_BY_MOOD: Record<number, keyof ResetContent> = {
   1: "heavy_day",
   2: "a_little_low",
@@ -69,6 +111,27 @@ const RESET_KEY_BY_MOOD: Record<number, keyof ResetContent> = {
   4: "good",
   5: "really_good",
 };
+
+// Same fix as the web CareWeekContent.tsx, 2026-08-03: several later
+// batches (postpartum weeks 79-156) were drafted with a literal generic
+// filler sentence standing in for real content on fields not given a
+// distinct answer that week — confirmed via grep across the migrations
+// (338+ exact occurrences). Hide a card entirely rather than show that
+// filler text as if it were real guidance. A real content rewrite for the
+// affected weeks is tracked separately (see CLAUDE.md).
+const EMPTY_FIELD_VALUES = new Set([
+  "No specific note this week.",
+  "No specific ask this week.",
+  "No specific caution this week.",
+  "No specific movement theme this week.",
+  "No specific change this week.",
+]);
+
+function hasContent(value?: string | null): value is string {
+  if (!value) return false;
+  const cleaned = value.replace(/\s*(—\s*)+-*\s*$/, "").trim();
+  return cleaned.length > 0 && !EMPTY_FIELD_VALUES.has(cleaned);
+}
 
 const TIME_OPTIONS = [
   { value: "5", label: "5", unit: "min" },
@@ -104,6 +167,7 @@ export default function CareScreen() {
   const [stage, setStage] = useState<Stage>("landing");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [week, setWeek] = useState<number | null>(null);
+  const [deliveryType, setDeliveryType] = useState<string | null>(null);
   const [healthFlags, setHealthFlags] = useState<string[]>([]);
   const [checkin, setCheckin] = useState<{ time_available: string; mood_score: number } | null>(null);
   const [weekContent, setWeekContent] = useState<WeekRow | null>(null);
@@ -118,15 +182,19 @@ export default function CareScreen() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("baby_dob, due_date")
+      .select("baby_dob, due_date, delivery_type")
       .eq("id", user.id)
       .maybeSingle();
 
     if (!profile || (!profile.baby_dob && !profile.due_date)) {
+      setLoading(false);
       return;
     }
 
@@ -135,6 +203,7 @@ export default function CareScreen() {
 
     const w = calculateCareWeek(profile.baby_dob ?? null, profile.due_date ?? null);
     setWeek(w);
+    setDeliveryType(profile.delivery_type ?? null);
 
     if (!subscribed || w === null) {
       setLoading(false);
@@ -172,9 +241,18 @@ export default function CareScreen() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  // Refetch every time this tab comes back into focus, not just on first
+  // mount — a plain useEffect(load, []) only ran once ever, so changing the
+  // due date/DOB in Account and returning to Care kept showing whatever
+  // week loaded the very first time, no matter what she actually changed.
+  // Caught live 2026-08-03: "whichever date I chose, it just asks me to go
+  // for a short walk" — same frozen content every time, not a content
+  // problem. Matches the same useFocusEffect pattern Community already used.
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   async function submitCheckin() {
     if (!timeChoice || !energyChoice || !moodChoice) return;
@@ -254,7 +332,7 @@ export default function CareScreen() {
             </Text>
           </View>
         ) : (
-          <CareWeekView week={weekContent} checkin={checkin} healthFlags={healthFlags} />
+          <CareWeekView week={weekContent} checkin={checkin} healthFlags={healthFlags} deliveryType={deliveryType} />
         )}
       </ScrollView>
     </View>
@@ -439,12 +517,13 @@ function CareWeekView({
   week,
   checkin,
   healthFlags,
+  deliveryType,
 }: {
   week: WeekRow;
   checkin: { time_available: string; mood_score: number };
   healthFlags: string[];
+  deliveryType: string | null;
 }) {
-  const moveTierKey = MOVE_TIER_BY_TIME[checkin.time_available] ?? "steady";
   const resetKey = RESET_KEY_BY_MOOD[checkin.mood_score] ?? "okay";
   const relevantConditionNotes = (week.condition_notes || []).filter(
     (n) => n.flag === "none" || healthFlags.includes(n.flag)
@@ -457,41 +536,41 @@ function CareWeekView({
       {week.mantra && <Text style={styles.mantra}>"{week.mantra}"</Text>}
       <Text style={styles.weekTheme}>{week.theme_title}</Text>
 
-      <ExpandableCard
-        icon="body-outline"
-        title="Move"
-        timeLabel={
-          checkin.time_available === "5" ? "5 min" : checkin.time_available === "15" ? "15 min" : "30 min"
-        }
-        summary={week.move.tiers[moveTierKey]}
-        whyThis={week.move.focus}
-      >
-        {week.move.safety && <Text style={styles.smallNote}>{week.move.safety}</Text>}
-      </ExpandableCard>
+      <MoveCard move={week.move} deliveryType={deliveryType} />
 
-      <ExpandableCard icon="nutrition-outline" title="Nourish" summary={week.nourish}>
-        {week.hydration_goal && (
-          <Text style={styles.smallNote}>Hydration: {week.hydration_goal}</Text>
-        )}
-      </ExpandableCard>
+      {(hasContent(week.nourish) || hasContent(week.hydration_goal)) && (
+        <ExpandableCard
+          icon="nutrition-outline"
+          title="Nourish"
+          summary={hasContent(week.nourish) ? week.nourish : week.hydration_goal}
+        >
+          {hasContent(week.hydration_goal) && hasContent(week.nourish) && (
+            <Text style={styles.smallNote}>Hydration: {week.hydration_goal}</Text>
+          )}
+        </ExpandableCard>
+      )}
 
       <ExpandableCard icon="flower-outline" title="Reset" summary={week.reset[resetKey]} />
 
-      <ExpandableCard icon="hand-left-outline" title="Care for yourself" summary={week.care_for_yourself} />
+      {hasContent(week.care_for_yourself) && (
+        <ExpandableCard icon="hand-left-outline" title="Care for yourself" summary={week.care_for_yourself} />
+      )}
 
-      <ExpandableCard icon="sparkles-outline" title="Rediscover" summary={week.your_corner} />
+      {hasContent(week.your_corner) && (
+        <ExpandableCard icon="sparkles-outline" title="Rediscover" summary={week.your_corner} />
+      )}
 
-      {(week.feeding_comfort || week.rest_support) && (
+      {(hasContent(week.feeding_comfort) || hasContent(week.rest_support)) && (
         <View style={styles.card}>
-          {week.feeding_comfort && (
+          {hasContent(week.feeding_comfort) && (
             <>
               <Text style={styles.cardTitle}>Feeding comfort</Text>
               <Text style={styles.body}>{week.feeding_comfort}</Text>
             </>
           )}
-          {week.rest_support && (
+          {hasContent(week.rest_support) && (
             <>
-              <Text style={[styles.cardTitle, { marginTop: week.feeding_comfort ? 12 : 0 }]}>
+              <Text style={[styles.cardTitle, { marginTop: hasContent(week.feeding_comfort) ? 12 : 0 }]}>
                 Rest support
               </Text>
               <Text style={styles.body}>{week.rest_support}</Text>
@@ -500,10 +579,10 @@ function CareWeekView({
         </View>
       )}
 
-      {relevantConditionNotes.length > 0 && (
+      {relevantConditionNotes.filter((n) => hasContent(n.note)).length > 0 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>If this applies to you</Text>
-          {relevantConditionNotes.map((n, i) => (
+          {relevantConditionNotes.filter((n) => hasContent(n.note)).map((n, i) => (
             <Text key={i} style={styles.body}>
               {n.note}
             </Text>
@@ -511,7 +590,7 @@ function CareWeekView({
         </View>
       )}
 
-      {week.mental_health_note && (
+      {hasContent(week.mental_health_note) && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="heart-circle" size={18} color={Colors.terracotta} />
@@ -521,18 +600,22 @@ function CareWeekView({
         </View>
       )}
 
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Ionicons name="trophy-outline" size={18} color={Colors.goldDeep} />
-          <Text style={styles.cardTitle}>Celebrate this week</Text>
+      {hasContent(week.celebrate_this_week) && (
+        <View style={styles.card}>
+          <View style={styles.cardTitleRow}>
+            <Ionicons name="trophy-outline" size={18} color={Colors.goldDeep} />
+            <Text style={styles.cardTitle}>Celebrate this week</Text>
+          </View>
+          <Text style={styles.body}>{week.celebrate_this_week}</Text>
         </View>
-        <Text style={styles.body}>{week.celebrate_this_week}</Text>
-      </View>
+      )}
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>For your care team</Text>
-        <Text style={styles.body}>{week.for_your_care_team}</Text>
-      </View>
+      {hasContent(week.for_your_care_team) && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>For your care team</Text>
+          <Text style={styles.body}>{week.for_your_care_team}</Text>
+        </View>
+      )}
 
       <Pressable onPress={() => Linking.openURL("https://www.momvillage.in/safety")}>
         <Text style={styles.safetyLink}>
@@ -589,6 +672,233 @@ function ExpandableCard({
         </View>
       )}
     </Pressable>
+  );
+}
+
+// Move card — rebuilt 2026-08-03 alongside the website's equivalent
+// (src/components/CareWeekContent.tsx's MoveSection) for the new Move
+// series content. Read-only, matching this screen's existing standing gap
+// (no per-card "done" toggle for Care yet, unlike the Monthly Chart) —
+// not something this pass adds. Deliberately never renders
+// move.clinicalFlag anywhere: that's an internal editorial flag kept only
+// for a future professional (pelvic-health physiotherapist/OB-GYN) review
+// pass, never shown to a mother.
+function MoveCard({ move, deliveryType }: { move: MoveContent; deliveryType: string | null }) {
+  const [open, setOpen] = useState(false);
+  const [showOtherRoutes, setShowOtherRoutes] = useState(false);
+  const routeKeys = move.recoveryRoute ? Object.keys(move.recoveryRoute) : [];
+  const primaryRouteKey = move.recoveryRoute ? primaryRouteKeyFor(deliveryType, routeKeys) : null;
+  const otherRouteKeys = routeKeys.filter((k) => k !== primaryRouteKey);
+
+  return (
+    <Pressable style={styles.expandCard} onPress={() => setOpen((o) => !o)}>
+      <View style={styles.expandHeaderRow}>
+        <View style={iconBadge(Colors.indigo, 40)}>
+          <Ionicons name="body-outline" size={19} color={Colors.indigo} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>Move</Text>
+          {hasContent(move.theme) && <Text style={styles.body}>{move.theme}</Text>}
+          {hasContent(move.mantra) && <Text style={styles.moveCardMantra}>&ldquo;{move.mantra}&rdquo;</Text>}
+        </View>
+        <Ionicons name={open ? "chevron-up" : "chevron-forward"} size={16} color={Colors.ink + "60"} />
+      </View>
+
+      {open && (
+        <View style={styles.expandBody}>
+          {move.format === "tiers3" && move.tiers ? (
+            <>
+              <MoveTierBlock label="Restore · 5 min" items={move.tiers.restore} />
+              <MoveTierBlock label="Rebuild · 15 min" items={move.tiers.rebuild} />
+              <MoveTierBlock label="Thrive · 30 min" items={move.tiers.thrive} />
+            </>
+          ) : (
+            <>
+              {hasContent(move.reset) && <MoveTextBlock label="Reset" text={move.reset as string} />}
+              {hasContent(move.today) && <MoveTextBlock label="Move" text={move.today as string} />}
+
+              {move.recoveryRoute && (
+                <View style={styles.moveSubCard}>
+                  <Text style={styles.moveSubLabel}>Your recovery route</Text>
+                  {primaryRouteKey ? (
+                    <>
+                      <Text style={styles.moveRouteName}>{titleCaseRoute(primaryRouteKey)}</Text>
+                      <Text style={styles.body}>{move.recoveryRoute[primaryRouteKey]}</Text>
+                    </>
+                  ) : (
+                    <Text style={[styles.body, { fontStyle: "italic" }]}>
+                      Choose whichever route below is closest to your birth.
+                    </Text>
+                  )}
+                  {otherRouteKeys.length > 0 && (
+                    <Pressable onPress={() => setShowOtherRoutes((v) => !v)} hitSlop={6}>
+                      <Text style={styles.moveLinkText}>
+                        {showOtherRoutes ? "Hide other routes" : "A different birth? See other routes"}
+                      </Text>
+                    </Pressable>
+                  )}
+                  {showOtherRoutes &&
+                    otherRouteKeys.map((k) => (
+                      <View key={k} style={{ marginTop: 6 }}>
+                        <Text style={styles.moveRouteName}>{titleCaseRoute(k)}</Text>
+                        <Text style={styles.body}>{move.recoveryRoute![k]}</Text>
+                      </View>
+                    ))}
+                </View>
+              )}
+
+              {move.door && (
+                <View style={styles.moveSubCard}>
+                  <Text style={styles.moveSubLabel}>Choose your door — {move.door.pattern}</Text>
+                  <Text style={styles.body}>
+                    <Text style={styles.moveDoorTag}>Comfort: </Text>
+                    {move.door.comfort}
+                  </Text>
+                  <Text style={styles.body}>
+                    <Text style={styles.moveDoorTag}>Steady: </Text>
+                    {move.door.steady}
+                  </Text>
+                  <Text style={styles.body}>
+                    <Text style={styles.moveDoorTag}>Challenge: </Text>
+                    {move.door.challenge}
+                  </Text>
+                </View>
+              )}
+
+              {move.build && move.build.length > 0 && (
+                <View style={styles.moveSubCard}>
+                  <Text style={styles.moveSubLabel}>Build</Text>
+                  {move.build.map((line, i) => (
+                    <Text key={i} style={styles.moveBullet}>
+                      • {line}
+                    </Text>
+                  ))}
+                </View>
+              )}
+
+              {hasContent(move.release) && <MoveTextBlock label="Release" text={move.release as string} />}
+            </>
+          )}
+
+          <View style={styles.moveSubCard}>
+            <Text style={styles.moveSubLabel}>This week&apos;s exercise: {move.exercise.name}</Text>
+            {hasContent(move.exercise.focus) && (
+              <Text style={styles.smallNote}>Focus: {move.exercise.focus}</Text>
+            )}
+            {hasContent(move.exercise.benefit) && (
+              <Text style={styles.smallNote}>Why it helps: {move.exercise.benefit}</Text>
+            )}
+            {hasContent(move.exercise.mistake) && (
+              <Text style={styles.smallNote}>Common mistake: {move.exercise.mistake}</Text>
+            )}
+            {hasContent(move.exercise.tip) && <Text style={styles.smallNote}>Tip: {move.exercise.tip}</Text>}
+          </View>
+
+          {hasContent(move.inRealLife) && <MoveTextBlock label="In real life" text={move.inRealLife as string} />}
+          {hasContent(move.why) && <MoveTextBlock label="Why this matters" text={move.why} />}
+          {hasContent(move.quote) && (
+            <View style={styles.moveQuoteBox}>
+              <Text style={styles.moveQuoteText}>{move.quote}</Text>
+            </View>
+          )}
+          {hasContent(move.note) && <Text style={styles.smallNote}>{move.note}</Text>}
+          {hasContent(move.progressionNote) && (
+            <Text style={styles.smallNote}>If you&apos;re ready for more: {move.progressionNote}</Text>
+          )}
+          {hasContent(move.safety) && (
+            <Text style={[styles.smallNote, { color: Colors.terracotta }]}>{move.safety}</Text>
+          )}
+
+          {move.recovery && move.recovery.length > 0 && (
+            <View style={styles.moveSubCard}>
+              {move.recovery.map((line, i) => (
+                <Text key={i} style={styles.moveBullet}>
+                  ☐ {line}
+                </Text>
+              ))}
+            </View>
+          )}
+
+          {hasContent(move.reflectionPrompt) && (
+            <View style={styles.movePauseBox}>
+              <Text style={styles.moveQuoteText}>{move.reflectionPrompt}</Text>
+            </View>
+          )}
+
+          {hasContent(move.closingText) && (
+            <MoveTextBlock label={hasContent(move.closingLabel) ? move.closingLabel : "Closing"} text={move.closingText} />
+          )}
+          {hasContent(move.lookingAhead) && (
+            <Text style={styles.smallNote}>Looking ahead: {move.lookingAhead}</Text>
+          )}
+
+          {(hasContent(move.milestone) || hasContent(move.breathLegacy) || hasContent(move.philosophy)) && (
+            <View style={{ marginTop: 10, alignItems: "center" }}>
+              {hasContent(move.milestone) && <Text style={styles.moveCallout}>{move.milestone}</Text>}
+              {hasContent(move.breathLegacy) && <Text style={styles.moveCallout}>{move.breathLegacy}</Text>}
+              {hasContent(move.philosophy) && <Text style={styles.moveCallout}>{move.philosophy}</Text>}
+            </View>
+          )}
+
+          {move.whatYouGaveYourself && move.whatYouGaveYourself.length > 0 && (
+            <View style={styles.moveSubCard}>
+              <Text style={styles.moveSubLabel}>What you gave yourself</Text>
+              {move.whatYouGaveYourself.map((line, i) => (
+                <Text key={i} style={styles.moveBullet}>
+                  • {line}
+                </Text>
+              ))}
+            </View>
+          )}
+          {move.childLearned && move.childLearned.length > 0 && (
+            <View style={styles.moveSubCard}>
+              <Text style={styles.moveSubLabel}>What your child learned watching you</Text>
+              {move.childLearned.map((line, i) => (
+                <Text key={i} style={styles.moveBullet}>
+                  • {line}
+                </Text>
+              ))}
+            </View>
+          )}
+          {(hasContent(move.finalNote) || (move.signatureLine && move.signatureLine.length > 0)) && (
+            <View style={{ marginTop: 12, alignItems: "center" }}>
+              {hasContent(move.finalNote) && <Text style={styles.body}>{move.finalNote}</Text>}
+              {move.signatureLine?.map((line, i) => (
+                <Text
+                  key={i}
+                  style={[styles.moveCallout, i === 0 ? { color: Colors.indigo } : { color: Colors.goldDeep }]}
+                >
+                  {line}
+                </Text>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+function MoveTextBlock({ label, text }: { label: string; text: string }) {
+  return (
+    <View style={{ marginBottom: 10 }}>
+      <Text style={styles.moveSubLabel}>{label}</Text>
+      <Text style={styles.body}>{text}</Text>
+    </View>
+  );
+}
+
+function MoveTierBlock({ label, items }: { label: string; items: string[] }) {
+  if (!items || items.length === 0) return null;
+  return (
+    <View style={styles.moveSubCard}>
+      <Text style={styles.moveSubLabel}>{label}</Text>
+      {items.map((line, i) => (
+        <Text key={i} style={styles.moveBullet}>
+          • {line}
+        </Text>
+      ))}
+    </View>
   );
 }
 
@@ -669,4 +979,38 @@ const styles = StyleSheet.create({
   timeBadgeText: { color: Colors.ivory, fontSize: 10, fontFamily: Fonts.bodyBold },
   expandBody: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.line },
   whyThisText: { fontSize: 12, fontFamily: Fonts.displayItalic, color: Colors.sageDeep, marginBottom: 6 },
+  moveCardMantra: { fontSize: 12, fontFamily: Fonts.displayItalic, color: Colors.sageDeep, marginTop: 2 },
+  moveSubCard: {
+    backgroundColor: Colors.ivory2,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  moveSubLabel: { fontSize: 12, fontFamily: Fonts.bodyBold, color: Colors.indigo, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
+  moveRouteName: { fontSize: 13, fontFamily: Fonts.bodySemiBold, color: Colors.sageDeep, marginBottom: 2 },
+  moveLinkText: { fontSize: 12, fontFamily: Fonts.bodySemiBold, color: Colors.goldDeep, marginTop: 4, textDecorationLine: "underline" },
+  moveDoorTag: { fontFamily: Fonts.bodyBold, color: Colors.indigo },
+  moveBullet: { fontSize: 13, fontFamily: Fonts.body, color: Colors.ink, lineHeight: 19, marginBottom: 3 },
+  moveQuoteBox: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.gold,
+    paddingLeft: 12,
+    paddingVertical: 4,
+    marginBottom: 10,
+  },
+  moveQuoteText: { fontSize: 14, fontFamily: Fonts.displayItalic, color: Colors.indigo, lineHeight: 20 },
+  movePauseBox: {
+    backgroundColor: Colors.ivory2,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  moveCallout: {
+    fontSize: 15,
+    fontFamily: Fonts.displayItalic,
+    color: Colors.sageDeep,
+    textAlign: "center",
+    marginBottom: 4,
+  },
 });
