@@ -686,9 +686,22 @@ function ExpandableCard({
 function MoveCard({ move, deliveryType }: { move: MoveContent; deliveryType: string | null }) {
   const [open, setOpen] = useState(false);
   const [showOtherRoutes, setShowOtherRoutes] = useState(false);
+  const [safetyOpen, setSafetyOpen] = useState(false);
   const routeKeys = move.recoveryRoute ? Object.keys(move.recoveryRoute) : [];
   const primaryRouteKey = move.recoveryRoute ? primaryRouteKeyFor(deliveryType, routeKeys) : null;
   const otherRouteKeys = routeKeys.filter((k) => k !== primaryRouteKey);
+
+  // "Why this helps" — merged 2026-08-03 redesign, matching the website's
+  // equivalent change: inRealLife/why/note/progressionNote used to each get
+  // their own bold mini-label as separate stacked paragraphs, reading as
+  // several competing headed sections for what's really one train of
+  // thought. Combined into one lightweight block under a single heading.
+  const whyBlockParts = [
+    hasContent(move.inRealLife) ? move.inRealLife : null,
+    move.why,
+    hasContent(move.note) ? move.note : null,
+    hasContent(move.progressionNote) ? move.progressionNote : null,
+  ].filter((p): p is string => Boolean(p));
 
   return (
     <Pressable style={styles.expandCard} onPress={() => setOpen((o) => !o)}>
@@ -780,13 +793,13 @@ function MoveCard({ move, deliveryType }: { move: MoveContent; deliveryType: str
             </>
           )}
 
-          <View style={styles.moveSubCard}>
-            <Text style={styles.moveSubLabel}>This week&apos;s exercise: {move.exercise.name}</Text>
+          <View style={styles.moveCardWhite}>
+            <Text style={styles.moveSubLabel}>⭐ {move.exercise.name}</Text>
             {hasContent(move.exercise.focus) && (
-              <Text style={styles.smallNote}>Focus: {move.exercise.focus}</Text>
-            )}
-            {hasContent(move.exercise.benefit) && (
-              <Text style={styles.smallNote}>Why it helps: {move.exercise.benefit}</Text>
+              <Text style={styles.smallNote}>
+                {move.exercise.focus}
+                {hasContent(move.exercise.benefit) ? ` — ${move.exercise.benefit}` : ""}
+              </Text>
             )}
             {hasContent(move.exercise.mistake) && (
               <Text style={styles.smallNote}>Common mistake: {move.exercise.mistake}</Text>
@@ -794,28 +807,51 @@ function MoveCard({ move, deliveryType }: { move: MoveContent; deliveryType: str
             {hasContent(move.exercise.tip) && <Text style={styles.smallNote}>Tip: {move.exercise.tip}</Text>}
           </View>
 
-          {hasContent(move.inRealLife) && <MoveTextBlock label="In real life" text={move.inRealLife as string} />}
-          {hasContent(move.why) && <MoveTextBlock label="Why this matters" text={move.why} />}
           {hasContent(move.quote) && (
             <View style={styles.moveQuoteBox}>
               <Text style={styles.moveQuoteText}>{move.quote}</Text>
             </View>
           )}
-          {hasContent(move.note) && <Text style={styles.smallNote}>{move.note}</Text>}
-          {hasContent(move.progressionNote) && (
-            <Text style={styles.smallNote}>If you&apos;re ready for more: {move.progressionNote}</Text>
+
+          {whyBlockParts.length > 0 && (
+            <View>
+              <Text style={styles.moveWhyLabel}>💛 Why this helps</Text>
+              {whyBlockParts.map((part, i) => (
+                <Text key={i} style={[styles.body, styles.moveWhyText]}>
+                  {part}
+                </Text>
+              ))}
+            </View>
           )}
+
+          {/* Safety — collapsed by default, 2026-08-03: a persistent
+              terracotta line on every single week reads as a repeated
+              warning to a mother who's already seen the same guidance many
+              times. Same information, now tucked behind a small tap. */}
           {hasContent(move.safety) && (
-            <Text style={[styles.smallNote, { color: Colors.terracotta }]}>{move.safety}</Text>
+            <Pressable onPress={() => setSafetyOpen((v) => !v)} hitSlop={6}>
+              <View style={styles.safetyRow}>
+                <Ionicons
+                  name={safetyOpen ? "chevron-down" : "chevron-forward"}
+                  size={12}
+                  color={Colors.ink + "70"}
+                />
+                <Text style={styles.safetyLabel}>🩺 Safety reminder</Text>
+              </View>
+              {safetyOpen && <Text style={styles.smallNote}>{move.safety}</Text>}
+            </Pressable>
           )}
 
           {move.recovery && move.recovery.length > 0 && (
-            <View style={styles.moveSubCard}>
-              {move.recovery.map((line, i) => (
-                <Text key={i} style={styles.moveBullet}>
-                  ☐ {line}
-                </Text>
-              ))}
+            <View>
+              <Text style={styles.moveWhyLabel}>Just notice, don&apos;t diagnose</Text>
+              <View style={styles.moveChipRow}>
+                {move.recovery.map((line, i) => (
+                  <View key={i} style={styles.moveChip}>
+                    <Text style={styles.moveChipText}>{line}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           )}
 
@@ -826,7 +862,10 @@ function MoveCard({ move, deliveryType }: { move: MoveContent; deliveryType: str
           )}
 
           {hasContent(move.closingText) && (
-            <MoveTextBlock label={hasContent(move.closingLabel) ? move.closingLabel : "Closing"} text={move.closingText} />
+            <View>
+              <Text style={styles.moveWhyLabel}>🌿 {move.closingLabel}</Text>
+              <Text style={[styles.body, styles.moveWhyText]}>{move.closingText}</Text>
+            </View>
           )}
           {hasContent(move.lookingAhead) && (
             <Text style={styles.smallNote}>Looking ahead: {move.lookingAhead}</Text>
@@ -891,7 +930,7 @@ function MoveTextBlock({ label, text }: { label: string; text: string }) {
 function MoveTierBlock({ label, items }: { label: string; items: string[] }) {
   if (!items || items.length === 0) return null;
   return (
-    <View style={styles.moveSubCard}>
+    <View style={styles.moveCardWhite}>
       <Text style={styles.moveSubLabel}>{label}</Text>
       {items.map((line, i) => (
         <Text key={i} style={styles.moveBullet}>
@@ -977,7 +1016,7 @@ const styles = StyleSheet.create({
   expandTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
   timeBadge: { backgroundColor: Colors.indigo, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
   timeBadgeText: { color: Colors.ivory, fontSize: 10, fontFamily: Fonts.bodyBold },
-  expandBody: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.line },
+  expandBody: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.line, gap: 14 },
   whyThisText: { fontSize: 12, fontFamily: Fonts.displayItalic, color: Colors.sageDeep, marginBottom: 6 },
   moveCardMantra: { fontSize: 12, fontFamily: Fonts.displayItalic, color: Colors.sageDeep, marginTop: 2 },
   moveSubCard: {
@@ -1013,4 +1052,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 4,
   },
+  // 2026-08-03 redesign: a real elevation card for the movement/exercise
+  // itself (Level 1 — "the beautiful card"), distinct from the muted ivory
+  // moveSubCard used for a genuine choice (recovery route / door) or a
+  // real list (Build). Native app convention is flat cards (thin border,
+  // no drop shadow — see constants/theme.ts's CardStyle comment), so the
+  // "stand out" effect here comes from white-vs-cream contrast, not shadow.
+  moveCardWhite: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 14,
+  },
+  moveWhyLabel: { fontSize: 12, fontFamily: Fonts.bodySemiBold, color: Colors.sageDeep, marginBottom: 2 },
+  moveWhyText: { fontStyle: "italic", marginBottom: 4 },
+  safetyRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  safetyLabel: { fontSize: 12, fontFamily: Fonts.bodySemiBold, color: Colors.ink + "70" },
+  moveChipRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+  moveChip: {
+    backgroundColor: Colors.sageDeep + "14",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  moveChipText: { fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "b3" },
 });

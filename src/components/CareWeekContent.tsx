@@ -254,18 +254,25 @@ function titleCaseRoute(key: string): string {
 
 // The Move series' own recovery-check items ("just notice, don't diagnose")
 // — display-only, not wired to per-item tracking, matching how "Celebrate
-// this week" is informational rather than actionable.
+// this week" is informational rather than actionable. Styled as plain
+// pills rather than a bulleted list, 2026-08-03 redesign: a disc-bullet
+// list this close to the app's other real, tappable checkbox-style controls
+// read as a broken/fake checkbox to Roop on live review — pills make clear
+// at a glance that this is a soft noticing list, nothing to tap.
 function MoveRecoveryCheck({ items }: { items: string[] }) {
   return (
-    <div className="mt-3 bg-sage/10 rounded-xl border border-sage-deep/20 p-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-sage-deep mb-1.5">
-        Check-in — just notice, don&apos;t diagnose
-      </p>
-      <ul className="text-[12px] text-ink/70 space-y-1 list-disc list-inside">
+    <div>
+      <p className="text-[11px] font-medium text-ink/45 mb-2">Just notice, don&apos;t diagnose</p>
+      <div className="flex flex-wrap gap-1.5">
         {items.map((it, i) => (
-          <li key={i}>{it}</li>
+          <span
+            key={i}
+            className="text-[12px] text-ink/70 bg-sage/10 border border-sage-deep/15 rounded-full px-3 py-1"
+          >
+            {it}
+          </span>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
@@ -325,19 +332,35 @@ function MoveSection({
   const primaryRouteKey = week.recoveryRoute ? primaryRouteKeyFor(deliveryType, routeKeys) : null;
   const otherRouteKeys = routeKeys.filter((k) => k !== primaryRouteKey);
 
+  // "Why this helps" — merged 2026-08-03 redesign. inRealLife/why/note/
+  // progressionNote used to each get their own bold mini-label ("In real
+  // life:", "Why:", "Note:") stacked as separate paragraphs, which read as
+  // three-to-four competing headed sections for what's really one train of
+  // thought. Combined into one lightweight, unboxed block under a single
+  // heading — same exact wording for every field, just without the per-
+  // field labels and extra visual weight. Order preserved from the
+  // original stacking order.
+  const whyBlockParts = [
+    hasContent(week.inRealLife) ? week.inRealLife : null,
+    week.why,
+    hasContent(week.note) ? week.note : null,
+    hasContent(week.progressionNote) ? week.progressionNote : null,
+  ].filter((p): p is string => Boolean(p));
+
   return (
     <div
-      className={`rounded-2xl border-2 p-6 mb-4 transition-colors ${
-        done ? "bg-sage/10 border-sage-deep/30" : "bg-ivory-2 border-gold/40"
+      className={`rounded-3xl p-6 mb-4 transition-colors shadow-sm ${
+        done ? "bg-sage/10" : "bg-ivory-2"
       }`}
+      style={{ borderTop: "3px solid var(--color-gold)" }}
     >
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-gold-deep mb-1">Move</p>
-          <h3 className={`font-display text-lg ${done ? "text-ink/50 line-through decoration-1" : "text-indigo"}`}>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1">Move</p>
+          <h3 className={`font-display text-xl ${done ? "text-ink/50 line-through decoration-1" : "text-indigo"}`}>
             {week.theme}
           </h3>
-          <p className="font-display italic text-[15px] text-sage-deep mt-0.5">&ldquo;{week.mantra}&rdquo;</p>
+          <p className="font-display italic text-[14px] text-sage-deep mt-0.5">&ldquo;{week.mantra}&rdquo;</p>
         </div>
         <button
           type="button"
@@ -352,12 +375,13 @@ function MoveSection({
         </button>
       </div>
 
-      <div className={`text-[13px] leading-relaxed space-y-3 ${done ? "text-ink/40" : "text-ink/75"}`}>
+      <div className={`text-[13.5px] leading-relaxed space-y-5 ${done ? "text-ink/40" : "text-ink/75"}`}>
+        {/* Level 1 — the movement itself: cream card, real elevation */}
         {week.format === "tiers3" && week.tiers ? (
           <div className="grid sm:grid-cols-3 gap-3">
             {(["restore", "rebuild", "thrive"] as const).map((tier) => (
-              <div key={tier} className="bg-ivory rounded-xl border border-line p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1.5">
+              <div key={tier} className="bg-white rounded-2xl shadow-sm p-3.5">
+                <p className="text-[10.5px] font-semibold uppercase tracking-wide text-gold-deep mb-1.5">
                   {tier === "restore" ? "Restore · 5 min" : tier === "rebuild" ? "Rebuild · 15 min" : "Thrive · 30 min"}
                 </p>
                 <ul className="text-[12px] space-y-1 list-disc list-inside">
@@ -369,26 +393,25 @@ function MoveSection({
             ))}
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {hasContent(week.reset) && (
               <p>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-sage-deep mr-1.5">Reset</span>
+                <span className="text-[11px] font-medium text-sage-deep mr-1.5">Reset</span>
                 {week.reset}
               </p>
             )}
             {hasContent(week.today) && (
               <p>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mr-1.5">Move</span>
+                <span className="text-[11px] font-medium text-gold-deep mr-1.5">Move</span>
                 {week.today}
               </p>
             )}
+            {/* Level 2 — a real choice to make: white card, light border */}
             {week.recoveryRoute && routeKeys.length > 0 && (
-              <div className="bg-indigo/5 rounded-xl border border-indigo/20 p-3">
+              <div className="bg-white rounded-2xl border border-line p-3.5">
                 {primaryRouteKey ? (
                   <>
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo mb-1">
-                      {titleCaseRoute(primaryRouteKey)}
-                    </p>
+                    <p className="text-[11px] font-semibold text-indigo mb-1">{titleCaseRoute(primaryRouteKey)}</p>
                     <p>{week.recoveryRoute[primaryRouteKey]}</p>
                   </>
                 ) : (
@@ -411,7 +434,7 @@ function MoveSection({
             )}
             {week.build && week.build.length > 0 && (
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1">Build</p>
+                <p className="text-[11px] font-medium text-gold-deep mb-1">Build</p>
                 <ul className="space-y-1 list-disc list-inside">
                   {week.build.map((item, i) => (
                     <li key={i}>{item}</li>
@@ -420,10 +443,8 @@ function MoveSection({
               </div>
             )}
             {week.door && (
-              <div className="bg-indigo/5 rounded-xl border border-indigo/20 p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo mb-1">
-                  Choose your door — {week.door.pattern}
-                </p>
+              <div className="bg-white rounded-2xl border border-line p-3.5">
+                <p className="text-[11px] font-semibold text-indigo mb-1">Choose your door — {week.door.pattern}</p>
                 <p className="text-[12px]">
                   <span className="font-semibold">Comfort: </span>
                   {week.door.comfort}
@@ -443,83 +464,78 @@ function MoveSection({
             )}
             {hasContent(week.release) && (
               <p>
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-sage-deep mr-1.5">Release</span>
+                <span className="text-[11px] font-medium text-sage-deep mr-1.5">Release</span>
                 {week.release}
               </p>
             )}
           </div>
         )}
 
-        <div className="bg-ivory rounded-xl border border-line p-3">
+        <div className="bg-white rounded-2xl shadow-sm p-4">
           <p className="font-semibold text-ink/85">⭐ {week.exercise.name}</p>
-          <p className="text-[12.5px] mt-0.5">
-            <span className="font-semibold">Focus: </span>
+          <p className="text-[13px] mt-1">
             {week.exercise.focus}
             {week.exercise.benefit ? ` — ${week.exercise.benefit}` : ""}
           </p>
-          <p className="text-[12.5px] mt-1">
+          <p className="text-[13px] mt-1.5">
             <span className="font-semibold">Common mistake: </span>
             {week.exercise.mistake}
           </p>
-          <p className="text-[12.5px] mt-1">
+          <p className="text-[13px] mt-1">
             <span className="font-semibold">Tiny tip: </span>
             {week.exercise.tip}
           </p>
         </div>
 
-        {hasContent(week.inRealLife) && (
-          <p className="text-[12.5px]">
-            <span className="font-semibold text-sage-deep">In real life: </span>
-            <span className="italic">{week.inRealLife}</span>
-          </p>
-        )}
-
-        <p>
-          <span className="font-semibold text-sage-deep">Why: </span>
-          <span className="italic">{week.why}</span>
-        </p>
-
         {hasContent(week.quote) && (
-          <p className="bg-gold/10 border border-gold/30 rounded-xl px-4 py-3 text-center font-display italic text-indigo text-[14px]">
+          <p className="bg-gold/10 border border-gold/30 rounded-2xl px-4 py-3 text-center font-display italic text-indigo text-[14px]">
             {week.quote}
           </p>
         )}
 
-        {hasContent(week.note) && (
-          <p className="text-[12.5px]">
-            <span className="font-semibold">Note: </span>
-            {week.note}
-          </p>
+        {/* Level 3 — educational prose: no box, just room to breathe */}
+        {whyBlockParts.length > 0 && (
+          <div className="max-w-prose">
+            <p className="text-[12px] font-medium text-sage-deep mb-1.5">💛 Why this helps</p>
+            <div className="space-y-2">
+              {whyBlockParts.map((part, i) => (
+                <p key={i} className="italic">
+                  {part}
+                </p>
+              ))}
+            </div>
+          </div>
         )}
 
-        {hasContent(week.progressionNote) && (
-          <p className="text-[12.5px]">
-            <span className="font-semibold text-sage-deep">If you&apos;re ready for more: </span>
-            <span className="italic">{week.progressionNote}</span>
-          </p>
-        )}
-
-        <p className="text-[12px] text-terracotta">
-          <span className="font-semibold">Safety: </span>
-          {week.safety}
-        </p>
+        {/* Safety — collapsed by default, 2026-08-03: a persistent
+            terracotta paragraph on every single week reads as a repeated
+            warning/error to a mother who's already seen the same guidance
+            dozens of times. Same information, now a small closed
+            disclosure she can open if she actually wants to re-read it. */}
+        <details className="group">
+          <summary className="cursor-pointer text-[12px] font-medium text-ink/45 select-none list-none flex items-center gap-1.5">
+            <span className="inline-block transition-transform group-open:rotate-90">›</span>
+            🩺 Safety reminder
+          </summary>
+          <p className="text-[12px] text-ink/60 mt-1.5 pl-4">{week.safety}</p>
+        </details>
 
         {week.recovery && week.recovery.length > 0 && <MoveRecoveryCheck items={week.recovery} />}
 
         {hasContent(week.reflectionPrompt) && (
-          <div className="bg-gold/10 rounded-xl border border-gold/40 p-3 text-center">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1">
-              Pause for a moment
-            </p>
+          <div className="bg-gold/10 rounded-2xl border border-gold/30 p-4 text-center">
+            <p className="text-[11px] font-medium text-gold-deep mb-1">Pause for a moment</p>
             <p className="italic">{week.reflectionPrompt}</p>
-            <p className="text-[11px] italic text-ink/45 mt-1">No answer required. Just pause.</p>
           </div>
         )}
 
-        <p className="text-[12.5px] italic">
-          <span className="font-semibold not-italic">{week.closingLabel}: </span>
-          {week.closingText}
-        </p>
+        <div className="max-w-prose">
+          <p className="italic">
+            <span className="text-[12px] font-medium text-sage-deep not-italic mr-1">🌿 {week.closingLabel}</span>
+            <br />
+            {week.closingText}
+          </p>
+        </div>
 
         {hasContent(week.lookingAhead) && (
           <p className="text-[12.5px] italic text-gold-deep">
@@ -544,7 +560,7 @@ function MoveSection({
       </div>
 
       {week.whatYouGaveYourself && week.whatYouGaveYourself.length > 0 && (
-        <div className="mt-5 pt-5 border-t border-gold/30">
+        <div className="mt-6 pt-5 border-t border-gold/30">
           <p className="font-display text-lg text-indigo mb-1">What You Gave Yourself</p>
           <p className="text-[12px] text-ink/55 italic mb-2">
             Not what this built for them. What it gave back to you, whether or not anyone else ever knew.
@@ -561,7 +577,7 @@ function MoveSection({
       )}
 
       {week.childLearned && week.childLearned.length > 0 && (
-        <div className="mt-5 pt-5 border-t border-gold/30">
+        <div className="mt-6 pt-5 border-t border-gold/30">
           <p className="font-display text-lg text-indigo mb-1">What Your Child Learned Watching You</p>
           <p className="text-[12px] text-ink/55 italic mb-2">
             Not what you learned this stretch. What they did, just from watching.
@@ -578,7 +594,7 @@ function MoveSection({
       )}
 
       {hasContent(week.finalNote) && (
-        <div className="mt-5 pt-5 border-t border-gold/30">
+        <div className="mt-6 pt-5 border-t border-gold/30">
           <p className="text-[13px] italic text-ink/70">{week.finalNote}</p>
           {week.signatureLine && week.signatureLine.length > 0 && (
             <div className="mt-4 text-center">
