@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, journeyWeekNumber, type CarePhaseKey } from "@/lib/weekCalculator";
+import { calculateNourishLookup, nourishGapWeek } from "@/lib/nourishCalculator";
+import type { NourishWeekRow } from "@/types/nourishContent";
 import LockedPreview from "@/components/LockedPreview";
 import CareStepItem from "@/components/CareStepItem";
 import CareWeekContent, { type CareWeekRow } from "@/components/CareWeekContent";
@@ -109,6 +111,32 @@ export default async function CareChartPage({
         .maybeSingle()
     : { data: null };
   const newWeekContent = weekRow as CareWeekRow | null;
+
+  // Nourish weekly meal plan (nourish_week_content, migration_54) — a
+  // completely separate lookup from journeyWeekNum above, since this
+  // series is authored by ordinary gestational week / weeks-since-birth,
+  // not the app's internal forward-count convention. See
+  // src/lib/nourishCalculator.ts. Skipped in Roop's ?phase= preview mode,
+  // same as the week-by-week content above, and for the genuine pregnancy
+  // weeks 2-8 gap (no locked content exists for those weeks yet).
+  const nourishLookup = !previewPhase
+    ? calculateNourishLookup(profile?.baby_dob ?? null, profile?.due_date ?? null)
+    : null;
+  const { data: nourishRow } = isSubscribed && nourishLookup && !nourishGapWeek(nourishLookup)
+    ? await supabase
+        .from("nourish_week_content")
+        .select(
+          "stage, week_number, trimester, phase_label, theme_title, mantra, why_it_matters, condition_notes, meat_fish_eggs_note, using_meals_note, days, reflection, looking_ahead"
+        )
+        .eq("stage", nourishLookup.stage)
+        .eq("week_number", nourishLookup.weekNumber)
+        .maybeSingle()
+    : { data: null };
+  const nourishWeek = nourishRow as NourishWeekRow | null;
+  const nourishToday =
+    nourishWeek && nourishLookup
+      ? nourishWeek.days.find((d) => d.day_number === nourishLookup.dayNumber) ?? null
+      : null;
 
   let doneCardKeys = new Set<string>();
   if (isSubscribed && newWeekContent && todayCheckin) {
@@ -258,6 +286,8 @@ export default async function CareChartPage({
           deliveryType={deliveryType}
           healthFlags={healthFlags}
           dietPreference={dietPreference}
+          nourishWeek={nourishWeek}
+          nourishToday={nourishToday}
         />
       ) : (
         <>

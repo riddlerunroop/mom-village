@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
 import { hasActiveSubscription } from "../../lib/subscription";
 import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } from "../../lib/weekCalculator";
+import { calculateNourishLookup, nourishGapWeek } from "../../lib/nourishCalculator";
 import { Colors, Fonts, iconBadge } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 
@@ -73,6 +74,38 @@ type ResetContent = {
   really_good: string;
 };
 type ConditionNote = { flag: string; note: string };
+
+// Nourish weekly meal-plan series (nourish_week_content, migration_54) —
+// see mobile/lib/nourishCalculator.ts and the website's equivalent for the
+// full history. A separate numbering system from journeyWeekNumber above.
+type NourishDay = {
+  day_number: number;
+  title: string;
+  notes: string | null;
+  breakfast_a: string | null;
+  breakfast_b: string | null;
+  lunch_a: string | null;
+  lunch_b: string | null;
+  nourishment_break_a: string | null;
+  nourishment_break_b: string | null;
+  dinner_a: string | null;
+  dinner_b: string | null;
+  still_hungry: string | null;
+};
+type NourishWeekRow = {
+  stage: "pregnancy" | "postpartum";
+  week_number: number;
+  theme_title: string;
+  mantra: string | null;
+  why_it_matters: string | null;
+  condition_notes: string | null;
+  meat_fish_eggs_note: string | null;
+  using_meals_note: string | null;
+  days: NourishDay[];
+  reflection: string | null;
+  looking_ahead: string | null;
+};
+
 type WeekRow = {
   week_number: number;
   theme_title: string;
@@ -171,6 +204,8 @@ export default function CareScreen() {
   const [healthFlags, setHealthFlags] = useState<string[]>([]);
   const [checkin, setCheckin] = useState<{ time_available: string; mood_score: number } | null>(null);
   const [weekContent, setWeekContent] = useState<WeekRow | null>(null);
+  const [nourishWeek, setNourishWeek] = useState<NourishWeekRow | null>(null);
+  const [nourishToday, setNourishToday] = useState<NourishDay | null>(null);
 
   const [timeChoice, setTimeChoice] = useState<string | null>(null);
   const [energyChoice, setEnergyChoice] = useState<number | null>(null);
@@ -216,6 +251,29 @@ export default function CareScreen() {
       .eq("user_id", user.id)
       .maybeSingle();
     setHealthFlags(careProfile?.health_flags || []);
+
+    // Nourish weekly meal plan (nourish_week_content, migration_54) — a
+    // completely separate lookup from journeyWeekNumber above, computed
+    // from ordinary gestational week / weeks-since-birth. See
+    // lib/nourishCalculator.ts. Skipped for the genuine pregnancy weeks
+    // 2-8 gap (no locked content exists for those weeks yet).
+    const nourishLookup = calculateNourishLookup(profile.baby_dob ?? null, profile.due_date ?? null);
+    if (nourishLookup && !nourishGapWeek(nourishLookup)) {
+      const { data: nourishRow } = await supabase
+        .from("nourish_week_content")
+        .select(
+          "stage, week_number, theme_title, mantra, why_it_matters, condition_notes, meat_fish_eggs_note, using_meals_note, days, reflection, looking_ahead"
+        )
+        .eq("stage", nourishLookup.stage)
+        .eq("week_number", nourishLookup.weekNumber)
+        .maybeSingle();
+      const nw = nourishRow as NourishWeekRow | null;
+      setNourishWeek(nw);
+      setNourishToday(nw ? nw.days.find((d) => d.day_number === nourishLookup.dayNumber) ?? null : null);
+    } else {
+      setNourishWeek(null);
+      setNourishToday(null);
+    }
 
     const today = new Date().toISOString().slice(0, 10);
     const { data: todayCheckin } = await supabase
@@ -332,7 +390,14 @@ export default function CareScreen() {
             </Text>
           </View>
         ) : (
-          <CareWeekView week={weekContent} checkin={checkin} healthFlags={healthFlags} deliveryType={deliveryType} />
+          <CareWeekView
+            week={weekContent}
+            checkin={checkin}
+            healthFlags={healthFlags}
+            deliveryType={deliveryType}
+            nourishWeek={nourishWeek}
+            nourishToday={nourishToday}
+          />
         )}
       </ScrollView>
     </View>
@@ -518,11 +583,15 @@ function CareWeekView({
   checkin,
   healthFlags,
   deliveryType,
+  nourishWeek,
+  nourishToday,
 }: {
   week: WeekRow;
   checkin: { time_available: string; mood_score: number };
   healthFlags: string[];
   deliveryType: string | null;
+  nourishWeek: NourishWeekRow | null;
+  nourishToday: NourishDay | null;
 }) {
   const resetKey = RESET_KEY_BY_MOOD[checkin.mood_score] ?? "okay";
   const relevantConditionNotes = (week.condition_notes || []).filter(
@@ -538,16 +607,20 @@ function CareWeekView({
 
       <MoveCard move={week.move} deliveryType={deliveryType} />
 
-      {(hasContent(week.nourish) || hasContent(week.hydration_goal)) && (
-        <ExpandableCard
-          icon="nutrition-outline"
-          title="Nourish"
-          summary={hasContent(week.nourish) ? week.nourish : week.hydration_goal}
-        >
-          {hasContent(week.hydration_goal) && hasContent(week.nourish) && (
-            <Text style={styles.smallNote}>Hydration: {week.hydration_goal}</Text>
-          )}
-        </ExpandableCard>
+      {nourishWeek && nourishToday ? (
+        <NourishMealCard nourishWeek={nourishWeek} today={nourishToday} legacyNourish={week.nourish} />
+      ) : (
+        (hasContent(week.nourish) || hasContent(week.hydration_goal)) && (
+          <ExpandableCard
+            icon="nutrition-outline"
+            title="Nourish"
+            summary={hasContent(week.nourish) ? week.nourish : week.hydration_goal}
+          >
+            {hasContent(week.hydration_goal) && hasContent(week.nourish) && (
+              <Text style={styles.smallNote}>Hydration: {week.hydration_goal}</Text>
+            )}
+          </ExpandableCard>
+        )
       )}
 
       <ExpandableCard icon="flower-outline" title="Reset" summary={week.reset[resetKey]} />
@@ -669,6 +742,101 @@ function ExpandableCard({
         <View style={styles.expandBody}>
           {whyThis && <Text style={styles.whyThisText}>Why this fits today: {whyThis}</Text>}
           {children}
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+// A single meal slot ("Breakfast — choose one: A / B") from the Nourish
+// weekly meal-plan series. Both options shown at once — a real day's
+// actual choices, not something to gate behind another tap.
+function NourishMealSlot({ label, a, b }: { label: string; a: string | null; b: string | null }) {
+  if (!a && !b) return null;
+  return (
+    <View style={styles.moveSubCard}>
+      <Text style={styles.moveSubLabel}>{label}</Text>
+      {a && <Text style={styles.body}>A. {a}</Text>}
+      {b && <Text style={[styles.body, { marginTop: 4 }]}>B. {b}</Text>}
+    </View>
+  );
+}
+
+// The Nourish weekly meal-plan card (nourish_week_content, migration_54) —
+// connects the standalone Nourish docx-per-week nutrition series into the
+// native Care Chart for the first time, 2026-09-14. Shows only *today's*
+// day from that week's full 7-day chart, per Roop's explicit choice. The
+// week's own short Care Chart `nourish` sentence (a separate, much thinner
+// field) still shows underneath as a small supplementary note when present.
+function NourishMealCard({
+  nourishWeek,
+  today,
+  legacyNourish,
+}: {
+  nourishWeek: NourishWeekRow;
+  today: NourishDay;
+  legacyNourish: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const stageLabel = nourishWeek.stage === "pregnancy" ? "pregnancy" : "postpartum";
+  const hasMore =
+    hasContent(nourishWeek.why_it_matters) ||
+    hasContent(nourishWeek.meat_fish_eggs_note) ||
+    hasContent(nourishWeek.condition_notes) ||
+    hasContent(nourishWeek.using_meals_note);
+
+  return (
+    <Pressable style={styles.expandCard} onPress={() => setOpen((o) => !o)}>
+      <View style={styles.expandHeaderRow}>
+        <View style={iconBadge(Colors.indigo, 40)}>
+          <Ionicons name="nutrition-outline" size={19} color={Colors.indigo} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.cardTitle}>Nourish</Text>
+          <Text style={styles.body}>
+            Day {today.day_number}
+            {today.title ? ` — ${today.title}` : ""}: {nourishWeek.theme_title}
+          </Text>
+        </View>
+        <Ionicons name={open ? "chevron-up" : "chevron-forward"} size={16} color={Colors.ink + "60"} />
+      </View>
+      {open && (
+        <View style={styles.expandBody}>
+          <Text style={styles.smallNote}>
+            Week {nourishWeek.week_number} {stageLabel} nourishment
+          </Text>
+          {nourishWeek.mantra && <Text style={styles.moveCardMantra}>&ldquo;{nourishWeek.mantra}&rdquo;</Text>}
+          {today.notes && <Text style={[styles.body, { marginTop: 6 }]}>{today.notes}</Text>}
+
+          <NourishMealSlot label="Breakfast" a={today.breakfast_a} b={today.breakfast_b} />
+          <NourishMealSlot label="Lunch" a={today.lunch_a} b={today.lunch_b} />
+          <NourishMealSlot label="Nourishment break" a={today.nourishment_break_a} b={today.nourishment_break_b} />
+          <NourishMealSlot label="Dinner" a={today.dinner_a} b={today.dinner_b} />
+
+          {today.still_hungry && (
+            <Text style={styles.smallNote}>Still hungry? {today.still_hungry}</Text>
+          )}
+
+          {hasContent(legacyNourish) && <Text style={styles.smallNote}>{legacyNourish}</Text>}
+
+          {hasMore && (
+            <Pressable onPress={() => setMoreOpen((o) => !o)} hitSlop={8}>
+              <Text style={styles.moveLinkText}>
+                {moreOpen ? "Hide more about this week's nourishment" : "More about this week's nourishment"}
+              </Text>
+            </Pressable>
+          )}
+          {moreOpen && (
+            <View style={{ marginTop: 8, gap: 8 }}>
+              {hasContent(nourishWeek.why_it_matters) && <Text style={styles.smallNote}>{nourishWeek.why_it_matters}</Text>}
+              {hasContent(nourishWeek.meat_fish_eggs_note) && <Text style={styles.smallNote}>{nourishWeek.meat_fish_eggs_note}</Text>}
+              {hasContent(nourishWeek.condition_notes) && (
+                <Text style={[styles.smallNote, { color: Colors.terracotta }]}>{nourishWeek.condition_notes}</Text>
+              )}
+              {hasContent(nourishWeek.using_meals_note) && <Text style={styles.smallNote}>{nourishWeek.using_meals_note}</Text>}
+            </View>
+          )}
         </View>
       )}
     </Pressable>

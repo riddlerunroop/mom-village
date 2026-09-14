@@ -17,6 +17,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { PROTEIN_TIP, type DietPreference } from "@/lib/proteinTips";
+import type { NourishDay, NourishWeekRow } from "@/types/nourishContent";
 
 // Move content — fully replaced 2026-08-03 with the real "Move" series
 // (11 separately drafted, reviewed and locked documents spanning pregnancy
@@ -669,6 +670,133 @@ function HeavyDaySafetyBridge() {
   );
 }
 
+// One meal slot ("Breakfast — choose one: A / B") from the Nourish weekly
+// meal-plan series. Shown plainly, both options visible at once — this is
+// a real day's actual choices, not something to gate behind a tap.
+function MealSlot({ label, a, b }: { label: string; a: string | null; b: string | null }) {
+  if (!a && !b) return null;
+  return (
+    <div className="bg-white rounded-xl border border-line p-3.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-sage-deep mb-1.5">{label}</p>
+      {a && (
+        <p className="text-[13px]">
+          <span className="font-semibold text-ink/70">A. </span>
+          {a}
+        </p>
+      )}
+      {b && (
+        <p className="text-[13px] mt-1">
+          <span className="font-semibold text-ink/70">B. </span>
+          {b}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// The Nourish weekly meal-plan card (nourish_week_content, migration_54) —
+// connects the standalone Nourish docx-per-week nutrition series into the
+// Care Chart for the first time, 2026-09-14. Shows only *today's* day from
+// that week's full 7-day chart, per Roop's explicit choice — a mother can
+// glance at it once and know what to eat right now, rather than scrolling
+// a full week every time. The week's own short Care Chart `nourish`
+// sentence (a completely separate, much thinner field) still shows
+// underneath as a small supplementary note when it carries real content,
+// same as before this integration.
+function NourishMealCard({
+  nourishWeek,
+  today,
+  legacyNourish,
+  dietPreference,
+  weekNumber,
+  doneCardKeys,
+}: {
+  nourishWeek: NourishWeekRow;
+  today: NourishDay;
+  legacyNourish?: string | null;
+  dietPreference?: DietPreference | null;
+  weekNumber: number;
+  doneCardKeys: Set<string>;
+}) {
+  const stageLabel = nourishWeek.stage === "pregnancy" ? "pregnancy" : "postpartum";
+  return (
+    <WeekCard
+      title="Nourish"
+      accent="sage"
+      cardKey="nourish"
+      weekNumber={weekNumber}
+      initiallyDone={doneCardKeys.has("nourish")}
+    >
+      <div className="space-y-3">
+        <div>
+          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-sage-deep/70 mb-0.5">
+            Week {nourishWeek.week_number} {stageLabel} nourishment · Day {today.day_number}
+            {today.title ? ` — ${today.title}` : ""}
+          </p>
+          <p className="font-display text-[15px] text-indigo">{nourishWeek.theme_title}</p>
+          {nourishWeek.mantra && (
+            <p className="font-display italic text-[13px] text-sage-deep mt-0.5">&ldquo;{nourishWeek.mantra}&rdquo;</p>
+          )}
+        </div>
+
+        {today.notes && <p className="text-[13px] text-ink/70">{today.notes}</p>}
+
+        <div className="grid sm:grid-cols-2 gap-2.5">
+          <MealSlot label="Breakfast" a={today.breakfast_a} b={today.breakfast_b} />
+          <MealSlot label="Lunch" a={today.lunch_a} b={today.lunch_b} />
+          <MealSlot label="Nourishment break" a={today.nourishment_break_a} b={today.nourishment_break_b} />
+          <MealSlot label="Dinner" a={today.dinner_a} b={today.dinner_b} />
+        </div>
+
+        {today.still_hungry && (
+          <p className="text-[12.5px] text-ink/60 italic">
+            <span className="font-semibold not-italic text-ink/70">Still hungry? </span>
+            {today.still_hungry}
+          </p>
+        )}
+
+        {hasContent(legacyNourish) && (
+          <p className="text-[12.5px] text-ink/60 pt-2 border-t border-sage-deep/10">{legacyNourish}</p>
+        )}
+
+        {dietPreference && (
+          <div className="pt-3 border-t border-sage-deep/15">
+            <p className="text-[11px] font-semibold text-sage-deep uppercase tracking-wide mb-1">
+              A protein tip for you, {dietPreference === "vegetarian" ? "vegetarian" : "non-vegetarian"}
+            </p>
+            <p className="text-[12px] text-ink/65 mb-1.5">{PROTEIN_TIP[dietPreference].headline}</p>
+            <ul className="text-[12px] text-ink/70 list-disc list-inside space-y-0.5">
+              {PROTEIN_TIP[dietPreference].tips.map((t, i) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {(hasContent(nourishWeek.why_it_matters) ||
+          hasContent(nourishWeek.meat_fish_eggs_note) ||
+          hasContent(nourishWeek.condition_notes) ||
+          hasContent(nourishWeek.using_meals_note)) && (
+          <details className="group pt-1">
+            <summary className="cursor-pointer text-[12px] font-medium text-ink/45 select-none list-none flex items-center gap-1.5">
+              <span className="inline-block transition-transform group-open:rotate-90">›</span>
+              More about this week&apos;s nourishment
+            </summary>
+            <div className="mt-2 pl-4 space-y-2 text-[12px] text-ink/60">
+              {hasContent(nourishWeek.why_it_matters) && <p>{nourishWeek.why_it_matters}</p>}
+              {hasContent(nourishWeek.meat_fish_eggs_note) && <p>{nourishWeek.meat_fish_eggs_note}</p>}
+              {hasContent(nourishWeek.condition_notes) && (
+                <p className="text-terracotta/90">{nourishWeek.condition_notes}</p>
+              )}
+              {hasContent(nourishWeek.using_meals_note) && <p>{nourishWeek.using_meals_note}</p>}
+            </div>
+          </details>
+        )}
+      </div>
+    </WeekCard>
+  );
+}
+
 export default function CareWeekContent({
   week,
   moodScore,
@@ -676,6 +804,8 @@ export default function CareWeekContent({
   deliveryType,
   healthFlags,
   dietPreference,
+  nourishWeek,
+  nourishToday,
 }: {
   week: CareWeekRow;
   // timeAvailable is no longer used here -- the new Move series lets her
@@ -688,6 +818,11 @@ export default function CareWeekContent({
   deliveryType?: string;
   healthFlags?: string[];
   dietPreference?: DietPreference | null;
+  // Nourish weekly meal-plan series (migration_54) — see NourishMealCard
+  // above. Both null for the genuine pregnancy weeks 2-8 gap, or if she
+  // hasn't set a due date/baby DOB yet.
+  nourishWeek?: NourishWeekRow | null;
+  nourishToday?: NourishDay | null;
 }) {
   const resetKey = RESET_KEY_BY_MOOD[moodScore] ?? "okay";
   const flags = healthFlags ?? [];
@@ -732,29 +867,40 @@ export default function CareWeekContent({
       />
 
       <div className="grid md:grid-cols-2 gap-4">
-        {(hasContent(week.nourish) || dietPreference) && (
-        <WeekCard
-          title="Nourish"
-          accent="sage"
-          cardKey="nourish"
-          weekNumber={week.week_number}
-          initiallyDone={doneCardKeys.has("nourish")}
-        >
-          {hasContent(week.nourish) && <p className="mb-2">{week.nourish}</p>}
-          {dietPreference && (
-            <div className="mt-3 pt-3 border-t border-sage-deep/15">
-              <p className="text-[11px] font-semibold text-sage-deep uppercase tracking-wide mb-1">
-                A protein tip for you, {dietPreference === "vegetarian" ? "vegetarian" : "non-vegetarian"}
-              </p>
-              <p className="text-[12px] text-ink/65 mb-1.5">{PROTEIN_TIP[dietPreference].headline}</p>
-              <ul className="text-[12px] text-ink/70 list-disc list-inside space-y-0.5">
-                {PROTEIN_TIP[dietPreference].tips.map((t, i) => (
-                  <li key={i}>{t}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </WeekCard>
+        {nourishWeek && nourishToday ? (
+          <NourishMealCard
+            nourishWeek={nourishWeek}
+            today={nourishToday}
+            legacyNourish={week.nourish}
+            dietPreference={dietPreference}
+            weekNumber={week.week_number}
+            doneCardKeys={doneCardKeys}
+          />
+        ) : (
+          (hasContent(week.nourish) || dietPreference) && (
+          <WeekCard
+            title="Nourish"
+            accent="sage"
+            cardKey="nourish"
+            weekNumber={week.week_number}
+            initiallyDone={doneCardKeys.has("nourish")}
+          >
+            {hasContent(week.nourish) && <p className="mb-2">{week.nourish}</p>}
+            {dietPreference && (
+              <div className="mt-3 pt-3 border-t border-sage-deep/15">
+                <p className="text-[11px] font-semibold text-sage-deep uppercase tracking-wide mb-1">
+                  A protein tip for you, {dietPreference === "vegetarian" ? "vegetarian" : "non-vegetarian"}
+                </p>
+                <p className="text-[12px] text-ink/65 mb-1.5">{PROTEIN_TIP[dietPreference].headline}</p>
+                <ul className="text-[12px] text-ink/70 list-disc list-inside space-y-0.5">
+                  {PROTEIN_TIP[dietPreference].tips.map((t, i) => (
+                    <li key={i}>{t}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </WeekCard>
+          )
         )}
 
         {hasContent(week.hydration_goal) && (
