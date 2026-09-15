@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, journeyWeekNumber, type CarePhaseKey } from "@/lib/weekCalculator";
-import { calculateNourishLookup, nourishGapWeek } from "@/lib/nourishCalculator";
+import { calculateNourishLookup, nourishGapWeek, type NourishLookup, type NourishStage } from "@/lib/nourishCalculator";
 import type { NourishWeekRow } from "@/types/nourishContent";
 import LockedPreview from "@/components/LockedPreview";
 import CareStepItem from "@/components/CareStepItem";
@@ -36,13 +36,55 @@ const PHASES: { key: CarePhaseKey; label: string }[] = [
   { key: "rhythm_year_three", label: "Your rhythm, year three (2–3yr)" },
 ];
 
+// Reviewer-only Nourish toggle, added 2026-09-15 per Roop's explicit ask:
+// as a real subscriber she only ever sees her own current day out of 190
+// possible weeks, and after the postpartum-content mixup (see CLAUDE.md's
+// 2026-09-15 entry) she wanted a "foolproof" way to check any week/day
+// herself rather than trusting a spot-check. Same spirit as the existing
+// ?phase= preview switcher above — a manual URL override never surfaced in
+// the normal member UI, just three extra params: ?nourishStage=pregnancy|
+// postpartum&nourishWeek=N&nourishDay=D. When present and valid, this
+// replaces the real calculateNourishLookup() date-based result below, but
+// leaves everything else on the page (her real check-in, her real
+// care_chart_week_content week) untouched — she's browsing the Nourish
+// meal plan specifically, not faking her whole profile.
+function parseNourishOverride(
+  stageParam: string | undefined,
+  weekParam: string | undefined,
+  dayParam: string | undefined
+): NourishLookup | null {
+  const stage: NourishStage | null =
+    stageParam === "pregnancy" || stageParam === "postpartum" ? stageParam : null;
+  if (!stage) return null;
+
+  const maxWeek = stage === "pregnancy" ? 40 : 157;
+  const weekNumRaw = Number(weekParam);
+  const dayNumRaw = Number(dayParam);
+  if (!Number.isFinite(weekNumRaw) || !Number.isFinite(dayNumRaw)) return null;
+
+  const weekNumber = Math.min(maxWeek, Math.max(1, Math.round(weekNumRaw)));
+  const dayNumber = Math.min(7, Math.max(1, Math.round(dayNumRaw)));
+  return { stage, weekNumber, dayNumber };
+}
+
 export default async function CareChartPage({
   searchParams,
 }: {
-  searchParams: Promise<{ phase?: string }>;
+  searchParams: Promise<{
+    phase?: string;
+    nourishStage?: string;
+    nourishWeek?: string;
+    nourishDay?: string;
+  }>;
 }) {
-  const { phase: previewParam } = await searchParams;
+  const {
+    phase: previewParam,
+    nourishStage: nourishStageParam,
+    nourishWeek: nourishWeekParam,
+    nourishDay: nourishDayParam,
+  } = await searchParams;
   const previewPhase = PHASES.find((p) => p.key === previewParam) ?? null;
+  const nourishOverride = parseNourishOverride(nourishStageParam, nourishWeekParam, nourishDayParam);
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -119,7 +161,9 @@ export default async function CareChartPage({
   // src/lib/nourishCalculator.ts. Skipped in Roop's ?phase= preview mode,
   // same as the week-by-week content above, and for the genuine pregnancy
   // weeks 2-8 gap (no locked content exists for those weeks yet).
-  const nourishLookup = !previewPhase
+  const nourishLookup = nourishOverride
+    ? nourishOverride
+    : !previewPhase
     ? calculateNourishLookup(profile?.baby_dob ?? null, profile?.due_date ?? null)
     : null;
   const { data: nourishRow } = isSubscribed && nourishLookup && !nourishGapWeek(nourishLookup)
@@ -253,6 +297,62 @@ export default async function CareChartPage({
           </Link>
         </div>
       )}
+
+      {nourishOverride && (() => {
+        const maxWeek = nourishOverride.stage === "pregnancy" ? 40 : 157;
+        const otherStage: NourishStage =
+          nourishOverride.stage === "pregnancy" ? "postpartum" : "pregnancy";
+        const link = (stage: NourishStage, wk: number, day: number) =>
+          `/dashboard/care/chart?nourishStage=${stage}&nourishWeek=${wk}&nourishDay=${day}`;
+        const { stage, weekNumber, dayNumber } = nourishOverride;
+        return (
+          <div className="mb-8 bg-terracotta/10 rounded-2xl border border-terracotta/30 p-4">
+            <p className="text-[13px] font-semibold text-terracotta mb-2.5">
+              Nourish reviewer mode — browsing {stage} week {weekNumber}, day{" "}
+              {dayNumber}. Not what a real member sees; this only appears
+              because of the nourish* link params.
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              <Link
+                href={link(stage, Math.max(1, weekNumber - 1), dayNumber)}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-terracotta text-terracotta"
+              >
+                ← week {Math.max(1, weekNumber - 1)}
+              </Link>
+              <Link
+                href={link(stage, weekNumber, dayNumber > 1 ? dayNumber - 1 : 7)}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-terracotta/50 text-terracotta"
+              >
+                ← day {dayNumber > 1 ? dayNumber - 1 : 7}
+              </Link>
+              <Link
+                href={link(stage, weekNumber, dayNumber < 7 ? dayNumber + 1 : 1)}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-terracotta/50 text-terracotta"
+              >
+                day {dayNumber < 7 ? dayNumber + 1 : 1} →
+              </Link>
+              <Link
+                href={link(stage, Math.min(maxWeek, weekNumber + 1), dayNumber)}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-terracotta text-terracotta"
+              >
+                week {Math.min(maxWeek, weekNumber + 1)} →
+              </Link>
+              <Link
+                href={link(otherStage, 1, 1)}
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-indigo/30 text-indigo"
+              >
+                switch to {otherStage}, week 1
+              </Link>
+              <Link
+                href="/dashboard/care/chart"
+                className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-line text-ink/60"
+              >
+                ← back to my real chart
+              </Link>
+            </div>
+          </div>
+        );
+      })()}
 
       {isSubscribed && !newWeekContent && mantraRow?.mantra && (
         <p className="font-display italic text-lg text-sage-deep mb-8 max-w-[540px]">
