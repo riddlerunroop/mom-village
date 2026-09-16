@@ -11,9 +11,14 @@ import { createClient } from "@/lib/supabase/client";
 export default function ReportButton({
   threadId,
   replyId,
+  resetShareId,
 }: {
   threadId?: string;
   replyId?: string;
+  // Added 2026-09-16 for the Reset Gallery (migration_59 widened
+  // community_reports to also accept a reset_share_id) — same report flow,
+  // one more kind of thing it can point at.
+  resetShareId?: string;
 }) {
   const supabase = createClient();
   const [open, setOpen] = useState(false);
@@ -37,6 +42,7 @@ export default function ReportButton({
       reporter_id: user.id,
       thread_id: threadId ?? null,
       reply_id: replyId ?? null,
+      reset_share_id: resetShareId ?? null,
       reason: reason.trim(),
     });
 

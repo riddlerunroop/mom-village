@@ -114,6 +114,18 @@ export default async function CommunityPage({
         />
       ) : (
         <>
+          <Link
+            href="/dashboard/community/reset-gallery"
+            className="block bg-terracotta/8 rounded-2xl border border-terracotta/25 px-5 py-4 mb-6 hover:border-terracotta/50 transition-colors"
+          >
+            <p className="text-sm font-semibold text-terracotta">
+              ✨ See what other mothers are resetting with today
+            </p>
+            <p className="text-[12.5px] text-ink/55 mt-0.5">
+              The Reset Gallery — just for browsing and a heart, no comments.
+            </p>
+          </Link>
+
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
             <form action="/dashboard/community" className="flex-1">
               <input

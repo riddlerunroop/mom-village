@@ -366,6 +366,15 @@ export default function CommunityScreen() {
                   />
                 )}
 
+                <Pressable style={styles.resetGalleryBanner} onPress={() => router.push("/reset-gallery")}>
+                  <Text style={styles.resetGalleryTitle}>
+                    ✨ See what other mothers are resetting with today
+                  </Text>
+                  <Text style={styles.resetGallerySubtitle}>
+                    The Reset Gallery — just for browsing and a heart, no comments.
+                  </Text>
+                </Pressable>
+
                 <Pressable style={styles.startButton} onPress={() => router.push("/community-new")}>
                   <Ionicons name="add" size={18} color={Colors.ivory} />
                   <Text style={styles.startButtonText}>Start a discussion</Text>
@@ -463,6 +472,17 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 },
   sectionLabel: { fontSize: 15, fontFamily: Fonts.bodySemiBold, color: Colors.indigo },
   seeAll: { fontSize: 12, fontFamily: Fonts.bodyBold, color: Colors.goldDeep },
+
+  resetGalleryBanner: {
+    backgroundColor: Colors.terracotta + "12",
+    borderWidth: 1,
+    borderColor: Colors.terracotta + "40",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+  },
+  resetGalleryTitle: { fontFamily: Fonts.bodyBold, fontSize: 13.5, color: Colors.terracotta },
+  resetGallerySubtitle: { fontFamily: Fonts.body, fontSize: 11.5, color: Colors.ink + "8c", marginTop: 2 },
 
   startButton: {
     flexDirection: "row",

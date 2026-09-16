@@ -20,8 +20,10 @@ import { supabase } from "../../lib/supabase";
 import { hasActiveSubscription } from "../../lib/subscription";
 import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } from "../../lib/weekCalculator";
 import { calculateNourishLookup, nourishGapWeek } from "../../lib/nourishCalculator";
+import { pickDailyResetIndex } from "../../lib/resetCalculator";
 import { Colors, Fonts, iconBadge } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
+import ResetOfTheDay, { type ResetActivityRow } from "../../components/ResetOfTheDay";
 
 // Move — fully replaced 2026-08-03 with the real "Move" series (11
 // separately drafted, reviewed and locked documents spanning pregnancy
@@ -137,14 +139,6 @@ function titleCaseRoute(key: string): string {
   return key.charAt(0).toUpperCase() + key.slice(1);
 }
 
-const RESET_KEY_BY_MOOD: Record<number, keyof ResetContent> = {
-  1: "heavy_day",
-  2: "a_little_low",
-  3: "okay",
-  4: "good",
-  5: "really_good",
-};
-
 // Same fix as the web CareWeekContent.tsx, 2026-08-03: several later
 // batches (postpartum weeks 79-156) were drafted with a literal generic
 // filler sentence standing in for real content on fields not given a
@@ -206,6 +200,9 @@ export default function CareScreen() {
   const [weekContent, setWeekContent] = useState<WeekRow | null>(null);
   const [nourishWeek, setNourishWeek] = useState<NourishWeekRow | null>(null);
   const [nourishToday, setNourishToday] = useState<NourishDay | null>(null);
+  const [resetActivity, setResetActivity] = useState<ResetActivityRow | null>(null);
+  const [resetDoneToday, setResetDoneToday] = useState(false);
+  const [resetTotalCompletions, setResetTotalCompletions] = useState(0);
 
   const [timeChoice, setTimeChoice] = useState<string | null>(null);
   const [energyChoice, setEnergyChoice] = useState<number | null>(null);
@@ -244,6 +241,31 @@ export default function CareScreen() {
       setLoading(false);
       return;
     }
+
+    // Reset of the day (migration_59/60, 2026-09-16) — a village-wide,
+    // date-based rotation through the 30-card bank, independent of her
+    // pregnancy/postpartum week. See lib/resetCalculator.ts and CLAUDE.md.
+    const today0 = new Date().toISOString().slice(0, 10);
+    const { data: resetActivities } = await supabase
+      .from("reset_activities")
+      .select("id, card_number, emoji, title, body")
+      .eq("is_active", true)
+      .order("card_number");
+    if (resetActivities && resetActivities.length > 0) {
+      setResetActivity(resetActivities[pickDailyResetIndex(resetActivities.length, today0)]);
+    }
+    const { count: totalResetCount } = await supabase
+      .from("user_reset_completions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    setResetTotalCompletions(totalResetCount ?? 0);
+    const { data: todayResetRow } = await supabase
+      .from("user_reset_completions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("completed_date", today0)
+      .maybeSingle();
+    setResetDoneToday(Boolean(todayResetRow));
 
     const { data: careProfile } = await supabase
       .from("user_care_profile")
@@ -397,6 +419,9 @@ export default function CareScreen() {
             deliveryType={deliveryType}
             nourishWeek={nourishWeek}
             nourishToday={nourishToday}
+            resetActivity={resetActivity}
+            resetDoneToday={resetDoneToday}
+            resetTotalCompletions={resetTotalCompletions}
           />
         )}
       </ScrollView>
@@ -585,6 +610,9 @@ function CareWeekView({
   deliveryType,
   nourishWeek,
   nourishToday,
+  resetActivity,
+  resetDoneToday,
+  resetTotalCompletions,
 }: {
   week: WeekRow;
   checkin: { time_available: string; mood_score: number };
@@ -592,8 +620,10 @@ function CareWeekView({
   deliveryType: string | null;
   nourishWeek: NourishWeekRow | null;
   nourishToday: NourishDay | null;
+  resetActivity: ResetActivityRow | null;
+  resetDoneToday: boolean;
+  resetTotalCompletions: number;
 }) {
-  const resetKey = RESET_KEY_BY_MOOD[checkin.mood_score] ?? "okay";
   const relevantConditionNotes = (week.condition_notes || []).filter(
     (n) => n.flag === "none" || healthFlags.includes(n.flag)
   );
@@ -623,7 +653,13 @@ function CareWeekView({
         )
       )}
 
-      <ExpandableCard icon="flower-outline" title="Reset" summary={week.reset[resetKey]} />
+      {resetActivity && (
+        <ResetOfTheDay
+          activity={resetActivity}
+          alreadyDoneToday={resetDoneToday}
+          totalCompletions={resetTotalCompletions}
+        />
+      )}
 
       {hasContent(week.care_for_yourself) && (
         <ExpandableCard icon="hand-left-outline" title="Care for yourself" summary={week.care_for_yourself} />

@@ -4,9 +4,11 @@ import { hasActiveSubscription } from "@/lib/subscription";
 import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, journeyWeekNumber, type CarePhaseKey } from "@/lib/weekCalculator";
 import { calculateNourishLookup, nourishGapWeek, type NourishLookup, type NourishStage } from "@/lib/nourishCalculator";
 import type { NourishWeekRow } from "@/types/nourishContent";
+import { pickDailyResetIndex } from "@/lib/resetCalculator";
 import LockedPreview from "@/components/LockedPreview";
 import CareStepItem from "@/components/CareStepItem";
 import CareWeekContent, { type CareWeekRow } from "@/components/CareWeekContent";
+import type { ResetActivityRow } from "@/components/ResetOfTheDay";
 
 // Renamed 2026-07-28 per Roop's review — user-facing section names now read
 // Move / Nourish / Reset / Care for yourself / Rediscover. The underlying
@@ -181,6 +183,41 @@ export default async function CareChartPage({
     nourishWeek && nourishLookup
       ? nourishWeek.days.find((d) => d.day_number === nourishLookup.dayNumber) ?? null
       : null;
+
+  // Reset of the day (migration_59/60, 2026-09-16) — a village-wide,
+  // date-based rotation through the 30-card bank, completely independent
+  // of her pregnancy/postpartum week. See src/lib/resetCalculator.ts and
+  // CLAUDE.md for the full design history (cumulative badges, not a
+  // streak; one fixed card a day, no reshuffle).
+  const { data: resetActivities } = isSubscribed
+    ? await supabase
+        .from("reset_activities")
+        .select("id, card_number, emoji, title, body")
+        .eq("is_active", true)
+        .order("card_number")
+    : { data: null };
+  const resetActivityRow: ResetActivityRow | null =
+    resetActivities && resetActivities.length > 0
+      ? resetActivities[pickDailyResetIndex(resetActivities.length, today)]
+      : null;
+
+  let resetDoneToday = false;
+  let resetTotalCompletions = 0;
+  if (isSubscribed) {
+    const { count: totalCount } = await supabase
+      .from("user_reset_completions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user!.id);
+    resetTotalCompletions = totalCount ?? 0;
+
+    const { data: todayResetRow } = await supabase
+      .from("user_reset_completions")
+      .select("id")
+      .eq("user_id", user!.id)
+      .eq("completed_date", today)
+      .maybeSingle();
+    resetDoneToday = Boolean(todayResetRow);
+  }
 
   let doneCardKeys = new Set<string>();
   if (isSubscribed && newWeekContent && todayCheckin) {
@@ -388,6 +425,9 @@ export default async function CareChartPage({
           dietPreference={dietPreference}
           nourishWeek={nourishWeek}
           nourishToday={nourishToday}
+          resetActivity={resetActivityRow}
+          resetDoneToday={resetDoneToday}
+          resetTotalCompletions={resetTotalCompletions}
         />
       ) : (
         <>

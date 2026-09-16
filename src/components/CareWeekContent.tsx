@@ -18,6 +18,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { PROTEIN_TIP, type DietPreference } from "@/lib/proteinTips";
 import type { NourishDay, NourishWeekRow } from "@/types/nourishContent";
+import ResetOfTheDay, { type ResetActivityRow } from "@/components/ResetOfTheDay";
 
 // Move content — fully replaced 2026-08-03 with the real "Move" series
 // (11 separately drafted, reviewed and locked documents spanning pregnancy
@@ -79,6 +80,11 @@ export type MoveContent = {
   signatureLine?: string[] | null;
 };
 
+// Superseded 2026-09-16 by the dynamic Reset-of-the-day feature (see
+// ResetOfTheDay.tsx and CLAUDE.md) — kept only because `care_chart_week_
+// content.reset` still holds this shape in the database and nothing was
+// stripped out of 196 already-locked weeks for a column the app no longer
+// reads. No longer rendered anywhere below.
 export type ResetContent = {
   heavy_day: string;
   a_little_low: string;
@@ -117,14 +123,6 @@ export type CareWeekRow = {
   for_your_care_team: string;
   condition_notes?: ConditionNote[] | null;
   closing_note?: string | null;
-};
-
-const RESET_KEY_BY_MOOD: Record<number, keyof ResetContent> = {
-  1: "heavy_day",
-  2: "a_little_low",
-  3: "okay",
-  4: "good",
-  5: "really_good",
 };
 
 // Real content gap found 2026-08-03: several later batches (Sustainable
@@ -806,6 +804,9 @@ export default function CareWeekContent({
   dietPreference,
   nourishWeek,
   nourishToday,
+  resetActivity,
+  resetDoneToday,
+  resetTotalCompletions,
 }: {
   week: CareWeekRow;
   // timeAvailable is no longer used here -- the new Move series lets her
@@ -823,8 +824,14 @@ export default function CareWeekContent({
   // hasn't set a due date/baby DOB yet.
   nourishWeek?: NourishWeekRow | null;
   nourishToday?: NourishDay | null;
+  // Reset-of-the-day (migration_59/60, 2026-09-16) — see ResetOfTheDay.tsx.
+  // resetActivity is null only if the reset_activities table is somehow
+  // empty (shouldn't happen with the 30 seeded cards, but rendered
+  // defensively rather than assumed).
+  resetActivity?: ResetActivityRow | null;
+  resetDoneToday?: boolean;
+  resetTotalCompletions?: number;
 }) {
-  const resetKey = RESET_KEY_BY_MOOD[moodScore] ?? "okay";
   const flags = healthFlags ?? [];
   const visibleConditionNotes = (week.condition_notes ?? []).filter(
     (n) => n.flag === "none" || flags.includes(n.flag)
@@ -865,6 +872,14 @@ export default function CareWeekContent({
         doneMove={doneCardKeys.has("move")}
         weekNumber={week.week_number}
       />
+
+      {resetActivity && (
+        <ResetOfTheDay
+          activity={resetActivity}
+          alreadyDoneToday={Boolean(resetDoneToday)}
+          totalCompletions={resetTotalCompletions ?? 0}
+        />
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         {nourishWeek && nourishToday ? (
@@ -939,16 +954,6 @@ export default function CareWeekContent({
           </WeekCard>
         )}
 
-        <WeekCard
-          title="Reset"
-          accent="terracotta"
-          cardKey="reset"
-          weekNumber={week.week_number}
-          initiallyDone={doneCardKeys.has("reset")}
-        >
-          {week.reset[resetKey]}
-        </WeekCard>
-
         {hasContent(week.care_for_yourself) && (
           <WeekCard
             title="Care for yourself"
@@ -1004,7 +1009,7 @@ export default function CareWeekContent({
         )}
       </div>
 
-      {resetKey === "heavy_day" && <HeavyDaySafetyBridge />}
+      {moodScore <= 1 && <HeavyDaySafetyBridge />}
 
       {visibleConditionNotes.filter((n) => hasContent(n.note)).length > 0 && (
         <div className="mt-5 bg-terracotta/5 rounded-2xl border border-terracotta/20 p-5">
@@ -1032,8 +1037,7 @@ export default function CareWeekContent({
 
       <div className="mt-5 flex items-center justify-between gap-3 bg-ivory-2 rounded-2xl border border-line px-5 py-4">
         <p className="text-[13px] text-ink/65">
-          However Reset landed for you today, support isn&apos;t limited to
-          this one card.
+          However today feels, support isn&apos;t limited to a single card.
         </p>
         <Link
           href="/dashboard/care/mental-health"
