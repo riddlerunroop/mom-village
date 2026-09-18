@@ -21,9 +21,11 @@ import { hasActiveSubscription } from "../../lib/subscription";
 import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } from "../../lib/weekCalculator";
 import { calculateNourishLookup, nourishGapWeek } from "../../lib/nourishCalculator";
 import { pickDailyResetIndex } from "../../lib/resetCalculator";
+import { careCategoryForDate, pickCareNoteId, type CareCategory } from "../../lib/careForYourselfCalculator";
 import { Colors, Fonts, iconBadge } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 import ResetOfTheDay, { type ResetActivityRow } from "../../components/ResetOfTheDay";
+import CareForYourself, { type CareForYourselfNoteRow } from "../../components/CareForYourself";
 
 // Move — fully replaced 2026-08-03 with the real "Move" series (11
 // separately drafted, reviewed and locked documents spanning pregnancy
@@ -121,6 +123,9 @@ type WeekRow = {
   feeding_comfort: string | null;
   rest_support: string | null;
   reset: ResetContent;
+  // Superseded 2026-09-18 by the new Care for Yourself module (see
+  // CLAUDE.md) — kept on the type only because the column still exists
+  // and the select query still reads it; no longer rendered below.
   care_for_yourself: string;
   your_corner: string;
   support_moment: string;
@@ -203,6 +208,10 @@ export default function CareScreen() {
   const [resetActivity, setResetActivity] = useState<ResetActivityRow | null>(null);
   const [resetDoneToday, setResetDoneToday] = useState(false);
   const [resetTotalCompletions, setResetTotalCompletions] = useState(0);
+  const [careForYourselfCategory, setCareForYourselfCategory] = useState<CareCategory | null>(null);
+  const [careForYourselfNote, setCareForYourselfNote] = useState<CareForYourselfNoteRow | null>(null);
+  const [careForYourselfDoneToday, setCareForYourselfDoneToday] = useState(false);
+  const [careForYourselfWeekCount, setCareForYourselfWeekCount] = useState(0);
 
   const [timeChoice, setTimeChoice] = useState<string | null>(null);
   const [energyChoice, setEnergyChoice] = useState<number | null>(null);
@@ -266,6 +275,37 @@ export default function CareScreen() {
       .eq("completed_date", today0)
       .maybeSingle();
     setResetDoneToday(Boolean(todayResetRow));
+
+    // Care for yourself (migration_61/62, 2026-09-18) — the seven-day
+    // personal-care rhythm that fully replaces the old generic per-week
+    // care_for_yourself text field. See lib/careForYourselfCalculator.ts
+    // and CLAUDE.md for the full spec.
+    const careCategory = careCategoryForDate(today0);
+    setCareForYourselfCategory(careCategory);
+    const { data: careNotes } = await supabase
+      .from("care_for_yourself_notes")
+      .select("id, category, content_type, headline, care_note, tiny_action")
+      .eq("category", careCategory)
+      .eq("is_active", true)
+      .order("note_number");
+    const pickedCareNoteId = pickCareNoteId(
+      user.id,
+      careCategory,
+      (careNotes || []).map((n) => ({ id: n.id, contentType: n.content_type })),
+      today0
+    );
+    setCareForYourselfNote((careNotes || []).find((n) => n.id === pickedCareNoteId) ?? null);
+
+    const sevenDaysAgo = new Date(new Date(`${today0}T00:00:00Z`).getTime() - 6 * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    const { data: careCompletionRows } = await supabase
+      .from("user_care_completions")
+      .select("completed_date")
+      .eq("user_id", user.id)
+      .gte("completed_date", sevenDaysAgo);
+    setCareForYourselfWeekCount(careCompletionRows?.length ?? 0);
+    setCareForYourselfDoneToday((careCompletionRows || []).some((r) => r.completed_date === today0));
 
     const { data: careProfile } = await supabase
       .from("user_care_profile")
@@ -422,6 +462,10 @@ export default function CareScreen() {
             resetActivity={resetActivity}
             resetDoneToday={resetDoneToday}
             resetTotalCompletions={resetTotalCompletions}
+            careForYourselfCategory={careForYourselfCategory}
+            careForYourselfNote={careForYourselfNote}
+            careForYourselfDoneToday={careForYourselfDoneToday}
+            careForYourselfWeekCount={careForYourselfWeekCount}
           />
         )}
       </ScrollView>
@@ -613,6 +657,10 @@ function CareWeekView({
   resetActivity,
   resetDoneToday,
   resetTotalCompletions,
+  careForYourselfCategory,
+  careForYourselfNote,
+  careForYourselfDoneToday,
+  careForYourselfWeekCount,
 }: {
   week: WeekRow;
   checkin: { time_available: string; mood_score: number };
@@ -623,6 +671,10 @@ function CareWeekView({
   resetActivity: ResetActivityRow | null;
   resetDoneToday: boolean;
   resetTotalCompletions: number;
+  careForYourselfCategory: CareCategory | null;
+  careForYourselfNote: CareForYourselfNoteRow | null;
+  careForYourselfDoneToday: boolean;
+  careForYourselfWeekCount: number;
 }) {
   const relevantConditionNotes = (week.condition_notes || []).filter(
     (n) => n.flag === "none" || healthFlags.includes(n.flag)
@@ -661,8 +713,13 @@ function CareWeekView({
         />
       )}
 
-      {hasContent(week.care_for_yourself) && (
-        <ExpandableCard icon="hand-left-outline" title="Care for yourself" summary={week.care_for_yourself} />
+      {careForYourselfCategory && careForYourselfNote && (
+        <CareForYourself
+          category={careForYourselfCategory}
+          note={careForYourselfNote}
+          alreadyDoneToday={careForYourselfDoneToday}
+          weekCompletionCount={careForYourselfWeekCount}
+        />
       )}
 
       {hasContent(week.your_corner) && (

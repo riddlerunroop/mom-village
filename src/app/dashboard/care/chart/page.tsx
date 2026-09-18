@@ -5,10 +5,12 @@ import { calculateCareWeek, carePhaseLabel, carePhaseKey, careWeekLabel, journey
 import { calculateNourishLookup, nourishGapWeek, type NourishLookup, type NourishStage } from "@/lib/nourishCalculator";
 import type { NourishWeekRow } from "@/types/nourishContent";
 import { pickDailyResetIndex } from "@/lib/resetCalculator";
+import { careCategoryForDate, pickCareNoteId } from "@/lib/careForYourselfCalculator";
 import LockedPreview from "@/components/LockedPreview";
 import CareStepItem from "@/components/CareStepItem";
 import CareWeekContent, { type CareWeekRow } from "@/components/CareWeekContent";
 import type { ResetActivityRow } from "@/components/ResetOfTheDay";
+import type { CareForYourselfNoteRow } from "@/components/CareForYourself";
 
 // Renamed 2026-07-28 per Roop's review — user-facing section names now read
 // Move / Nourish / Reset / Care for yourself / Rediscover. The underlying
@@ -217,6 +219,48 @@ export default async function CareChartPage({
       .eq("completed_date", today)
       .maybeSingle();
     resetDoneToday = Boolean(todayResetRow);
+  }
+
+  // Care for yourself (migration_61/62, 2026-09-18) — the seven-day
+  // personal-care rhythm that fully replaces the old generic per-week
+  // care_for_yourself text field wherever a mother sees her real chart
+  // (Roop's explicit "replace it everywhere" decision). See
+  // src/lib/careForYourselfCalculator.ts and CLAUDE.md for the full spec.
+  const careCategory = isSubscribed ? careCategoryForDate(today) : null;
+  const { data: careNotes } = isSubscribed && careCategory
+    ? await supabase
+        .from("care_for_yourself_notes")
+        .select("id, category, content_type, headline, care_note, tiny_action")
+        .eq("category", careCategory)
+        .eq("is_active", true)
+        .order("note_number")
+    : { data: null };
+
+  const pickedCareNoteId =
+    isSubscribed && careCategory
+      ? pickCareNoteId(
+          user!.id,
+          careCategory,
+          (careNotes || []).map((n) => ({ id: n.id, contentType: n.content_type })),
+          today
+        )
+      : null;
+  const careForYourselfNote: CareForYourselfNoteRow | null =
+    (careNotes || []).find((n) => n.id === pickedCareNoteId) ?? null;
+
+  let careForYourselfDoneToday = false;
+  let careForYourselfWeekCount = 0;
+  if (isSubscribed) {
+    const sevenDaysAgo = new Date(new Date(`${today}T00:00:00Z`).getTime() - 6 * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    const { data: careCompletionRows } = await supabase
+      .from("user_care_completions")
+      .select("completed_date")
+      .eq("user_id", user!.id)
+      .gte("completed_date", sevenDaysAgo);
+    careForYourselfWeekCount = careCompletionRows?.length ?? 0;
+    careForYourselfDoneToday = (careCompletionRows || []).some((r) => r.completed_date === today);
   }
 
   let doneCardKeys = new Set<string>();
@@ -428,6 +472,10 @@ export default async function CareChartPage({
           resetActivity={resetActivityRow}
           resetDoneToday={resetDoneToday}
           resetTotalCompletions={resetTotalCompletions}
+          careForYourselfCategory={careCategory}
+          careForYourselfNote={careForYourselfNote}
+          careForYourselfDoneToday={careForYourselfDoneToday}
+          careForYourselfWeekCount={careForYourselfWeekCount}
         />
       ) : (
         <>

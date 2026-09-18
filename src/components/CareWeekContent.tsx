@@ -19,6 +19,8 @@ import { createClient } from "@/lib/supabase/client";
 import { PROTEIN_TIP, type DietPreference } from "@/lib/proteinTips";
 import type { NourishDay, NourishWeekRow } from "@/types/nourishContent";
 import ResetOfTheDay, { type ResetActivityRow } from "@/components/ResetOfTheDay";
+import CareForYourself, { type CareForYourselfNoteRow } from "@/components/CareForYourself";
+import type { CareCategory } from "@/lib/careForYourselfCalculator";
 import PillarCard from "@/components/PillarCard";
 
 // Shared "mark done" toggle for any per-card entry in user_care_week_
@@ -174,6 +176,11 @@ export type CareWeekRow = {
   feeding_comfort?: string | null;
   rest_support?: string | null;
   reset: ResetContent;
+  // Superseded 2026-09-18 by the new Care for Yourself module (see
+  // CLAUDE.md) — same precedent as ResetContent above. The DB column
+  // still holds this old per-week text, but it's no longer rendered
+  // anywhere below; kept on the type only because the column still
+  // exists and the select query still reads it.
   care_for_yourself: string;
   your_corner: string;
   support_moment: string;
@@ -766,6 +773,10 @@ export default function CareWeekContent({
   resetActivity,
   resetDoneToday,
   resetTotalCompletions,
+  careForYourselfCategory,
+  careForYourselfNote,
+  careForYourselfDoneToday,
+  careForYourselfWeekCount,
 }: {
   week: CareWeekRow;
   // timeAvailable is no longer used here -- the new Move series lets her
@@ -790,6 +801,14 @@ export default function CareWeekContent({
   resetActivity?: ResetActivityRow | null;
   resetDoneToday?: boolean;
   resetTotalCompletions?: number;
+  // Care for yourself (migration_61/62, 2026-09-18) — see CareForYourself.tsx
+  // and CLAUDE.md for the full spec. careForYourselfCategory is null only
+  // if she isn't subscribed; careForYourselfNote is null only if the
+  // content bank has no active row for today's category yet.
+  careForYourselfCategory?: CareCategory | null;
+  careForYourselfNote?: CareForYourselfNoteRow | null;
+  careForYourselfDoneToday?: boolean;
+  careForYourselfWeekCount?: number;
 }) {
   const flags = healthFlags ?? [];
   const visibleConditionNotes = (week.condition_notes ?? []).filter(
@@ -920,16 +939,13 @@ export default function CareWeekContent({
           </WeekCard>
         )}
 
-        {hasContent(week.care_for_yourself) && (
-          <WeekCard
-            title="Care for yourself"
-            accent="gold-deep"
-            cardKey="care_for_yourself"
-            weekNumber={week.week_number}
-            initiallyDone={doneCardKeys.has("care_for_yourself")}
-          >
-            {week.care_for_yourself}
-          </WeekCard>
+        {careForYourselfCategory && careForYourselfNote && (
+          <CareForYourself
+            category={careForYourselfCategory}
+            note={careForYourselfNote}
+            alreadyDoneToday={Boolean(careForYourselfDoneToday)}
+            weekCompletionCount={careForYourselfWeekCount ?? 0}
+          />
         )}
 
         {hasContent(week.your_corner) && (
