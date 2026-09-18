@@ -14,6 +14,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { justUnlockedResetBadge, RESET_BADGE_LABELS } from "@/lib/resetCalculator";
+import PillarCard from "@/components/PillarCard";
 
 export type ResetActivityRow = {
   id: string;
@@ -75,20 +76,9 @@ export default function ResetOfTheDay({
   }
 
   return (
-    <div
-      className="rounded-3xl p-6 mb-4 bg-terracotta/8"
-      style={{ borderTop: "3px solid var(--color-terracotta)" }}
-    >
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-terracotta mb-3">
-        Need a Reset?
-      </p>
-
+    <PillarCard eyebrow="Need a Reset?" icon={activity.emoji} title={activity.title} accent="terracotta">
       {phase === "offer" && (
         <>
-          <div className="flex items-start gap-3 mb-3">
-            <span className="text-3xl leading-none shrink-0">{activity.emoji}</span>
-            <h3 className="font-display text-lg text-indigo">{activity.title}</h3>
-          </div>
           <p className="text-[13.5px] text-ink/75 leading-relaxed mb-4 max-w-prose">
             {activity.body}
           </p>
@@ -122,13 +112,7 @@ export default function ResetOfTheDay({
 
       {phase === "done" && (
         <>
-          <div className="flex items-start gap-3 mb-3">
-            <span className="text-3xl leading-none shrink-0">{activity.emoji}</span>
-            <div>
-              <h3 className="font-display text-lg text-indigo">{activity.title}</h3>
-              <p className="text-[12px] font-semibold text-sage-deep mt-0.5">Reset done ✓</p>
-            </div>
-          </div>
+          <p className="text-[12px] font-semibold text-sage-deep mb-3">Reset done ✓</p>
 
           {justUnlocked && (
             <div className="bg-gold/15 border border-gold/40 rounded-2xl px-4 py-3 mb-3">
@@ -150,6 +134,6 @@ export default function ResetOfTheDay({
           </Link>
         </>
       )}
-    </div>
+    </PillarCard>
   );
 }

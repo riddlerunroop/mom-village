@@ -19,6 +19,65 @@ import { createClient } from "@/lib/supabase/client";
 import { PROTEIN_TIP, type DietPreference } from "@/lib/proteinTips";
 import type { NourishDay, NourishWeekRow } from "@/types/nourishContent";
 import ResetOfTheDay, { type ResetActivityRow } from "@/components/ResetOfTheDay";
+import PillarCard from "@/components/PillarCard";
+
+// Shared "mark done" toggle for any per-card entry in user_care_week_
+// progress — used by WeekCard, MoveSection, and NourishMealCard alike so
+// the same upsert/delete logic isn't hand-copied a third time (it already
+// was, twice, before this 2026-09-18 refactor pulled it into one place).
+function useCardDoneToggle(weekNumber: number, cardKey: string, initiallyDone: boolean) {
+  const supabase = createClient();
+  const [done, setDone] = useState(initiallyDone);
+  const [busy, setBusy] = useState(false);
+
+  async function toggleDone() {
+    setBusy(true);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setBusy(false);
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    if (done) {
+      await supabase
+        .from("user_care_week_progress")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("week_number", weekNumber)
+        .eq("card_key", cardKey)
+        .eq("completed_date", today);
+      setDone(false);
+    } else {
+      await supabase.from("user_care_week_progress").upsert(
+        { user_id: user.id, week_number: weekNumber, card_key: cardKey, completed_date: today },
+        { onConflict: "user_id,week_number,card_key,completed_date" }
+      );
+      setDone(true);
+    }
+    setBusy(false);
+  }
+
+  return { done, busy, toggleDone };
+}
+
+function DoneButton({ done, busy, onClick, size = "small" }: { done: boolean; busy: boolean; onClick: () => void; size?: "small" | "large" }) {
+  const dims = size === "large" ? "w-7 h-7 text-[13px]" : "w-6 h-6 text-[12px]";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      aria-label={done ? "Mark not done" : "Mark done"}
+      className={`shrink-0 rounded-full border-2 flex items-center justify-center font-bold transition-colors ${dims} ${
+        done ? "bg-sage-deep border-sage-deep text-ivory" : "border-ink/25 text-transparent hover:border-sage-deep/60"
+      }`}
+    >
+      ✓
+    </button>
+  );
+}
 
 // Move content — fully replaced 2026-08-03 with the real "Move" series
 // (11 separately drafted, reviewed and locked documents spanning pregnancy
@@ -170,69 +229,23 @@ function WeekCard({
   weekNumber?: number;
   initiallyDone?: boolean;
 }) {
-  const supabase = createClient();
-  const [done, setDone] = useState(Boolean(initiallyDone));
-  const [busy, setBusy] = useState(false);
   const actionable = cardKey !== undefined && weekNumber !== undefined;
-
-  async function toggleDone() {
-    if (!actionable) return;
-    setBusy(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setBusy(false);
-      return;
-    }
-    const today = new Date().toISOString().slice(0, 10);
-
-    if (done) {
-      await supabase
-        .from("user_care_week_progress")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("week_number", weekNumber)
-        .eq("card_key", cardKey)
-        .eq("completed_date", today);
-      setDone(false);
-    } else {
-      await supabase.from("user_care_week_progress").upsert(
-        { user_id: user.id, week_number: weekNumber, card_key: cardKey, completed_date: today },
-        { onConflict: "user_id,week_number,card_key,completed_date" }
-      );
-      setDone(true);
-    }
-    setBusy(false);
-  }
+  const { done, busy, toggleDone } = useCardDoneToggle(
+    weekNumber ?? 0,
+    cardKey ?? "",
+    Boolean(initiallyDone)
+  );
+  const isDone = actionable && done;
 
   return (
-    <div
-      className={`rounded-2xl border p-5 transition-colors ${done ? "bg-sage/10 border-sage-deep/30" : "bg-ivory-2 border-line"}`}
-      style={{ borderTop: `3px solid var(--color-${accent})` }}
+    <PillarCard
+      title={title}
+      accent={accent}
+      done={isDone}
+      doneButton={actionable ? <DoneButton done={done} busy={busy} onClick={toggleDone} /> : undefined}
     >
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <h3 className={`font-display text-base ${done ? "text-ink/50 line-through decoration-1" : "text-indigo"}`}>
-          {title}
-        </h3>
-        {actionable && (
-          <button
-            type="button"
-            onClick={toggleDone}
-            disabled={busy}
-            aria-label={done ? "Mark not done" : "Mark done"}
-            className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-[12px] font-bold transition-colors ${
-              done
-                ? "bg-sage-deep border-sage-deep text-ivory"
-                : "border-ink/25 text-transparent hover:border-sage-deep/60"
-            }`}
-          >
-            ✓
-          </button>
-        )}
-      </div>
-      <div className={`text-[13px] leading-relaxed ${done ? "text-ink/40" : "text-ink/75"}`}>{children}</div>
-    </div>
+      <div className={`text-[13px] leading-relaxed ${isDone ? "text-ink/40" : "text-ink/75"}`}>{children}</div>
+    </PillarCard>
   );
 }
 
@@ -294,38 +307,7 @@ function MoveSection({
   doneMove: boolean;
   weekNumber: number;
 }) {
-  const supabase = createClient();
-  const [done, setDone] = useState(doneMove);
-  const [busy, setBusy] = useState(false);
-
-  async function toggleDone() {
-    setBusy(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setBusy(false);
-      return;
-    }
-    const today = new Date().toISOString().slice(0, 10);
-    if (done) {
-      await supabase
-        .from("user_care_week_progress")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("week_number", weekNumber)
-        .eq("card_key", "move")
-        .eq("completed_date", today);
-      setDone(false);
-    } else {
-      await supabase.from("user_care_week_progress").upsert(
-        { user_id: user.id, week_number: weekNumber, card_key: "move", completed_date: today },
-        { onConflict: "user_id,week_number,card_key,completed_date" }
-      );
-      setDone(true);
-    }
-    setBusy(false);
-  }
+  const { done, busy, toggleDone } = useCardDoneToggle(weekNumber, "move", doneMove);
 
   const routeKeys = week.recoveryRoute ? Object.keys(week.recoveryRoute) : [];
   const primaryRouteKey = week.recoveryRoute ? primaryRouteKeyFor(deliveryType, routeKeys) : null;
@@ -347,33 +329,15 @@ function MoveSection({
   ].filter((p): p is string => Boolean(p));
 
   return (
-    <div
-      className={`rounded-3xl p-6 mb-4 transition-colors shadow-sm ${
-        done ? "bg-sage/10" : "bg-ivory-2"
-      }`}
-      style={{ borderTop: "3px solid var(--color-gold)" }}
+    <PillarCard
+      eyebrow="Move"
+      title={week.theme}
+      subtitle={week.mantra}
+      accent="gold"
+      done={done}
+      defaultOpen={false}
+      doneButton={<DoneButton done={done} busy={busy} onClick={toggleDone} size="large" />}
     >
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gold-deep mb-1">Move</p>
-          <h3 className={`font-display text-xl ${done ? "text-ink/50 line-through decoration-1" : "text-indigo"}`}>
-            {week.theme}
-          </h3>
-          <p className="font-display italic text-[14px] text-sage-deep mt-0.5">&ldquo;{week.mantra}&rdquo;</p>
-        </div>
-        <button
-          type="button"
-          onClick={toggleDone}
-          disabled={busy}
-          aria-label={done ? "Mark not done" : "Mark done"}
-          className={`shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center text-[13px] font-bold transition-colors ${
-            done ? "bg-sage-deep border-sage-deep text-ivory" : "border-ink/25 text-transparent hover:border-sage-deep/60"
-          }`}
-        >
-          ✓
-        </button>
-      </div>
-
       <div className={`text-[13.5px] leading-relaxed space-y-5 ${done ? "text-ink/40" : "text-ink/75"}`}>
         {/* Level 1 — the movement itself: cream card, real elevation */}
         {week.format === "tiers3" && week.tiers ? (
@@ -609,7 +573,7 @@ function MoveSection({
           )}
         </div>
       )}
-    </div>
+    </PillarCard>
   );
 }
 
@@ -717,26 +681,21 @@ function NourishMealCard({
   doneCardKeys: Set<string>;
 }) {
   const stageLabel = nourishWeek.stage === "pregnancy" ? "pregnancy" : "postpartum";
+  const { done, busy, toggleDone } = useCardDoneToggle(weekNumber, "nourish", doneCardKeys.has("nourish"));
+  const eyebrow = `Nourish · Week ${nourishWeek.week_number} ${stageLabel} · Day ${today.day_number}${
+    today.title ? ` — ${today.title}` : ""
+  }`;
+
   return (
-    <WeekCard
-      title="Nourish"
+    <PillarCard
+      eyebrow={eyebrow}
+      title={nourishWeek.theme_title}
+      subtitle={nourishWeek.mantra ?? undefined}
       accent="sage"
-      cardKey="nourish"
-      weekNumber={weekNumber}
-      initiallyDone={doneCardKeys.has("nourish")}
+      done={done}
+      doneButton={<DoneButton done={done} busy={busy} onClick={toggleDone} />}
     >
       <div className="space-y-3">
-        <div>
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-sage-deep/70 mb-0.5">
-            Week {nourishWeek.week_number} {stageLabel} nourishment · Day {today.day_number}
-            {today.title ? ` — ${today.title}` : ""}
-          </p>
-          <p className="font-display text-[15px] text-indigo">{nourishWeek.theme_title}</p>
-          {nourishWeek.mantra && (
-            <p className="font-display italic text-[13px] text-sage-deep mt-0.5">&ldquo;{nourishWeek.mantra}&rdquo;</p>
-          )}
-        </div>
-
         {today.notes && <p className="text-[13px] text-ink/70">{today.notes}</p>}
 
         <div className="grid sm:grid-cols-2 gap-2.5">
@@ -791,7 +750,7 @@ function NourishMealCard({
           </details>
         )}
       </div>
-    </WeekCard>
+    </PillarCard>
   );
 }
 
@@ -866,22 +825,29 @@ export default function CareWeekContent({
         )}
       </div>
 
-      <MoveSection
-        week={week.move}
-        deliveryType={deliveryType}
-        doneMove={doneCardKeys.has("move")}
-        weekNumber={week.week_number}
-      />
-
-      {resetActivity && (
-        <ResetOfTheDay
-          activity={resetActivity}
-          alreadyDoneToday={Boolean(resetDoneToday)}
-          totalCompletions={resetTotalCompletions ?? 0}
+      {/* Linear, single-column list of collapsed-by-default cards — changed
+          2026-09-18 from separate hero cards + a 2-column grid, per Roop's
+          live-review feedback ("make all tabs linear, where user clicks to
+          expand" + inconsistent header sizes). Move, Reset, and every
+          smaller pillar card now render through the same PillarCard
+          component in one straight top-to-bottom list, each expanding
+          independently — nothing here reflows around a grid anymore. */}
+      <div className="space-y-3">
+        <MoveSection
+          week={week.move}
+          deliveryType={deliveryType}
+          doneMove={doneCardKeys.has("move")}
+          weekNumber={week.week_number}
         />
-      )}
 
-      <div className="grid md:grid-cols-2 gap-4">
+        {resetActivity && (
+          <ResetOfTheDay
+            activity={resetActivity}
+            alreadyDoneToday={Boolean(resetDoneToday)}
+            totalCompletions={resetTotalCompletions ?? 0}
+          />
+        )}
+
         {nourishWeek && nourishToday ? (
           <NourishMealCard
             nourishWeek={nourishWeek}
