@@ -10,10 +10,13 @@
 // text field, per Roop's "replace it everywhere" decision. See
 // CLAUDE.md's "Care for Yourself" entry for the full spec.
 //
-// IMPORTANT: the real 210 Care Notes are Roop's own to write — right now
-// this only ever renders whatever's in care_for_yourself_notes, which is
-// 7 clearly-flagged placeholder rows (one per category) until she writes
-// the real content.
+// All 210 real Care Notes are loaded and safety_flag = 'approved' — Roop's
+// explicit 2026-09-18 call: these are general, low-stakes statements a
+// mother is free to follow or not, not individualized medical guidance, so
+// no outside clinical/dermatology review is needed before calling them
+// final. The liability-waiving disclaimer she asked for instead is the
+// small caption rendered below every note, not a per-note review process.
+// See CLAUDE.md.
 
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
@@ -94,6 +97,12 @@ export default function CareForYourself({
             <Text style={styles.tinyAction}>Today: {note.tiny_action}</Text>
           ) : null}
 
+          <Text style={styles.disclaimer}>
+            General suggestions, not tailored medical advice — patch test anything new, and check
+            with a healthcare professional if you have allergies, a skin or hair condition, or are
+            pregnant or breastfeeding.
+          </Text>
+
           <Pressable
             style={[styles.doneButton, done && styles.doneButtonActive]}
             onPress={markDone}
@@ -152,4 +161,5 @@ const styles = StyleSheet.create({
   doneButtonText: { fontSize: 13, fontFamily: Fonts.bodyBold, color: Colors.indigo },
   doneButtonTextActive: { color: Colors.terracotta },
   acknowledgment: { fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "73" },
+  disclaimer: { fontSize: 11, fontFamily: Fonts.body, color: Colors.ink + "66", lineHeight: 15 },
 });

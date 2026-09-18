@@ -23,11 +23,14 @@
 // "replace it everywhere" decision — same precedent as Reset-of-the-day
 // fully replacing the old mood-mapped Reset card.
 //
-// IMPORTANT: the real 210 Care Notes (30 per category) are Roop's own to
-// write. This component only ever renders whatever's actually in
-// care_for_yourself_notes — right now that's 7 clearly-flagged
-// (safety_flag = 'placeholder') demonstration rows, one per category, so
-// the feature is visible and testable before her real content exists.
+// All 210 real Care Notes (30 per category, Roop's own words) are loaded
+// and safety_flag = 'approved' — her explicit 2026-09-18 call: these are
+// general, low-stakes statements a mother is free to follow or not, not
+// individualized medical guidance, so no outside clinical/dermatology
+// review is needed before calling them final. The liability-waiving
+// disclaimer she asked for instead ("go by their dharma... any sort of
+// disclaimer that will waive us off") is the small caption rendered below
+// every note, not a per-note review process. See CLAUDE.md.
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -97,6 +100,12 @@ export default function CareForYourself({
         {note.tiny_action && (
           <p className="text-[13px] text-sage-deep italic">Today: {note.tiny_action}</p>
         )}
+
+        <p className="text-[11px] text-ink/40 leading-snug">
+          General suggestions, not tailored medical advice — patch test anything new, and check
+          with a healthcare professional if you have allergies, a skin or hair condition, or are
+          pregnant or breastfeeding.
+        </p>
 
         <button
           type="button"
