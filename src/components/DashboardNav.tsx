@@ -9,6 +9,7 @@ const tabs = [
   { label: "Wealth", href: "/dashboard/wealth" },
   { label: "Library", href: "/dashboard/library" },
   { label: "Community", href: "/dashboard/community" },
+  { label: "Rediscover", href: "/dashboard/rediscover" },
 ];
 
 export default function DashboardNav({

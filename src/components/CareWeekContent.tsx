@@ -948,17 +948,14 @@ export default function CareWeekContent({
           />
         )}
 
-        {hasContent(week.your_corner) && (
-          <WeekCard
-            title="Your corner"
-            accent="gold"
-            cardKey="your_corner"
-            weekNumber={week.week_number}
-            initiallyDone={doneCardKeys.has("your_corner")}
-          >
-            {week.your_corner}
-          </WeekCard>
-        )}
+        {/* "Your corner" (Rediscover) retired from the Care Chart, 2026-09-19 —
+            Roop's explicit call to pull Rediscover out of Care Chart entirely
+            and build it as its own standalone marketplace module (see
+            src/app/dashboard/rediscover/). The your_corner column stays on
+            care_chart_week_content and is still selected above — nothing in
+            the database changed, this is a display-only retirement, same
+            "superseded but kept" convention already used for the old
+            care_for_yourself text field. Do not reintroduce this card. */}
 
         {hasContent(week.support_moment) && (
           <WeekCard

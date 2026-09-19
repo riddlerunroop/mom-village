@@ -12,12 +12,15 @@ import LockedPreview from "@/components/LockedPreview";
 // at /dashboard/care/chart. This mirrors how Monthly Chart and other
 // pillars greet her before showing the day's specifics.
 
+// "Rediscover" removed from this list, 2026-09-19 — it's no longer a Care
+// Chart pillar at all. Roop's explicit call to pull it out entirely and
+// build it as its own standalone marketplace module, see
+// src/app/dashboard/rediscover/. Care Chart is back to 4 daily pillars.
 const SECTION_PREVIEWS = [
   { label: "Move", accent: "gold", line: "Named exercises for exactly where you are — never a generic \"go for a walk.\"" },
   { label: "Nourish", accent: "sage", line: "Real food guidance for your stage, with PCOS- and diabetes-specific notes where they apply." },
   { label: "Reset", accent: "terracotta", line: "A weekly mantra and real tools for hard days, not just \"stay positive.\"" },
   { label: "Care for yourself", accent: "indigo", line: "A real morning-and-night routine, not just \"keep it simple.\"" },
-  { label: "Rediscover", accent: "gold-deep", line: "Small things that are just for you — not baby-related, not another chore." },
 ] as const;
 
 export default async function CareLandingPage() {
@@ -182,7 +185,7 @@ export default async function CareLandingPage() {
       {isSubscribed && (
         <Link
           href="/dashboard/care/mental-health"
-          className="block bg-ivory-2 rounded-2xl border border-terracotta/30 p-5 mb-6 hover:border-terracotta/60 transition-colors"
+          className="block bg-ivory-2 rounded-2xl border border-terracotta/30 p-5 mb-4 hover:border-terracotta/60 transition-colors"
         >
           <div className="flex items-center justify-between gap-3">
             <div>
@@ -195,6 +198,27 @@ export default async function CareLandingPage() {
               </p>
             </div>
             <span className="text-terracotta text-lg flex-shrink-0">→</span>
+          </div>
+        </Link>
+      )}
+
+      {isSubscribed && (
+        <Link
+          href="/dashboard/rediscover"
+          className="block bg-ivory-2 rounded-2xl border border-gold-deep/30 p-5 mb-6 hover:border-gold-deep/60 transition-colors"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] uppercase tracking-wide font-bold text-gold-deep mb-1">
+                Rediscover
+              </div>
+              <p className="text-[13px] text-ink/70 leading-snug">
+                Something of yours can begin here — explore, showcase a
+                skill, find what you need, or build something with another
+                mother. Now its own space, separate from your daily chart.
+              </p>
+            </div>
+            <span className="text-gold-deep text-lg flex-shrink-0">→</span>
           </div>
         </Link>
       )}

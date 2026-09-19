@@ -127,6 +127,9 @@ type WeekRow = {
   // CLAUDE.md) — kept on the type only because the column still exists
   // and the select query still reads it; no longer rendered below.
   care_for_yourself: string;
+  // Superseded 2026-09-19 by the new standalone Rediscover module (see
+  // CLAUDE.md) — kept on the type only because the column still exists
+  // and the select query still reads it; no longer rendered below.
   your_corner: string;
   support_moment: string;
   celebrate_this_week: string;
@@ -184,12 +187,15 @@ const MOOD_OPTIONS: { value: number; label: string; icon: keyof typeof Ionicons.
   { value: 4, label: "Good", icon: "sunny-outline" },
   { value: 5, label: "Really good", icon: "sparkles-outline" },
 ];
+// "Rediscover" removed, 2026-09-19 — it's no longer a Care Chart pillar at
+// all. Roop's explicit call to pull it out entirely and build it as its own
+// standalone marketplace module (see the new Rediscover pointer card below).
+// Care Chart is back to 4 daily pillars.
 const PILLARS: { key: string; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: "move", label: "Move", icon: "body-outline" },
   { key: "nourish", label: "Nourish", icon: "nutrition-outline" },
   { key: "reset", label: "Reset", icon: "flower-outline" },
   { key: "care_for_yourself", label: "Care for yourself", icon: "hand-left-outline" },
-  { key: "rediscover", label: "Rediscover", icon: "sparkles-outline" },
 ];
 
 type Stage = "landing" | "checkin" | "chart";
@@ -530,13 +536,26 @@ function LandingView({
         <Ionicons name="chevron-forward" size={16} color={Colors.ink + "60"} />
       </Pressable>
 
+      {/* Opens web for now — same placeholder pattern used elsewhere in this
+          native rollout (Phase 1's Wealth/Library/Community placeholders)
+          until the native Rediscover screens are built (see CLAUDE.md).
+          Swap to router.push("/rediscover") once that lands. */}
+      <Pressable
+        style={styles.rediscoverCard}
+        onPress={() => Linking.openURL("https://www.momvillage.in/dashboard/rediscover")}
+      >
+        <Ionicons name="sparkles" size={22} color={Colors.goldDeep} />
+        <Text style={styles.rediscoverText}>Rediscover</Text>
+        <Ionicons name="chevron-forward" size={16} color={Colors.ink + "60"} />
+      </Pressable>
+
       <Pressable onPress={() => Linking.openURL("https://www.momvillage.in/safety")}>
         <Text style={styles.safetyLink}>
           Feeling something that worries you? See warning signs & emergency support →
         </Text>
       </Pressable>
 
-      <Text style={styles.sectionKicker}>Your five pillars</Text>
+      <Text style={styles.sectionKicker}>Your four pillars</Text>
       {PILLARS.map((p) => (
         <View key={p.key} style={styles.pillarRow}>
           <View style={iconBadge(Colors.indigo, 32)}>
@@ -722,9 +741,9 @@ function CareWeekView({
         />
       )}
 
-      {hasContent(week.your_corner) && (
-        <ExpandableCard icon="sparkles-outline" title="Rediscover" summary={week.your_corner} />
-      )}
+      {/* "Rediscover" card retired, 2026-09-19 — replaced entirely by the
+          standalone Rediscover module (see the pointer card on the landing
+          screen above). Do not reintroduce this card. */}
 
       {(hasContent(week.feeding_comfort) || hasContent(week.rest_support)) && (
         <View style={styles.card}>
@@ -1237,6 +1256,8 @@ const styles = StyleSheet.create({
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
   mentalHealthCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
   mentalHealthText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.indigo },
+  rediscoverCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
+  rediscoverText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.goldDeep },
   safetyLink: { fontSize: 12, fontFamily: Fonts.bodySemiBold, color: Colors.terracotta, marginBottom: 20, textDecorationLine: "underline" },
   sectionKicker: { fontSize: 11, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 1, color: Colors.sageDeep, marginBottom: 10, marginTop: 4 },
   pillarRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.line },

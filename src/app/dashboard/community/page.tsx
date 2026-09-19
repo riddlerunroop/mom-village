@@ -126,6 +126,24 @@ export default async function CommunityPage({
             </p>
           </Link>
 
+          {/* Rediscover banner, 2026-09-19 — Community only ever links out to
+              Rediscover, never hosts listings itself. Roop's explicit call
+              to keep Community exactly the flat discussion forum it already
+              is: "let the community module be the forum as for discussions
+              and topics in everything only." Do not add listings/needs
+              content directly to this page. */}
+          <Link
+            href="/dashboard/rediscover"
+            className="block bg-gold-deep/8 rounded-2xl border border-gold-deep/25 px-5 py-4 mb-6 hover:border-gold-deep/50 transition-colors"
+          >
+            <p className="text-sm font-semibold text-gold-deep">
+              🌱 Rediscover — find skills, work, and collaborators in your Village
+            </p>
+            <p className="text-[12.5px] text-ink/55 mt-0.5">
+              A separate space to showcase what you make or offer, find what you need, and message other mothers.
+            </p>
+          </Link>
+
           <div className="flex flex-col sm:flex-row gap-3 mb-8">
             <form action="/dashboard/community" className="flex-1">
               <input

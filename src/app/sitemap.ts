@@ -16,6 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/community-guidelines", priority: 0.3, changeFrequency: "yearly" as const },
     { path: "/refund-policy", priority: 0.3, changeFrequency: "yearly" as const },
     { path: "/safety", priority: 0.5, changeFrequency: "yearly" as const },
+    { path: "/rediscover-disclaimer", priority: 0.3, changeFrequency: "yearly" as const },
   ];
 
   return routes.map((r) => ({

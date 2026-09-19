@@ -103,6 +103,7 @@ export default async function DashboardLayout({
           <Link href="/community-guidelines" className="hover:text-indigo transition-colors">Community Guidelines</Link>
           <Link href="/refund-policy" className="hover:text-indigo transition-colors">Cancellation &amp; Refund Policy</Link>
           <Link href="/safety" className="hover:text-indigo transition-colors">Safety &amp; Emergency Support</Link>
+          <Link href="/rediscover-disclaimer" className="hover:text-indigo transition-colors">Rediscover Disclaimer</Link>
         </div>
       </footer>
     </div>
