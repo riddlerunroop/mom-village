@@ -13,7 +13,7 @@ import {
   StyleSheet,
   Linking,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../../lib/supabase";
@@ -536,14 +536,8 @@ function LandingView({
         <Ionicons name="chevron-forward" size={16} color={Colors.ink + "60"} />
       </Pressable>
 
-      {/* Opens web for now — same placeholder pattern used elsewhere in this
-          native rollout (Phase 1's Wealth/Library/Community placeholders)
-          until the native Rediscover screens are built (see CLAUDE.md).
-          Swap to router.push("/rediscover") once that lands. */}
-      <Pressable
-        style={styles.rediscoverCard}
-        onPress={() => Linking.openURL("https://www.momvillage.in/dashboard/rediscover")}
-      >
+      {/* Rediscover — native screens built 2026-09-19, see CLAUDE.md. */}
+      <Pressable style={styles.rediscoverCard} onPress={() => router.push("/rediscover")}>
         <Ionicons name="sparkles" size={22} color={Colors.goldDeep} />
         <Text style={styles.rediscoverText}>Rediscover</Text>
         <Ionicons name="chevron-forward" size={16} color={Colors.ink + "60"} />

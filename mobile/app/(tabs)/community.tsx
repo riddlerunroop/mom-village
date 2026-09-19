@@ -375,6 +375,19 @@ export default function CommunityScreen() {
                   </Text>
                 </Pressable>
 
+                {/* Rediscover banner, 2026-09-19 — Community only ever links
+                    out to Rediscover, never hosts listings itself. Roop's
+                    explicit call to keep Community exactly the flat
+                    discussion forum it already is. */}
+                <Pressable style={styles.rediscoverBanner} onPress={() => router.push("/rediscover")}>
+                  <Text style={styles.rediscoverBannerTitle}>
+                    🌱 Rediscover — find skills, work, and collaborators in your Village
+                  </Text>
+                  <Text style={styles.rediscoverBannerSubtitle}>
+                    A separate space to showcase what you make or offer, find what you need, and message other mothers.
+                  </Text>
+                </Pressable>
+
                 <Pressable style={styles.startButton} onPress={() => router.push("/community-new")}>
                   <Ionicons name="add" size={18} color={Colors.ivory} />
                   <Text style={styles.startButtonText}>Start a discussion</Text>
@@ -483,6 +496,17 @@ const styles = StyleSheet.create({
   },
   resetGalleryTitle: { fontFamily: Fonts.bodyBold, fontSize: 13.5, color: Colors.terracotta },
   resetGallerySubtitle: { fontFamily: Fonts.body, fontSize: 11.5, color: Colors.ink + "8c", marginTop: 2 },
+
+  rediscoverBanner: {
+    backgroundColor: Colors.goldDeep + "12",
+    borderWidth: 1,
+    borderColor: Colors.goldDeep + "40",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+  },
+  rediscoverBannerTitle: { fontFamily: Fonts.bodyBold, fontSize: 13.5, color: Colors.goldDeep },
+  rediscoverBannerSubtitle: { fontFamily: Fonts.body, fontSize: 11.5, color: Colors.ink + "8c", marginTop: 2 },
 
   startButton: {
     flexDirection: "row",
