@@ -16,6 +16,7 @@ import {
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Clipboard from "expo-clipboard";
 import { supabase } from "../../lib/supabase";
 import { hasActiveSubscription } from "../../lib/subscription";
 import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } from "../../lib/weekCalculator";
@@ -663,6 +664,55 @@ function CheckinView({
   );
 }
 
+// Pregnancy NORMALISE moment — ported 2026-09-21 from the web build (see
+// CareWeekContent.tsx / CLAUDE.md). Same unconditional week_number 28-39
+// gate, same verbatim card text, same share-message mechanism — just using
+// expo-clipboard instead of navigator.clipboard.
+function PregnancyMentalHealthNormalise() {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const shareMessage =
+    "Something worth knowing, before the baby comes: after birth, some " +
+    "mothers go through real emotional changes — persistent low mood, " +
+    "anxiety, numbness, or feeling unlike themselves. It's common, and it " +
+    "says nothing about how much she loves the baby. If you notice this " +
+    "in her, or she tells you something feels off, the best thing you can " +
+    "do is take it seriously and gently help her reach support. She " +
+    "doesn't have to figure out what it is before either of you act on it.";
+
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(shareMessage);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <View style={styles.normaliseCard}>
+      <Text style={styles.normaliseEyebrow}>A note for after birth</Text>
+      <Text style={styles.body}>
+        Emotional changes after having a baby are common. But persistent
+        sadness, anxiety, fear, numbness or feeling unlike yourself deserve
+        attention too. You don&apos;t have to decide what it is. You just
+        have to tell someone.
+      </Text>
+      <Pressable onPress={() => setOpen(!open)} style={{ marginTop: 10 }}>
+        <Text style={styles.normaliseToggle}>
+          {open ? "Hide the message" : "Share this with someone close to you →"}
+        </Text>
+      </Pressable>
+      {open && (
+        <View style={styles.normaliseShareBox}>
+          <Text style={styles.smallNote}>{shareMessage}</Text>
+          <Pressable style={styles.button} onPress={handleCopy}>
+            <Text style={styles.buttonText}>{copied ? "Copied!" : "Copy this text"}</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
+}
+
 function CareWeekView({
   week,
   checkin,
@@ -702,6 +752,8 @@ function CareWeekView({
       <Text style={styles.body}>Small steps. Big difference.</Text>
       {week.mantra && <Text style={styles.mantra}>"{week.mantra}"</Text>}
       <Text style={styles.weekTheme}>{week.theme_title}</Text>
+
+      {week.week_number >= 28 && week.week_number <= 39 && <PregnancyMentalHealthNormalise />}
 
       <MoveCard move={week.move} deliveryType={deliveryType} />
 
@@ -1274,6 +1326,14 @@ const styles = StyleSheet.create({
   careTeamHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   careTeamWhoTag: { ...moduleEyebrow, marginBottom: 0 },
   careTeamLede: { fontFamily: Fonts.bodyBold, color: Colors.ink },
+  // Pregnancy NORMALISE moment, 2026-09-21 — see PregnancyMentalHealthNormalise
+  // above. Terracotta accent, matching every other mental-health-adjacent
+  // surface (mentalHealthCard, safetyLink) rather than the indigo used for
+  // ordinary daily-chart cards.
+  normaliseCard: { ...moduleCard(Colors.terracotta) },
+  normaliseEyebrow: { ...moduleEyebrow, color: Colors.terracotta, marginBottom: 6 },
+  normaliseToggle: { fontFamily: Fonts.bodyBold, fontSize: 13, color: Colors.terracotta },
+  normaliseShareBox: { marginTop: 10, backgroundColor: Colors.ivory, borderRadius: 12, borderWidth: 1, borderColor: Colors.line, padding: 12 },
   mentalHealthCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
   mentalHealthText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.indigo },
   rediscoverCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },

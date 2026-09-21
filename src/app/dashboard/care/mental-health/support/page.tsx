@@ -2,15 +2,12 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hasActiveSubscription } from "@/lib/subscription";
 import LockedPreview from "@/components/LockedPreview";
+import ReachSomeoneAction from "./ReachSomeoneAction";
 
 const ACTIONS = [
   {
     title: "Get through the next 10 minutes",
     line: "Put your baby somewhere safe (crib, cot, or with someone else) and step into another room for a few minutes if you need to. It's okay to put your baby down and walk away to breathe.",
-  },
-  {
-    title: "Reach one person",
-    line: "You don't have to explain everything. A single message — \"having a hard time, can you call me\" — is enough to start.",
   },
   {
     title: "Lower the bar for today",
@@ -51,7 +48,14 @@ export default async function SupportForTodayPage() {
         />
       ) : (
         <div className="space-y-4">
-          {ACTIONS.map((a) => (
+          <div className="bg-ivory-2 rounded-2xl border border-line p-5">
+            <h2 className="font-display text-base text-indigo mb-1.5">{ACTIONS[0].title}</h2>
+            <p className="text-[13px] text-ink/70 leading-relaxed">{ACTIONS[0].line}</p>
+          </div>
+
+          <ReachSomeoneAction />
+
+          {ACTIONS.slice(1).map((a) => (
             <div key={a.title} className="bg-ivory-2 rounded-2xl border border-line p-5">
               <h2 className="font-display text-base text-indigo mb-1.5">{a.title}</h2>
               <p className="text-[13px] text-ink/70 leading-relaxed">{a.line}</p>

@@ -13,9 +13,12 @@ export default async function AboutPPDPage() {
       <Link href="/dashboard/care/mental-health" className="text-xs font-semibold text-ink/45 hover:text-indigo mb-3 inline-block">
         ← Mental health &amp; support
       </Link>
-      <h1 className="font-display text-[26px] text-indigo mb-4">
-        Could this be postpartum depression or anxiety?
+      <h1 className="font-display text-[26px] text-indigo mb-1">
+        Postpartum depression &amp; anxiety
       </h1>
+      <p className="text-xs uppercase tracking-wide text-ink/40 font-semibold mb-4">
+        sometimes called perinatal depression and anxiety (PPD / PPA)
+      </p>
 
       {!isSubscribed ? (
         <LockedPreview
@@ -52,24 +55,58 @@ export default async function AboutPPDPage() {
             </p>
           </div>
 
+          <p>
+            Everyone experiences this differently, and you don&apos;t need
+            every item on either list for it to be real — the two often
+            overlap, and plenty of mothers experience both together.
+          </p>
+
           <div>
             <h2 className="font-display text-lg text-indigo mb-2">
-              What it can look like
+              Postpartum depression
             </h2>
-            <p className="mb-2">
-              Everyone experiences this differently, and you don&apos;t need
-              every item on a list for it to be real. Some common signs:
+            <p className="mb-2 text-[13px] text-ink/60">
+              Persistent low mood or a flatness that doesn&apos;t lift on
+              its own — different from ordinary tiredness, and different
+              from the baby blues in how long it lasts and how much it
+              affects you.
             </p>
             <ul className="list-disc pl-5 space-y-1.5">
               <li>Persistent sadness, hopelessness, or crying that doesn&apos;t feel tied to anything in particular</li>
-              <li>Constant worry, racing thoughts, or a sense of dread that&apos;s hard to switch off</li>
               <li>Feeling numb, flat, or disconnected from your baby, or guilty about not &ldquo;feeling the way you should&rdquo;</li>
-              <li>Trouble sleeping even when your baby is asleep, or sleeping far more than usual</li>
               <li>Loss of interest in things you&apos;d normally enjoy</li>
+              <li>Trouble sleeping even when your baby is asleep, or sleeping far more than usual</li>
               <li>Difficulty concentrating or making even small decisions</li>
-              <li>Intrusive, unwanted thoughts that scare you</li>
-              <li>Thoughts of harming yourself or your baby</li>
             </ul>
+          </div>
+
+          <div>
+            <h2 className="font-display text-lg text-indigo mb-2">
+              Postpartum anxiety
+            </h2>
+            <p className="mb-2 text-[13px] text-ink/60">
+              Less talked about than depression, and at least as common —
+              it often shows up as worry rather than sadness, so it can be
+              missed or brushed off as ordinary new-mother nerves.
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5">
+              <li>Constant worry, racing thoughts, or a sense of dread that&apos;s hard to switch off</li>
+              <li>Feeling on edge, restless, or unable to sit still or relax</li>
+              <li>Physical symptoms — a racing heart, nausea, dizziness — with no other cause</li>
+              <li>Repeatedly checking on your baby, or intrusive &ldquo;what if&rdquo; thoughts about something happening to them</li>
+              <li>Intrusive, unwanted thoughts that scare you</li>
+            </ul>
+          </div>
+
+          <div className="bg-terracotta/10 border border-terracotta/30 rounded-xl p-4">
+            <p className="text-sm text-ink/80">
+              Thoughts of harming yourself or your baby are different from
+              either of the above — they always deserve immediate attention,
+              whatever else is or isn&apos;t going on.{" "}
+              <Link href="/safety" className="font-semibold text-terracotta underline">
+                Go to emergency numbers and support →
+              </Link>
+            </p>
           </div>
 
           <div className="bg-terracotta/10 border border-terracotta/30 rounded-2xl p-5">

@@ -587,6 +587,69 @@ function MoveSection({
   );
 }
 
+// Pregnancy NORMALISE moment — new 2026-09-21, Phase 2 of the Maternal
+// Mental Health / PPD+PPA integration (see CLAUDE.md). Roop's own framing:
+// mothers shouldn't first meet this content only once they're already
+// struggling. Shown for week_number 28-39 (third trimester start through
+// birth) — deliberately unconditional, not gated by mood or check-in,
+// since the whole point is she (and whoever she shares it with) sees this
+// before she needs it. Matches ACOG's own recommendation to give
+// educational material to both the mother and her support system ahead of
+// delivery. Not stored in the DB — static content, same as the safety
+// footer, so no migration was needed for this piece. The card text itself
+// is Roop's own words, verbatim.
+function PregnancyMentalHealthNormalise() {
+  const [copied, setCopied] = useState(false);
+
+  const shareMessage =
+    "Something worth knowing, before the baby comes: after birth, some " +
+    "mothers go through real emotional changes — persistent low mood, " +
+    "anxiety, numbness, or feeling unlike themselves. It's common, and it " +
+    "says nothing about how much she loves the baby. If you notice this " +
+    "in her, or she tells you something feels off, the best thing you can " +
+    "do is take it seriously and gently help her reach support. She " +
+    "doesn't have to figure out what it is before either of you act on it.";
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareMessage);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard may be unavailable — she can still select and copy manually
+    }
+  };
+
+  return (
+    <div className="mt-4 bg-terracotta/10 rounded-2xl border border-terracotta/30 p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-terracotta mb-2">
+        A note for after birth
+      </p>
+      <p className="text-sm text-ink/80 mb-3">
+        Emotional changes after having a baby are common. But persistent
+        sadness, anxiety, fear, numbness or feeling unlike yourself deserve
+        attention too. You don&apos;t have to decide what it is. You just
+        have to tell someone.
+      </p>
+      <details className="text-sm">
+        <summary className="cursor-pointer font-semibold text-terracotta">
+          Share this with someone close to you →
+        </summary>
+        <div className="mt-3 bg-ivory rounded-xl border border-line p-4">
+          <p className="text-[13px] text-ink/70 mb-3">{shareMessage}</p>
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="text-sm font-semibold px-5 py-2 rounded-full bg-terracotta text-ivory"
+          >
+            {copied ? "Copied!" : "Copy this text"}
+          </button>
+        </div>
+      </details>
+    </div>
+  );
+}
+
 // Heavy-day safety bridge — new 2026-07-29, Phase 1 of the Maternal Mental
 // Health / PPD integration (see CLAUDE.md). Shown only when her check-in's
 // mood lands on "heavy day" — the one moment the app already knows she's
@@ -845,6 +908,8 @@ export default function CareWeekContent({
             </p>
           </div>
         )}
+
+        {week.week_number >= 28 && week.week_number <= 39 && <PregnancyMentalHealthNormalise />}
       </div>
 
       {/* Linear, single-column list of collapsed-by-default cards — changed
