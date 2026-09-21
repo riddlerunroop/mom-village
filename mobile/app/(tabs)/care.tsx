@@ -22,7 +22,7 @@ import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } f
 import { calculateNourishLookup, nourishGapWeek } from "../../lib/nourishCalculator";
 import { pickDailyResetIndex } from "../../lib/resetCalculator";
 import { careCategoryForDate, pickCareNoteId, type CareCategory } from "../../lib/careForYourselfCalculator";
-import { Colors, Fonts, iconBadge, moduleCard, moduleTitle } from "../../constants/theme";
+import { Colors, Fonts, iconBadge, moduleCard, moduleTitle, moduleEyebrow } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 import ResetOfTheDay, { type ResetActivityRow } from "../../components/ResetOfTheDay";
 import CareForYourself, { type CareForYourselfNoteRow } from "../../components/CareForYourself";
@@ -135,6 +135,9 @@ type WeekRow = {
   celebrate_this_week: string;
   mental_health_note: string | null;
   for_your_care_team: string;
+  for_your_care_team_who: string | null;
+  for_your_care_team_lede: string | null;
+  for_your_care_team_detail: string | null;
   condition_notes: ConditionNote[] | null;
 };
 
@@ -357,7 +360,7 @@ export default function CareScreen() {
       const { data: weekRow } = await supabase
         .from("care_chart_week_content")
         .select(
-          "week_number, theme_title, mantra, priority, journey, what_you_may_notice, move, nourish, hydration_goal, feeding_comfort, rest_support, reset, care_for_yourself, your_corner, support_moment, celebrate_this_week, mental_health_note, for_your_care_team, condition_notes"
+          "week_number, theme_title, mantra, priority, journey, what_you_may_notice, move, nourish, hydration_goal, feeding_comfort, rest_support, reset, care_for_yourself, your_corner, support_moment, celebrate_this_week, mental_health_note, for_your_care_team, for_your_care_team_who, for_your_care_team_lede, for_your_care_team_detail, condition_notes"
         )
         .eq("week_number", journeyWeek)
         .maybeSingle();
@@ -791,8 +794,20 @@ function CareWeekView({
 
       {hasContent(week.for_your_care_team) && (
         <View style={styles.dayCard}>
-          <Text style={styles.dayCardTitle}>For your care team</Text>
-          <Text style={styles.body}>{week.for_your_care_team}</Text>
+          <View style={styles.careTeamHeaderRow}>
+            <Text style={styles.dayCardTitle}>For your care team</Text>
+            {hasContent(week.for_your_care_team_who) && (
+              <Text style={styles.careTeamWhoTag}>{week.for_your_care_team_who}</Text>
+            )}
+          </View>
+          {hasContent(week.for_your_care_team_lede) && hasContent(week.for_your_care_team_detail) ? (
+            <Text style={styles.body}>
+              <Text style={styles.careTeamLede}>{week.for_your_care_team_lede}: </Text>
+              {week.for_your_care_team_detail}
+            </Text>
+          ) : (
+            <Text style={styles.body}>{week.for_your_care_team}</Text>
+          )}
         </View>
       )}
 
@@ -1256,6 +1271,9 @@ const styles = StyleSheet.create({
   // which the check-in screen still uses and wasn't part of this feedback.
   dayCard: moduleCard(Colors.indigo),
   dayCardTitle: { ...moduleTitle, marginBottom: 4 },
+  careTeamHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  careTeamWhoTag: { ...moduleEyebrow, marginBottom: 0 },
+  careTeamLede: { fontFamily: Fonts.bodyBold, color: Colors.ink },
   mentalHealthCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
   mentalHealthText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.indigo },
   rediscoverCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },

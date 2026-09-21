@@ -187,6 +187,9 @@ export type CareWeekRow = {
   celebrate_this_week: string;
   mental_health_note?: string | null;
   for_your_care_team: string;
+  for_your_care_team_who?: string | null;
+  for_your_care_team_lede?: string | null;
+  for_your_care_team_detail?: string | null;
   condition_notes?: ConditionNote[] | null;
   closing_note?: string | null;
 };
@@ -1007,10 +1010,24 @@ export default function CareWeekContent({
 
       {hasContent(week.for_your_care_team) && (
         <div className="mt-5 bg-indigo/5 rounded-2xl border border-indigo/20 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-indigo mb-1.5">
-            For your care team
-          </p>
-          <p className="text-[13px] text-ink/70">{week.for_your_care_team}</p>
+          <div className="flex items-center justify-between gap-3 mb-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-indigo">
+              For your care team
+            </p>
+            {hasContent(week.for_your_care_team_who) && (
+              <span className="text-[11px] font-medium text-indigo/60 whitespace-nowrap">
+                {week.for_your_care_team_who}
+              </span>
+            )}
+          </div>
+          {hasContent(week.for_your_care_team_lede) && hasContent(week.for_your_care_team_detail) ? (
+            <p className="text-[13px] text-ink/70">
+              <span className="font-semibold text-ink/85">{week.for_your_care_team_lede}: </span>
+              {week.for_your_care_team_detail}
+            </p>
+          ) : (
+            <p className="text-[13px] text-ink/70">{week.for_your_care_team}</p>
+          )}
         </div>
       )}
 

@@ -26,7 +26,7 @@ function OnboardingPageInner() {
     setError("");
 
     if (stage === "born" && !deliveryType) {
-      setError("Let us know how she delivered, so we can tailor the fitness plan safely.");
+      setError("Let us know how you delivered, so we can tailor the fitness plan safely.");
       return;
     }
 

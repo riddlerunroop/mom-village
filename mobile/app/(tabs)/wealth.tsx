@@ -86,7 +86,7 @@ export default function WealthScreen() {
     <View style={styles.screen}>
       <ScreenHeader />
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        <Text style={styles.eyebrow}>her own security</Text>
+        <Text style={styles.eyebrow}>your own security</Text>
         <Text style={styles.title}>Wealth & direction</Text>
         <Text style={styles.intro}>
           Government schemes, how to save for these first years, and how to stay financially

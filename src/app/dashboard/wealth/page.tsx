@@ -12,7 +12,7 @@ export default async function WealthPage() {
   return (
     <main className="max-w-[900px] mx-auto px-6 py-10">
       <div className="mb-2 text-xs uppercase tracking-[0.12em] text-sage-deep font-semibold">
-        her own security
+        your own security
       </div>
       <h1 className="font-display text-[30px] text-indigo mb-2">
         Wealth &amp; direction

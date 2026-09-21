@@ -263,13 +263,13 @@ export default async function Home() {
       <section id="chart" className="bg-indigo py-18 px-8">
         <div className="max-w-[1080px] mx-auto text-center">
           <div className="text-xs tracking-[0.12em] uppercase text-gold font-semibold mb-2">
-            her first 1000 days
+            your first 1000 days
           </div>
           <h2 className="text-[32px] text-ivory mb-2">
             Every month, mapped for you
           </h2>
           <p className="text-ivory/75 max-w-[480px] mx-auto mb-12 text-[15px]">
-            Money, milestones, and how her own body is recovering and getting
+            Money, milestones, and how your own body is recovering and getting
             stronger — delivered the first of every month, from pregnancy
             through age three.
           </p>
@@ -353,10 +353,10 @@ export default async function Home() {
               more than a workout
             </div>
             <h2 className="text-[32px] text-indigo mt-2">
-              Her body, mind, and days — cared for too
+              Your body, mind, and days — cared for too
             </h2>
             <p className="text-ink/68 text-[15px] mt-3">
-              Matched to her pregnancy or postpartum stage — not a generic
+              Matched to your pregnancy or postpartum stage — not a generic
               &quot;bounce back&quot; plan, and never crunches or guilt.
             </p>
           </div>
