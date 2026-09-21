@@ -13,7 +13,7 @@ import {
   StyleSheet,
   Linking,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
@@ -540,12 +540,11 @@ function LandingView({
         <Ionicons name="chevron-forward" size={16} color={Colors.ink + "60"} />
       </Pressable>
 
-      {/* Rediscover — native screens built 2026-09-19, see CLAUDE.md. */}
-      <Pressable style={styles.rediscoverCard} onPress={() => router.push("/rediscover")}>
-        <Ionicons name="sparkles" size={22} color={Colors.goldDeep} />
-        <Text style={styles.rediscoverText}>Rediscover</Text>
-        <Ionicons name="chevron-forward" size={16} color={Colors.ink + "60"} />
-      </Pressable>
+      {/* Rediscover pointer card removed, 2026-09-21 — Roop's explicit call
+          to pull Rediscover out of Care entirely, including this landing
+          screen, and give it its own 6th tab in the bottom nav instead (see
+          app/(tabs)/rediscover.tsx and CLAUDE.md's "Rediscover placement"
+          entry). Do not reintroduce a Rediscover pointer here. */}
 
       <Pressable onPress={() => Linking.openURL("https://www.momvillage.in/safety")}>
         <Text style={styles.safetyLink}>
@@ -1336,8 +1335,6 @@ const styles = StyleSheet.create({
   normaliseShareBox: { marginTop: 10, backgroundColor: Colors.ivory, borderRadius: 12, borderWidth: 1, borderColor: Colors.line, padding: 12 },
   mentalHealthCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
   mentalHealthText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.indigo },
-  rediscoverCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
-  rediscoverText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.goldDeep },
   safetyLink: { fontSize: 12, fontFamily: Fonts.bodySemiBold, color: Colors.terracotta, marginBottom: 20, textDecorationLine: "underline" },
   sectionKicker: { fontSize: 11, fontFamily: Fonts.bodyBold, textTransform: "uppercase", letterSpacing: 1, color: Colors.sageDeep, marginBottom: 10, marginTop: 4 },
   pillarRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: Colors.line },

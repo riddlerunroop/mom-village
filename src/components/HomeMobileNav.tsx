@@ -73,6 +73,15 @@ export default function HomeMobileNav({ isLoggedIn }: { isLoggedIn: boolean }) {
                 </Link>
               </li>
             ))}
+            <li>
+              <Link
+                href={dest("/dashboard/rediscover")}
+                onClick={close}
+                className="block py-3 border-b border-line"
+              >
+                Rediscover
+              </Link>
+            </li>
             {!isLoggedIn && (
               <li>
                 <Link

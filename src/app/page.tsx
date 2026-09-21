@@ -4,9 +4,12 @@ import HomeMobileNav from "@/components/HomeMobileNav";
 import ExploreDropdown from "@/components/ExploreDropdown";
 
 // Nav restructured 2026-07-28 — Roop's review: "nav reads a little
-// crowded" (6 top-level items). Now just 3: Monthly chart, an "Explore"
-// dropdown grouping the other four pillars (see ExploreDropdown.tsx — made
+// crowded" (6 top-level items). Reduced to 3: Monthly chart, an "Explore"
+// dropdown grouping four pillars (see ExploreDropdown.tsx — made
 // tap-friendly 2026-07-30, audit finding #17), and Pricing (guests only).
+// Rediscover added as its own top-level link 2026-09-21, NOT folded into
+// Explore — Roop's explicit call once it grew into a real independent
+// marketplace pillar, not something to bury inside a grouped dropdown.
 // Every link still routes through login/onboarding for guests and straight
 // to the real page for members, via the dest() helper below — clicking a
 // pillar should lead toward actually getting it, not just scroll to a
@@ -22,10 +25,13 @@ const HERO_PREVIEW = [
   { label: "Appointments & Safety", accent: "terracotta", line: "Her 6-week checkup — growth, feeding, and your own recovery." },
 ];
 
-// Four pillars, matching what's actually built — 2026-07-27 pre-Razorpay
+// Five pillars, matching what's actually built — 2026-07-27 pre-Razorpay
 // review found Wealth was missing entirely and Community's copy promised
 // anonymity the real feature doesn't have (real profile names, one open
-// forum, no groups). Both fixed here.
+// forum, no groups). Both fixed here. Rediscover added 2026-09-21 — pulled
+// out of Care Chart entirely into its own independent pillar (a real
+// marketplace: profiles, listings, needs, messaging, recommendations), per
+// Roop's explicit call once it had outgrown being one card inside Care.
 const pillars = [
   {
     num: "1",
@@ -51,19 +57,26 @@ const pillars = [
     body: "One open forum under your real name — search past discussions, ask anything, and see what other mothers at your stage are actually going through.",
     href: "/dashboard/community",
   },
+  {
+    num: "5",
+    title: "Rediscover",
+    body: "Showcase what you make or offer, find what you need, or just explore ideas — and connect with other mothers building something of their own.",
+    href: "/dashboard/rediscover",
+  },
 ];
 
 // Shortened deliberately (2026-07-27) — this used to be two long grids (10
 // cards, plus two non-functional "Normal delivery / C-section" toggle
 // buttons) describing a structure that didn't match what's actually built.
-// Now: the five real pillars, one line each, matching Body/Food/Mind/Skin/
-// Rediscover across all 9 phases.
+// Now: the four real Care Chart pillars, one line each — Body/Food/Mind/
+// Skin. Rediscover pulled out entirely 2026-09-19/21 (see the pillars
+// section above) — it's now its own independent pillar, not part of Care,
+// so it no longer belongs in this grid.
 const careCards = [
   { label: "Body", body: "Named exercises for pregnancy through year three — never a generic \"go for a walk.\"" },
   { label: "Food", body: "Real guidance for your stage, with PCOS- and gestational-diabetes-specific notes where they apply." },
   { label: "Mind", body: "A weekly mantra and real tools for hard days, not just \"stay positive.\"" },
   { label: "Skin", body: "A real morning-and-night routine for your stage, not just \"keep it simple.\"" },
-  { label: "Rediscover", body: "Small things that are just for you — not baby-related, not another chore." },
 ];
 
 // Illustrative preview of one real month's chart — same six categories and
@@ -135,6 +148,11 @@ export default async function Home() {
             </Link>
           </li>
           <ExploreDropdown isLoggedIn={!!user} />
+          <li className="whitespace-nowrap">
+            <Link href={dest("/dashboard/rediscover")} className="hover:text-gold-deep transition-colors">
+              Rediscover
+            </Link>
+          </li>
           {!user && (
             <li className="whitespace-nowrap">
               <Link href="#pricing" className="hover:text-gold-deep transition-colors">
@@ -322,10 +340,10 @@ export default async function Home() {
               what&apos;s inside
             </div>
             <h2 className="text-[32px] text-indigo mt-2">
-              Four things, always with you
+              Five things, always with you
             </h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {pillars.map((p) => (
               <Link
                 key={p.num}
@@ -360,7 +378,7 @@ export default async function Home() {
               &quot;bounce back&quot; plan, and never crunches or guilt.
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4.5 mb-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4.5 mb-8">
             {careCards.map((c) => (
               <Link
                 key={c.label}

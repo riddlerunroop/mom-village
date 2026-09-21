@@ -1,17 +1,27 @@
-// Rediscover — native landing screen, 2026-09-19. Port of
-// src/app/dashboard/rediscover/page.tsx. Pushed from Care's landing screen
-// and from Community's banner (both updated to router.push("/rediscover")
-// instead of opening the website) — see CLAUDE.md's "Rediscover" entry for
-// the full spec and every decision behind it.
+// Rediscover — now its own top-level tab, 2026-09-21. Moved out of a
+// pushed route reached only via Care's landing screen and Community's
+// banner (mobile/app/rediscover.tsx, built 2026-09-19) into a real 6th tab
+// in the bottom bar, per Roop's explicit call: Rediscover has grown into a
+// real marketplace (profiles, listings, needs, messaging, recommendations)
+// and should read as a fully independent pillar, not something tucked
+// inside Care. See CLAUDE.md's "Rediscover placement" entry for the full
+// decision. Community's banner link (community.tsx) still points at
+// "/rediscover" and keeps working unchanged, since a group folder like
+// (tabs) doesn't change the route's URL segment — only the file's location
+// on disk moved, so nothing that already links to "/rediscover" needed to
+// change. Content/logic below is otherwise identical to the file this
+// replaces; only the header (DrillHeader → ScreenHeader, since this is now
+// a tab root, not a pushed screen with a back arrow) and relative import
+// depth (one directory deeper under app/(tabs)/) changed.
 
 import { useCallback, useState } from "react";
 import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet, Linking } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { supabase } from "../lib/supabase";
-import { hasActiveSubscription } from "../lib/subscription";
-import { Colors, Fonts, CardStyle, iconBadge } from "../constants/theme";
-import DrillHeader from "../components/DrillHeader";
+import { supabase } from "../../lib/supabase";
+import { hasActiveSubscription } from "../../lib/subscription";
+import { Colors, Fonts, CardStyle, iconBadge } from "../../constants/theme";
+import ScreenHeader from "../../components/ScreenHeader";
 
 const DOORS = [
   { key: "explore", icon: "leaf-outline" as const, title: "Explore", body: "I don't know my thing yet — show me ideas.", route: "/rediscover-explore" as const },
@@ -64,7 +74,7 @@ export default function RediscoverLandingScreen() {
 
   return (
     <View style={styles.screen}>
-      <DrillHeader title="Rediscover" />
+      <ScreenHeader />
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 50 }}>
         <Text style={styles.kicker}>something of yours can begin here</Text>
         <Text style={styles.title}>Rediscover</Text>

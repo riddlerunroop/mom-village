@@ -1,6 +1,11 @@
-// Five-tab nav per the 2026-07-31 layout brief: Today / Care / Wealth /
-// Library / Community. Account moved OUT of the tab bar entirely — it's
-// reached via the profile icon in ScreenHeader now (see components/
+// Six-tab nav: Today / Care / Wealth / Library / Community / Rediscover.
+// Started as five per the 2026-07-31 layout brief; Rediscover added as its
+// own 6th tab 2026-09-21, per Roop's explicit call to pull it out of Care
+// Chart entirely — it had grown into a real marketplace (profiles,
+// listings, needs, messaging, recommendations) and deserved to read as an
+// independent pillar, not something tucked inside Care. See CLAUDE.md's
+// "Rediscover placement" entry. Account stays OUT of the tab bar — it's
+// reached via the profile icon in ScreenHeader (see components/
 // ScreenHeader.tsx and app/account.tsx).
 
 import { Text } from "react-native";
@@ -54,6 +59,13 @@ export default function TabsLayout() {
         options={{
           title: "Community",
           tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="rediscover"
+        options={{
+          title: "Rediscover",
+          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles" size={size} color={color} />,
         }}
       />
     </Tabs>
