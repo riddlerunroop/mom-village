@@ -8,7 +8,7 @@ import { useState } from "react";
 import { View, Text, Pressable, ActivityIndicator, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "../lib/supabase";
-import { Colors, Fonts } from "../constants/theme";
+import { Colors, Fonts, moduleCard, moduleTitle, moduleEyebrow } from "../constants/theme";
 import { justUnlockedResetBadge, RESET_BADGE_LABELS } from "../lib/resetCalculator";
 
 export type ResetActivityRow = {
@@ -69,13 +69,14 @@ export default function ResetOfTheDay({
 
   return (
     <View style={styles.card}>
+      <Text style={styles.moduleTitle}>Reset</Text>
       <Text style={styles.eyebrow}>Need a Reset?</Text>
 
       {phase === "offer" && (
         <>
           <View style={styles.headerRow}>
             <Text style={styles.emoji}>{activity.emoji}</Text>
-            <Text style={styles.title}>{activity.title}</Text>
+            <Text style={styles.activityTitle}>{activity.title}</Text>
           </View>
           <Text style={styles.body}>{activity.body}</Text>
           <View style={styles.buttonRow}>
@@ -103,7 +104,7 @@ export default function ResetOfTheDay({
           <View style={styles.headerRow}>
             <Text style={styles.emoji}>{activity.emoji}</Text>
             <View>
-              <Text style={styles.title}>{activity.title}</Text>
+              <Text style={styles.activityTitle}>{activity.title}</Text>
               <Text style={styles.doneLabel}>Reset done ✓</Text>
             </View>
           </View>
@@ -133,25 +134,15 @@ export default function ResetOfTheDay({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.terracotta + "14",
-    borderTopWidth: 3,
-    borderTopColor: Colors.terracotta,
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 16,
-  },
+  card: moduleCard(Colors.terracotta),
+  moduleTitle: { ...moduleTitle, marginBottom: 2 },
   eyebrow: {
-    fontFamily: Fonts.bodyBold,
-    fontSize: 11,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    color: Colors.terracotta,
+    ...moduleEyebrow,
     marginBottom: 10,
   },
   headerRow: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 10 },
   emoji: { fontSize: 30, lineHeight: 34 },
-  title: { fontFamily: Fonts.display, fontSize: 17, color: Colors.indigo },
+  activityTitle: { fontFamily: Fonts.displayBold, fontSize: 16, color: Colors.indigo },
   body: { fontFamily: Fonts.body, fontSize: 14, lineHeight: 20, color: Colors.ink + "CC", marginBottom: 14 },
   buttonRow: { flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" },
   primaryButton: {

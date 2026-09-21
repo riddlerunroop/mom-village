@@ -21,7 +21,7 @@
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { supabase } from "../lib/supabase";
-import { Colors, Fonts, iconBadge } from "../constants/theme";
+import { Colors, Fonts, iconBadge, moduleCard, moduleTitle, moduleEyebrow } from "../constants/theme";
 import { CARE_CATEGORY_META, careWeekAcknowledgment, type CareCategory } from "../lib/careForYourselfCalculator";
 
 export type CareForYourselfNoteRow = {
@@ -76,14 +76,14 @@ export default function CareForYourself({
   return (
     <Pressable style={styles.card} onPress={() => setOpen((o) => !o)}>
       <View style={styles.headerRow}>
-        <View style={iconBadge(Colors.indigo, 40)}>
+        <View style={iconBadge(Colors.goldDeep, 40)}>
           <Text style={{ fontSize: 18 }}>{meta.emoji}</Text>
         </View>
         <View style={{ flex: 1 }}>
+          <Text style={[styles.title, done && styles.titleDone]}>Care for yourself</Text>
           <Text style={styles.eyebrow}>
             {meta.dayLabel.toUpperCase()} · {meta.label.toUpperCase()}
           </Text>
-          <Text style={[styles.title, done && styles.titleDone]}>Care for yourself</Text>
         </View>
         <Text style={styles.chevron}>{open ? "︿" : "﹀"}</Text>
       </View>
@@ -121,25 +121,11 @@ export default function CareForYourself({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: Colors.line,
-  },
+  card: moduleCard(Colors.goldDeep),
   headerRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  eyebrow: {
-    fontSize: 11,
-    fontFamily: Fonts.bodyBold,
-    color: Colors.goldDeep,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  title: { fontSize: 16, fontFamily: Fonts.bodySemiBold, color: Colors.indigo },
+  title: { ...moduleTitle, marginBottom: 2 },
   titleDone: { color: Colors.ink + "80", textDecorationLine: "line-through" },
+  eyebrow: moduleEyebrow,
   chevron: { fontSize: 14, color: Colors.ink + "60", marginTop: 2 },
   body: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: Colors.line, gap: 8 },
   headline: { fontSize: 13, fontFamily: Fonts.bodyBold, color: Colors.indigo },

@@ -22,7 +22,7 @@ import { calculateCareWeek, careWeekLabel, carePhaseLabel, journeyWeekNumber } f
 import { calculateNourishLookup, nourishGapWeek } from "../../lib/nourishCalculator";
 import { pickDailyResetIndex } from "../../lib/resetCalculator";
 import { careCategoryForDate, pickCareNoteId, type CareCategory } from "../../lib/careForYourselfCalculator";
-import { Colors, Fonts, iconBadge } from "../../constants/theme";
+import { Colors, Fonts, iconBadge, moduleCard, moduleTitle } from "../../constants/theme";
 import ScreenHeader from "../../components/ScreenHeader";
 import ResetOfTheDay, { type ResetActivityRow } from "../../components/ResetOfTheDay";
 import CareForYourself, { type CareForYourselfNoteRow } from "../../components/CareForYourself";
@@ -740,16 +740,16 @@ function CareWeekView({
           screen above). Do not reintroduce this card. */}
 
       {(hasContent(week.feeding_comfort) || hasContent(week.rest_support)) && (
-        <View style={styles.card}>
+        <View style={styles.dayCard}>
           {hasContent(week.feeding_comfort) && (
             <>
-              <Text style={styles.cardTitle}>Feeding comfort</Text>
+              <Text style={styles.dayCardTitle}>Feeding comfort</Text>
               <Text style={styles.body}>{week.feeding_comfort}</Text>
             </>
           )}
           {hasContent(week.rest_support) && (
             <>
-              <Text style={[styles.cardTitle, { marginTop: hasContent(week.feeding_comfort) ? 12 : 0 }]}>
+              <Text style={[styles.dayCardTitle, { marginTop: hasContent(week.feeding_comfort) ? 12 : 0 }]}>
                 Rest support
               </Text>
               <Text style={styles.body}>{week.rest_support}</Text>
@@ -759,8 +759,8 @@ function CareWeekView({
       )}
 
       {relevantConditionNotes.filter((n) => hasContent(n.note)).length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>If this applies to you</Text>
+        <View style={styles.dayCard}>
+          <Text style={styles.dayCardTitle}>If this applies to you</Text>
           {relevantConditionNotes.filter((n) => hasContent(n.note)).map((n, i) => (
             <Text key={i} style={styles.body}>
               {n.note}
@@ -770,28 +770,28 @@ function CareWeekView({
       )}
 
       {hasContent(week.mental_health_note) && (
-        <View style={styles.card}>
+        <View style={styles.dayCard}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="heart-circle" size={18} color={Colors.terracotta} />
-            <Text style={styles.cardTitle}>Mental health & support</Text>
+            <Text style={styles.dayCardTitle}>Mental health & support</Text>
           </View>
           <Text style={styles.body}>{week.mental_health_note}</Text>
         </View>
       )}
 
       {hasContent(week.celebrate_this_week) && (
-        <View style={styles.card}>
+        <View style={styles.dayCard}>
           <View style={styles.cardTitleRow}>
             <Ionicons name="trophy-outline" size={18} color={Colors.goldDeep} />
-            <Text style={styles.cardTitle}>Celebrate this week</Text>
+            <Text style={styles.dayCardTitle}>Celebrate this week</Text>
           </View>
           <Text style={styles.body}>{week.celebrate_this_week}</Text>
         </View>
       )}
 
       {hasContent(week.for_your_care_team) && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>For your care team</Text>
+        <View style={styles.dayCard}>
+          <Text style={styles.dayCardTitle}>For your care team</Text>
           <Text style={styles.body}>{week.for_your_care_team}</Text>
         </View>
       )}
@@ -829,7 +829,7 @@ function ExpandableCard({
         </View>
         <View style={{ flex: 1 }}>
           <View style={styles.expandTitleRow}>
-            <Text style={styles.cardTitle}>{title}</Text>
+            <Text style={styles.dayCardTitle}>{title}</Text>
             {timeLabel && (
               <View style={styles.timeBadge}>
                 <Text style={styles.timeBadgeText}>{timeLabel}</Text>
@@ -899,7 +899,7 @@ function NourishMealCard({
           <Ionicons name="nutrition-outline" size={19} color={Colors.indigo} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>Nourish</Text>
+          <Text style={styles.dayCardTitle}>Nourish</Text>
           <Text style={styles.body}>
             Day {today.day_number}
             {today.title ? ` — ${today.title}` : ""}: {nourishWeek.theme_title}
@@ -984,7 +984,7 @@ function MoveCard({ move, deliveryType }: { move: MoveContent; deliveryType: str
           <Ionicons name="body-outline" size={19} color={Colors.indigo} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.cardTitle}>Move</Text>
+          <Text style={styles.dayCardTitle}>Move</Text>
           {hasContent(move.theme) && <Text style={styles.body}>{move.theme}</Text>}
           {hasContent(move.mantra) && <Text style={styles.moveCardMantra}>&ldquo;{move.mantra}&rdquo;</Text>}
         </View>
@@ -1248,6 +1248,14 @@ const styles = StyleSheet.create({
   card: { backgroundColor: "#FFFFFF", borderRadius: 18, padding: 18, marginBottom: 14, ...cardShadow },
   cardTitle: { fontSize: 16, fontFamily: Fonts.bodySemiBold, color: Colors.indigo, marginBottom: 4 },
   cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  // Card-consistency pass, 2026-09-21 — every module on today's chart
+  // (Move/Nourish/Feeding comfort/If this applies to you/Mental health &
+  // support/Celebrate this week/For your care team) now shares this one
+  // tinted/top-border shape and this one bold heading style, matching
+  // Reset's own card. Deliberately separate from `card`/`cardTitle` above,
+  // which the check-in screen still uses and wasn't part of this feedback.
+  dayCard: moduleCard(Colors.indigo),
+  dayCardTitle: { ...moduleTitle, marginBottom: 4 },
   mentalHealthCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
   mentalHealthText: { flex: 1, fontSize: 14, fontFamily: Fonts.bodyBold, color: Colors.indigo },
   rediscoverCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
@@ -1287,7 +1295,7 @@ const styles = StyleSheet.create({
   radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 1.5, borderColor: Colors.line },
   radioSelected: { borderColor: Colors.goldDeep, backgroundColor: Colors.goldDeep },
   smallNote: { fontSize: 12, fontFamily: Fonts.body, color: Colors.ink + "8c", marginTop: 4 },
-  expandCard: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 14, marginBottom: 10, ...cardShadow },
+  expandCard: moduleCard(Colors.indigo),
   expandHeaderRow: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
   expandTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
   timeBadge: { backgroundColor: Colors.indigo, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },

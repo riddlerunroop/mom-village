@@ -2,6 +2,18 @@
 
 # Mom Village — Project Status
 
+## Native Care Chart — card/heading consistency pass, 2026-09-21, PUSH PENDING
+
+Roop live-reviewed the native app's daily Care Chart on her phone and flagged it as visually chaotic: Move/Nourish/Reset/Care for yourself/the informational cards (Feeding comfort, If this applies to you, Mental health & support, Celebrate this week, For your care team) were each built on a different card treatment — some plain white cards with a shadow, some plain white with a border, Reset alone tinted with a colored top border — and each module's title used a different font/weight/size. Separately, on the Care for Yourself card specifically, the day/category eyebrow ("MONDAY · FACE TIME") visually outweighed the real heading ("Care for yourself"), the opposite of the intended hierarchy.
+
+Fixed by adding three shared tokens to `mobile/constants/theme.ts` — `moduleCard(accentColor)` (Reset's own tinted-background + colored-top-border shape, now reused by every module so they all share one structure while each keeps its own accent color for quick visual distinction), `moduleTitle` (the one shared bold heading style — Fraunces 700 Bold, indigo, 18px — every module's name now renders in, regardless of module), and `moduleEyebrow` (a small, quiet secondary-caption style for things like the day/category label, deliberately lighter than `moduleTitle` so it can never out-compete the real heading again).
+
+Applied: `ResetOfTheDay.tsx` now actually renders "Reset" as its own bold heading (previously it only ever showed "Need a Reset?" as a small eyebrow with no literal "Reset" heading at all) with "Need a Reset?" demoted to the muted eyebrow above it, and the day's specific activity title moved to a secondary sub-heading. `CareForYourself.tsx`'s header order flipped — "Care for yourself" is now the bold primary heading, the day/category label sits below it as a muted eyebrow — and its card switched from a plain white/bordered box to `moduleCard(Colors.goldDeep)`. `care.tsx`'s Move and Nourish cards, and the generic informational cards (Feeding comfort/Rest support, If this applies to you, Mental health & support, Celebrate this week, For your care team), all switched to a new `dayCard`/`dayCardTitle` pair (`moduleCard(Colors.indigo)` + `moduleTitle`) — kept deliberately separate from the pre-existing `card`/`cardTitle` styles, which the check-in screen (time/energy/mood) still uses and wasn't part of this feedback, so that screen was left untouched.
+
+Verified clean on `npx tsc --noEmit` (zero errors) and `npx expo lint` (18 problems — the exact same pre-existing `react/no-unescaped-entities` baseline already documented elsewhere in this file, zero new issues in any touched file).
+
+**Status: built and verified 2026-09-21, NOT yet pushed via GitHub Desktop.** Roop is reviewing live on her phone via Expo Go before pushing.
+
 ## Rediscover — new standalone marketplace module, built web + native, migration confirmed live, 2026-09-19
 
 Direct follow-on to the Care for Yourself work above, same session-arc but a much bigger scope decision. Roop shared an extensive written concept for redefining "Rediscover" — previously a small Care Chart pillar (three tiny reflective Care Steps per phase) — into a real marketplace: "the optional career, talent, passion and collaboration space within Mom's Village." Asked for a critical opinion before anything was built. Through several rounds of clarification (not all decided at once):

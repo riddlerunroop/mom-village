@@ -51,3 +51,44 @@ export const Fonts = {
   bodySemiBold: "Karla_600SemiBold",
   bodyBold: "Karla_700Bold",
 };
+
+// Care Chart card consistency pass, 2026-09-21 — Roop's live feedback:
+// today's chart read as "chaotic" because Move/Nourish/Care for
+// yourself/Reset/etc. were each built on a different card treatment (some
+// plain white + shadow, some plain white + border, Reset alone tinted with
+// a colored top border), and each module's title used a different
+// font/weight/size. moduleCard() gives every daily-chart card Reset's own
+// tinted/top-border shape (each module keeps its own accent color so
+// they're still visually distinguishable), while moduleTitle is the ONE
+// shared heading style — same font, same weight, same color — every
+// module's name (Move / Nourish / Reset / Care for yourself / etc.) now
+// renders in. Do not give a module's title its own one-off color/weight
+// again; add a new accent to a moduleCard() call instead.
+export function moduleCard(accentColor: string) {
+  return {
+    backgroundColor: accentColor + "14",
+    borderTopWidth: 3,
+    borderTopColor: accentColor,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 14,
+  };
+}
+
+export const moduleTitle = {
+  fontFamily: Fonts.displayBold,
+  fontSize: 18,
+  color: Colors.indigo,
+};
+
+// A quiet, secondary caption — for things like Care for Yourself's
+// "MONDAY · FACE TIME" day/category label, which must read as smaller and
+// less insistent than the module's real heading (moduleTitle above), never
+// competing with it for attention.
+export const moduleEyebrow = {
+  fontFamily: Fonts.bodySemiBold,
+  fontSize: 11,
+  textTransform: "uppercase" as const,
+  letterSpacing: 0.5,
+  color: Colors.ink + "70",
+};
