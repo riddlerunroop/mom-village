@@ -578,13 +578,17 @@ export default async function Home() {
           </p>
 
           {/* CREDIBILITY + SAFETY — added 2026-07-27 per Roop's review.
-              Personal-bio line intentionally left as a placeholder — needs
-              her own words, not invented credentials. */}
+              Personal-bio line replaced 2026-09-22 with Roop's own words —
+              no longer a placeholder. */}
           <div className="max-w-[640px] mx-auto bg-ivory-2 rounded-2xl border border-line p-7 text-center">
-            <p className="text-sm text-ink/80 leading-relaxed mb-3">
-              {/* TODO (Roop): replace with your own 1-2 line story/background */}
-              Mom&apos;s Village is built by Roop, an Indian mother who built
-              the resource she couldn&apos;t find herself.
+            <p className="text-sm text-ink/80 leading-relaxed mb-2 italic">
+              &ldquo;The first thousand days belong to both of them — a baby
+              growing into the world and a mother growing into a new chapter
+              of herself. Mom&apos;s Village was built to guide, care for and
+              celebrate them both.&rdquo;
+            </p>
+            <p className="text-sm font-semibold text-indigo mb-3">
+              — Roop, Founder of Mom&apos;s Village
             </p>
             <p className="text-sm text-ink/80 leading-relaxed">
               Every medical, financial, and government-scheme claim in the app

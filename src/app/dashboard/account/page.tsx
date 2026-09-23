@@ -100,21 +100,30 @@ export default async function AccountPage() {
 
       <div className="bg-ivory-2 rounded-2xl border border-line p-6 mt-8">
         <h2 className="font-display text-lg text-indigo mb-1">Membership</h2>
-        <p className="text-sm text-ink/65 mb-4">
-          {subscription
-            ? "You can cancel anytime — cancelling stops future billing, and you keep access through the end of what you've already paid for."
-            : "You don't currently have an active membership."}{" "}
-          Self-serve cancellation from this page isn&apos;t live yet — for
-          now,{" "}
-          <Link href="/contact" className="underline text-gold-deep font-semibold">
-            contact us
-          </Link>{" "}
-          to cancel or ask about your membership. See our{" "}
-          <Link href="/refund-policy" className="underline text-gold-deep font-semibold">
-            Cancellation &amp; Refund Policy
-          </Link>
-          .
-        </p>
+        {subscription ? (
+          <>
+            <p className="text-sm font-semibold text-ink/85 mt-3 mb-1">
+              Cancel subscription
+            </p>
+            <p className="text-sm text-ink/65 mb-4">
+              Want to cancel?{" "}
+              <Link href="/contact" className="underline text-gold-deep font-semibold">
+                Email us
+              </Link>
+              . We&apos;ll cancel future renewals while keeping your access
+              active until the end of your current paid period. You
+              won&apos;t be charged again. See our{" "}
+              <Link href="/refund-policy" className="underline text-gold-deep font-semibold">
+                Cancellation &amp; Refund Policy
+              </Link>
+              .
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-ink/65 mb-4">
+            You don&apos;t currently have an active membership.
+          </p>
+        )}
         {!subscription && <SubscribeButton label="Subscribe for ₹299/month" />}
       </div>
 

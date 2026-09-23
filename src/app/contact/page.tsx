@@ -3,12 +3,8 @@ import LegalPage, { LegalSection } from "@/components/LegalPage";
 
 export const metadata = { title: "Contact & Help — Mom Village" };
 
-// Support email intentionally left as a placeholder — Roop is setting up a
-// dedicated address on her own domain (2026-07-28: "i will make a different
-// mail with domain name in picture") rather than using her personal Gmail
-// long-term. Swap SUPPORT_EMAIL in once that's ready, same "flag, don't
-// fabricate" pattern used for the homepage bio placeholder.
-const SUPPORT_EMAIL: string | null = null;
+// Real support mailbox, live on GoDaddy Titan Email since 2026-09-23.
+const SUPPORT_EMAIL: string | null = "support@momvillage.in";
 
 export default function ContactPage() {
   return (
