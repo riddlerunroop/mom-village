@@ -6,6 +6,7 @@ import PushSubscribeButton from "@/components/PushSubscribeButton";
 import BlockedList from "@/components/BlockedList";
 import DeleteAccountRequest from "@/components/DeleteAccountRequest";
 import SubscribeButton from "@/components/SubscribeButton";
+import CancelButton from "@/components/CancelButton";
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
@@ -32,20 +33,23 @@ export default async function AccountPage() {
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("status, plan, current_period_end")
+    .select("status, plan, current_period_end, cancel_at_period_end")
     .eq("user_id", user!.id)
     .eq("status", "active")
     .maybeSingle();
 
+  const periodEndLabel = subscription?.current_period_end
+    ? new Date(subscription.current_period_end).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : null;
+
   const subscriptionLabel = subscription
-    ? `Active — ${subscription.plan}${
-        subscription.current_period_end
-          ? ` (renews ${new Date(subscription.current_period_end).toLocaleDateString(
-              "en-IN",
-              { day: "numeric", month: "short", year: "numeric" }
-            )})`
-          : ""
-      }`
+    ? subscription.cancel_at_period_end
+      ? `Cancelling — active until ${periodEndLabel ?? "your current period ends"}`
+      : `Active — ${subscription.plan}${periodEndLabel ? ` (renews ${periodEndLabel})` : ""}`
     : "Not subscribed";
 
   const { data: deletionRequest } = await supabase
@@ -105,19 +109,26 @@ export default async function AccountPage() {
             <p className="text-sm font-semibold text-ink/85 mt-3 mb-1">
               Cancel subscription
             </p>
-            <p className="text-sm text-ink/65 mb-4">
-              Want to cancel?{" "}
-              <Link href="/contact" className="underline text-gold-deep font-semibold">
-                Email us
-              </Link>
-              . We&apos;ll cancel future renewals while keeping your access
-              active until the end of your current paid period. You
-              won&apos;t be charged again. See our{" "}
-              <Link href="/refund-policy" className="underline text-gold-deep font-semibold">
-                Cancellation &amp; Refund Policy
-              </Link>
-              .
-            </p>
+            {subscription.cancel_at_period_end ? (
+              <p className="text-sm text-sage-deep mb-4">
+                Cancellation scheduled — you won&apos;t be charged again,
+                and your access stays active until{" "}
+                {periodEndLabel ?? "the end of your current period"}.
+              </p>
+            ) : (
+              <>
+                <p className="text-sm text-ink/65 mb-4">
+                  Cancelling stops future renewals while keeping your
+                  access active until the end of your current paid period.
+                  You won&apos;t be charged again. See our{" "}
+                  <Link href="/refund-policy" className="underline text-gold-deep font-semibold">
+                    Cancellation &amp; Refund Policy
+                  </Link>
+                  .
+                </p>
+                <CancelButton currentPeriodEndLabel={periodEndLabel} />
+              </>
+            )}
           </>
         ) : (
           <p className="text-sm text-ink/65 mb-4">

@@ -68,28 +68,51 @@ export async function POST(req: NextRequest) {
             current_period_end: sub.current_end
               ? new Date(sub.current_end * 1000).toISOString()
               : null,
+            // A fresh charge/activation always means no cancellation is
+            // pending anymore (covers the normal monthly renewal case, and
+            // the rare case of a subscription being un-cancelled/renewed).
+            cancel_at_period_end: false,
           },
           { onConflict: "razorpay_subscription_id" }
         );
         break;
       }
 
-      case "subscription.cancelled":
-      case "subscription.completed": {
+      case "subscription.cancelled": {
         const sub = evt.payload?.subscription?.entity;
         if (!sub) break;
-        // Reflects Razorpay's actual state as soon as it changes. If Roop
-        // wants a cancelled mother to keep access through the period
-        // she's already paid for (per the Refund Policy), she should
-        // cancel with cancel_at_cycle_end so this event — and the status
-        // flip below — only fires once that period actually ends, rather
-        // than this route trying to infer "still within paid period" on
-        // its own.
+        // Razorpay fires this the moment a cancel is requested — including
+        // a cancel_at_cycle_end request, well before the paid period is
+        // actually over. So this must NOT immediately cut off access: if
+        // her current_end is still in the future, keep status 'active' and
+        // just flag cancel_at_period_end so the account page can say
+        // "cancelling — active until <date>". hasActiveSubscription()
+        // already checks current_period_end against "now" for any
+        // status='active' row, so access falls away on its own once that
+        // date passes — no second webhook event needed for that. Only an
+        // immediate/no-notice cancel (current_end already past, or absent)
+        // should flip status to 'cancelled' right away.
+        const periodEndsAt = sub.current_end ? new Date(sub.current_end * 1000) : null;
+        const stillWithinPaidPeriod = !!periodEndsAt && periodEndsAt > new Date();
         await service
           .from("subscriptions")
           .update({
-            status: evt.event === "subscription.completed" ? "expired" : "cancelled",
+            cancel_at_period_end: true,
+            status: stillWithinPaidPeriod ? "active" : "cancelled",
           })
+          .eq("razorpay_subscription_id", sub.id);
+        break;
+      }
+
+      case "subscription.completed": {
+        const sub = evt.payload?.subscription?.entity;
+        if (!sub) break;
+        // Fires once a subscription's billing cycles are genuinely done
+        // (including the final cycle of a cancel_at_cycle_end request) —
+        // this is the real "access should end now" signal.
+        await service
+          .from("subscriptions")
+          .update({ status: "expired", cancel_at_period_end: false })
           .eq("razorpay_subscription_id", sub.id);
         break;
       }
