@@ -59,7 +59,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await razorpay.subscriptions.cancel(subscription.razorpay_subscription_id, {
+    // The `razorpay` npm package's bundled TypeScript types are out of sync
+    // with Razorpay's own documented API here — their docs show exactly
+    // this call shape (subscriptionId, { cancel_at_cycle_end: true }), but
+    // the shipped .d.ts rejects it. Cast past the stale type rather than
+    // reshape a call that's already correct per Razorpay's own docs.
+    await (razorpay.subscriptions.cancel as (
+      id: string,
+      options: { cancel_at_cycle_end: boolean }
+    ) => Promise<unknown>)(subscription.razorpay_subscription_id, {
       cancel_at_cycle_end: true,
     });
   } catch (err) {
